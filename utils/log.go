@@ -39,8 +39,6 @@ func init() {
 
 		fmt.Println("logFilePath:", fileName)
 
-		os.Remove(fileName)
-
 		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			fmt.Println("err", err)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoServer/conf"
 	. "GoServer/service"
 	"fmt"
 	"os"
@@ -14,11 +15,11 @@ var (
 )
 
 func init() {
-	fmt.Println("\nGiSunLinkSrv run")
+	fmt.Println("\nServer runing")
 	if len(os.Args) == 2 && (os.Args[1] == "-v" || os.Args[1] == "-version") {
 		fmt.Println("go version: \t" + GoVersion)
 		fmt.Println("Build Time: \t" + BuildTime)
-		fmt.Println("\n")
+		fmt.Println("")
 	}
 }
 
@@ -37,6 +38,10 @@ func waitSignalExit() {
 func main() {
 
 	var err error
+
+	if conf.GetConfig() == nil {
+		panic(conf.ErrString)
+	}
 
 	if err = StartMqttService(); err != nil {
 		fmt.Println("StartMqttService err:", err)

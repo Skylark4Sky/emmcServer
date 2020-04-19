@@ -11,6 +11,3 @@ func init() {
 	fmt.Println("log init")
 }
 
-func PrintLog() {
-
-}

@@ -1,6 +1,8 @@
 package Service
 
 import (
+	"GoServer/conf"
+	_ "GoServer/conf"
 	. "GoServer/packet"
 	"bytes"
 	"fmt"
@@ -8,14 +10,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-)
-
-const (
-	TIME_FORMAT  = "2006/01/02 15:04:05"
-	TARGET_HOST  = "tcp://139.9.6.174:1883"
-	CLIENT_TOKEN = "f65f58790f3f40da88e3bedd83a85299"
-	CLIENT_NAME  = "test"
-	CLIENT_PWSD  = "test1"
 )
 
 type Job interface {
@@ -121,7 +115,7 @@ func GetGoroutineID() uint64 {
 func (msg *MqMsg) Exec() error {
 	ok, packet := MessageHandler(msg.Topic, msg.Payload)
 	if ok && packet.JsonData != nil {
-		fmt.Println("==========", msg.Topic, "time:", time.Now().Format(TIME_FORMAT), "=========", GetGoroutineID(), len(JobQueue))
+		fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		fmt.Println(packet.JsonData.(Protocol).Print())
 	} else {
 		fmt.Println("analysis failed ->Topic:%s Payload:%s",msg.Topic,msg.Payload)
@@ -144,10 +138,10 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	opts := M.NewClientOptions().AddBroker(TARGET_HOST)
-	opts.SetClientID(CLIENT_TOKEN)
-	opts.SetUsername(CLIENT_NAME)
-	opts.SetPassword(CLIENT_PWSD)
+	opts := M.NewClientOptions().AddBroker(conf.GetConfig().GetMqtt().Host)
+	opts.SetClientID(conf.GetConfig().GetMqtt().Token)
+	opts.SetUsername(conf.GetConfig().GetMqtt().Name)
+	opts.SetPassword(conf.GetConfig().GetMqtt().Pwsd)
 	opts.SetDefaultPublishHandler(MessageCb)
 
 	Client := M.NewClient(opts)

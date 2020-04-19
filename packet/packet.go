@@ -33,13 +33,13 @@ func (packet *Packet) AnalysisAction() {
 		packet.AnalysisTransferBehavior()
 		break
 	case TRANSFER_RESULT:
-		packet.JsonData = &Transfer_result{}
+		packet.JsonData = &TransferResult{}
 		break
 	case DEVICE_INFO:
-		packet.JsonData = &Device_info{}
+		packet.JsonData = &DeviceInfo{}
 		break
 	case FIRMWARE_UPDATE:
-		packet.JsonData = &Update_state{}
+		packet.JsonData = &UpdateState{}
 		break
 	}
 

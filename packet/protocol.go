@@ -41,19 +41,19 @@ type Protocol interface {
 }
 
 //更新状态
-type Update_state struct {
+type UpdateState struct {
 	Msg string `json:"msg"`
 }
 
 //传输回复
-type Transfer_result struct {
+type TransferResult struct {
 	ReqID   int64  `json:"req_id"`
 	Success string `json:"success"`
 	Msg     string `json:"msg"`
 }
 
 //信息截取
-type Device_info struct {
+type DeviceInfo struct {
 	Imei     string `json:"imei "`
 	Version  string `json:"version"`
 	DeviceSn string `json:"device_sn"`
@@ -120,18 +120,18 @@ type JosnPacket struct {
 	Behavior int    `json:"behavior"`
 }
 
-func (update *Update_state) Print() (retString string) {
+func (update *UpdateState) Print() (retString string) {
 	retString = "update_state"
 	return
 
 }
 
-func (result *Transfer_result) Print() (retString string) {
+func (result *TransferResult) Print() (retString string) {
 	retString = "transfer_result"
 	return
 }
 
-func (device *Device_info) Print() (retString string) {
+func (device *DeviceInfo) Print() (retString string) {
 	retString = "device_info"
 	return
 }

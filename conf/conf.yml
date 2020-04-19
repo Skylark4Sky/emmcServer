@@ -1,0 +1,20 @@
+mqtt:
+    host: 'tcp://139.9.6.174:1883'
+    token: 'f65f58790f3f40da88e3bedd83a84299'
+    name: 'test'
+    pwsd: 'test1'
+
+mysql:
+    host: '123'
+    name: '456'
+    pwsd: '789'
+
+web:
+    port: '8888'
+
+system:
+    timeformat: '2006/01/02 15:04:05'
+    log:
+        enabel: true
+        filepath: './log/'
+        filename: 'server.log'

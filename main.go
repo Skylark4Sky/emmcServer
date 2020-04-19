@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GoServer/conf"
+	. "GoServer/utils"
 	. "GoServer/service"
 	"fmt"
 	"os"
@@ -39,8 +39,8 @@ func main() {
 
 	var err error
 
-	if conf.GetConfig() == nil {
-		panic(conf.ErrString)
+	if GetConfig() == nil {
+		panic(ErrConfString)
 	}
 
 	if err = StartMqttService(); err != nil {

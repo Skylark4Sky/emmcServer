@@ -1,8 +1,7 @@
 package Service
 
 import (
-	"GoServer/conf"
-	_ "GoServer/conf"
+	. "GoServer/utils"
 	. "GoServer/packet"
 	"bytes"
 	"fmt"
@@ -13,7 +12,7 @@ import (
 )
 
 type Job interface {
-	Exec() error
+	ExecTask() error
 }
 
 type Worker struct {
@@ -53,7 +52,7 @@ func (w Worker) Start() {
 			w.WorkerPool <- w.JobChannel
 			select {
 			case job := <-w.JobChannel:
-				if err := job.Exec(); err != nil {
+				if err := job.ExecTask(); err != nil {
 					fmt.Printf("excute job failed with err: %v", err)
 				}
 			case <-w.Quit:
@@ -112,11 +111,12 @@ func GetGoroutineID() uint64 {
 	return n
 }
 
-func (msg *MqMsg) Exec() error {
+func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 	if ok && packet.JsonData != nil {
-		fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
-		fmt.Println(packet.JsonData.(Protocol).Print())
+		PrintInfo("==========", msg.Topic, "time:", time.Now().Format(GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
+		//fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
+		//fmt.Println(packet.JsonData.(Protocol).Print())
 	} else {
 		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 	}
@@ -136,10 +136,10 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	opts := M.NewClientOptions().AddBroker(conf.GetConfig().GetMqtt().Host)
-	opts.SetClientID(conf.GetConfig().GetMqtt().Token)
-	opts.SetUsername(conf.GetConfig().GetMqtt().Name)
-	opts.SetPassword(conf.GetConfig().GetMqtt().Pwsd)
+	opts := M.NewClientOptions().AddBroker(GetConfig().GetMqtt().Host)
+	opts.SetClientID(GetConfig().GetMqtt().Token)
+	opts.SetUsername(GetConfig().GetMqtt().Name)
+	opts.SetPassword(GetConfig().GetMqtt().Pwsd)
 	opts.SetDefaultPublishHandler(MessageCb)
 
 	Client := M.NewClient(opts)

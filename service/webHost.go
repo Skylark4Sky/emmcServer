@@ -1,7 +1,7 @@
 package Service
 
 import (
-	"GoServer/conf"
+	. "GoServer/utils"
 	. "GoServer/model"
 	"bytes"
 	"github.com/gin-contrib/cors"
@@ -46,7 +46,7 @@ func exceptionInterceptor(context *gin.Context) {
 	var buffer bytes.Buffer
 	buffer.WriteString("IP:" + context.ClientIP())
 	buffer.WriteString(" -t ")
-	buffer.WriteString(time.Now().Format(conf.GetConfig().GetSystem().Timeformat))
+	buffer.WriteString(time.Now().Format(GetConfig().GetSystem().Timeformat))
 	buffer.WriteString(" -a ")
 	buffer.WriteString(context.Request.Method)
 	buffer.WriteString(" -p ")
@@ -75,7 +75,7 @@ func StatrWebService() error {
 
 	setWebRouter(g)
 
-	if err := g.Run(conf.GetConfig().GetWeb().Port); err != nil {
+	if err := g.Run(GetConfig().GetWeb().Port); err != nil {
 		return err
 	}
 	return nil

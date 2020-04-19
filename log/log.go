@@ -10,4 +10,3 @@ var log = logrus.New()
 func init() {
 	fmt.Println("log init")
 }
-

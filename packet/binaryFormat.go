@@ -20,15 +20,6 @@ const (
 	MAX_PROTO_VERSION3 = 322
 )
 
-const (
-	NO_ERROR                   = 0x00
-	OPEN_ERROR                 = 0x02
-	READ_ERROR                 = 0x10
-	ENERGY_ERROR               = 0x80
-	ELECTRICITY_ERROR          = 0x40
-	ELECTRICITY_OVERFLOW_ERROR = 0x20
-)
-
 func init() {
 
 }

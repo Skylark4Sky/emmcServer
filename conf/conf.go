@@ -3,8 +3,8 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	yaml "gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 type Mqtt struct {
@@ -29,10 +29,10 @@ type System struct {
 }
 
 type Config struct {
-	MqttConfig Mqtt `yaml:"mqtt"`
-	MysqlConfig Mysql `yaml:"mysql"`
-	WebConfig Web `yaml:"web"`
- 	SystemConfig System `yaml:"system"`
+	MqttConfig   Mqtt   `yaml:"mqtt"`
+	MysqlConfig  Mysql  `yaml:"mysql"`
+	WebConfig    Web    `yaml:"web"`
+	SystemConfig System `yaml:"system"`
 }
 
 var config = &Config{}
@@ -73,7 +73,7 @@ func (conf *Config) GetMysql() *Mysql {
 	return &(conf.MysqlConfig)
 }
 
-func (conf *Config) GetWeb() *Web  {
+func (conf *Config) GetWeb() *Web {
 	if ErrString != nil {
 		return nil
 	}

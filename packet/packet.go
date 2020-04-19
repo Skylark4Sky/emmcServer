@@ -51,7 +51,7 @@ func (packet *Packet) AnalysisAction() {
 	}
 }
 
-func MessageHandler(Topic string, Payload []byte) (ok bool, packet *Packet) {
+func MessageHandler(Payload []byte) (ok bool, packet *Packet) {
 	ok = false
 	Json := &JosnPacket{}
 	err := json.Unmarshal(Payload, &Json)

@@ -113,16 +113,14 @@ func GetGoroutineID() uint64 {
 }
 
 func (msg *MqMsg) Exec() error {
-	ok, packet := MessageHandler(msg.Topic, msg.Payload)
+	ok, packet := MessageHandler(msg.Payload)
 	if ok && packet.JsonData != nil {
 		fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		fmt.Println(packet.JsonData.(Protocol).Print())
 	} else {
-		fmt.Println("analysis failed ->Topic:%s Payload:%s",msg.Topic,msg.Payload)
+		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 	}
-
 	return nil
-
 }
 
 func init() {

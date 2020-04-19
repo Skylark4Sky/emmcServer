@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-const (
-	port = ":8888"
-)
-
 var (
 	GaugeVecApiDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "apiDuration",

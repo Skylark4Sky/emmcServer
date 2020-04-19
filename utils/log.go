@@ -38,7 +38,10 @@ func init() {
 		}
 
 		fmt.Println("logFilePath:", fileName)
-		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+
+		os.Remove(fileName)
+
+		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			fmt.Println("err", err)
 			return
@@ -46,7 +49,6 @@ func init() {
 
 		logrus.SetOutput(file)
 		logrus.SetLevel(logrus.DebugLevel)
-		//logrus.SetFormatter(new(CustomFormatter))
 
 		// 设置 rotatelogs
 		logWriter, err := rotatelogs.New(

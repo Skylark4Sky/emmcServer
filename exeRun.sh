@@ -21,7 +21,8 @@ if [ $exeName ]; then
 	runCmd="./$build/$exeName -v"
 
 	if [ $logName ]; then
-		runCmd="${runCmd} > ./build/$logName &"
+    #runCmd="${runCmd} > ./build/$logName &"
+    runCmd="${runCmd} 1>/dev/null 2>&1 &"
 	fi
 
 	eval $runCmd

@@ -1,8 +1,8 @@
 package main
 
 import (
-	. "GoServer/utils"
 	. "GoServer/service"
+	. "GoServer/utils"
 	"fmt"
 	"os"
 	"os/signal"

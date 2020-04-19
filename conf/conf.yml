@@ -17,4 +17,4 @@ system:
     log:
         enabel: true
         filepath: './log/'
-        filename: 'server.log'
+        filename: 'server'

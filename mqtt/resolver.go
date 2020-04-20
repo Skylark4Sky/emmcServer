@@ -45,7 +45,7 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 	instance.comPort = make([]interface{}, instance.comNum, instance.comNum)
 	instance.enableCount = 0
 
-	for index, _ := range instance.comPort {
+	for index := range instance.comPort {
 		com := ComData{}
 		com.token = getUint32(bytesBuf)
 		com.maxEnergy = getUint32(bytesBuf)

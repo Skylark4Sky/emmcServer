@@ -16,8 +16,10 @@ type Mqtt struct {
 
 type Mysql struct {
 	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 	Name string `yaml:"name"`
 	Pwsd string `yaml:"pwsd"`
+	Basedata string `yaml:"basedata"`
 }
 
 type Web struct {

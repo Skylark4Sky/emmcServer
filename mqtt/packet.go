@@ -1,4 +1,4 @@
-package Packect
+package mqtt
 
 import (
 	"encoding/base64"
@@ -8,10 +8,6 @@ import (
 type Packet struct {
 	Json     *JosnPacket
 	JsonData interface{}
-}
-
-func init() {
-
 }
 
 func TranslateBinaryData(base64String string) (binary []byte) {

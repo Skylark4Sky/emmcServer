@@ -1,4 +1,4 @@
-package Packect
+package mqtt
 
 import (
 	"bytes"
@@ -34,6 +34,19 @@ const (
 	GISUNLINK_COM_UPDATE       = 0x1B //参数刷新
 	GISUNLINK_STOP_CHARGE      = 0x1C //停止
 	GISUNLINK_COM_NO_UPDATE    = 0x1D //参数没有刷新
+)
+
+const (
+	COM_NO_WORKING     = 0
+	COM_WORKING        = 1
+	MIN_PROTO_VERSION0 = 27
+	MIN_PROTO_VERSION1 = 32
+	MIN_PROTO_VERSION2 = 33
+	MIN_PROTO_VERSION3 = 34
+	MAX_PROTO_VERSION0 = 261
+	MAX_PROTO_VERSION1 = 302
+	MAX_PROTO_VERSION2 = 312
+	MAX_PROTO_VERSION3 = 322
 )
 
 type Protocol interface {
@@ -118,6 +131,20 @@ type JosnPacket struct {
 	Ctime    int    `json:"ctime"`
 	Data     string `json:"data"`
 	Behavior int    `json:"behavior"`
+}
+
+func getProtocolVersion(length int) (version uint16) {
+	version = 0
+	if length == MIN_PROTO_VERSION0 || length == MAX_PROTO_VERSION0 {
+		version = MAX_PROTO_VERSION0
+	} else if length == MIN_PROTO_VERSION1 || length == MAX_PROTO_VERSION1 {
+		version = MAX_PROTO_VERSION1
+	} else if length == MIN_PROTO_VERSION2 || length == MAX_PROTO_VERSION2 {
+		version = MAX_PROTO_VERSION2
+	} else if length == MIN_PROTO_VERSION3 || length == MAX_PROTO_VERSION3 {
+		version = MAX_PROTO_VERSION3
+	}
+	return
 }
 
 func (update *UpdateState) Print() (retString string) {

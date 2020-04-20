@@ -1,7 +1,7 @@
 package Service
 
 import (
-	. "GoServer/packet"
+	. "GoServer/mqtt"
 	. "GoServer/utils"
 	"bytes"
 	"fmt"
@@ -114,12 +114,10 @@ func GetGoroutineID() uint64 {
 func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 	if ok && packet.JsonData != nil {
-		//fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
-		//fmt.Println(packet.JsonData.(Protocol).Print())
 		PrintInfo("==========", msg.Topic, " time:", time.Now().Format(GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		PrintInfo(packet.JsonData.(Protocol).Print())
 	} else {
-		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
+		PrintInfo("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 	}
 	return nil
 }

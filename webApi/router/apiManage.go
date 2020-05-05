@@ -2,45 +2,37 @@ package router
 
 import (
 	"GoServer/webApi/action"
-	. "GoServer/webApi/middleWare"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func ApiRegisterManage(router *gin.Engine, prometheusHttp func(context *gin.Context)) {
-	//通用接口
+	//性能监控
 	func(general *gin.Engine) {
 		general.GET("/metrics", gin.WrapH(promhttp.Handler()))
-		general.GET("/any-term", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
+		general.GET("/check", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
 		general.Use(cors.Default())
 	}(router)
 
-	api := router.Group("api").Use(prometheusHttp)
+	api := router.Group("api")
 	{
-		//不需要验证的接口
+		api.Use(prometheusHttp)
+		// 全局通用接口
 		func(api gin.IRoutes) {
-			api.GET("health-check", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			//登陆
-			api.POST("login", action.Login)
-			//注册
-			api.POST("register", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			//验证
-			api.POST("checkCode", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-
+			//手机验证码
+			api.POST("sms",action.SMSLimiter,action.GetSMS)
 		}(api)
 
-		auth := api.Use(JwtIntercept)
-
-		//需要验证的接口
-		func(auth gin.IRoutes) {
-			auth.GET("ws/:id", UserRole(WsInterface), UserBehaviorIntercept(), func(context *gin.Context) {
-				context.AbortWithStatusJSON(200, gin.H{"ok1": true})
-			})
-			auth.GET("machine/:id", UserRole(MachineInterface), UserBehaviorIntercept(), func(context *gin.Context) {
-				context.AbortWithStatusJSON(200, gin.H{"ok2": true})
-			})
-		}(auth)
+		// 注册用户接口路由
+		registerUserRouter(api)
+		// 注册合作关系接口路由 客户&供应商
+		registerPartnershipRouter(api)
+		// 注册商品接口路由
+		registerProductRouter(api)
+		// 注册设置接口路由
+		registerSettingRouter(api)
 	}
+
 
 }

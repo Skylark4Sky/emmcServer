@@ -14,12 +14,27 @@ type Mqtt struct {
 	Pwsd  string `yaml:"pwsd"`
 }
 
-type Mysql struct {
+type Redis struct {
+	Host        string `yaml:"host"`
+	Port        string `yaml:"port"`
+	Auth        string `yaml:"auth"`
+	Accesstoken string `yaml:accesstoken`
+	Expiredtime string `expiredtime`
+}
+
+type RabbitMQ struct {
 	Host string `yaml:"host"`
-	Port string `yaml:"port"`
 	Name string `yaml:"name"`
 	Pwsd string `yaml:"pwsd"`
+}
+
+type Mysql struct {
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	Name     string `yaml:"name"`
+	Pwsd     string `yaml:"pwsd"`
 	Basedata string `yaml:"basedata"`
+	Debug    bool   `yaml:"debug"`
 }
 
 type Web struct {
@@ -27,28 +42,36 @@ type Web struct {
 }
 
 type Log struct {
-	Enabel bool `yaml:"enabel"`
+	Enabel   bool   `yaml:"enabel"`
 	Filepath string `yaml:"filepath"`
 	Filename string `yaml:"filename"`
 }
 
+type Service struct {
+	Mqtt bool `yaml:"mqtt"`
+	Web  bool `yaml:"web"`
+}
+
 type System struct {
-	Timeformat string `yaml:"timeformat"`
-	LogConfig Log `yaml:"log"`
+	Service    Service `yaml:"service"`
+	LogConfig  Log     `yaml:"log"`
+	Timeformat string  `yaml:"timeformat"`
 }
 
 type Config struct {
-	MqttConfig   Mqtt   `yaml:"mqtt"`
-	MysqlConfig  Mysql  `yaml:"mysql"`
-	WebConfig    Web    `yaml:"web"`
-	SystemConfig System `yaml:"system"`
+	MqttConfig     Mqtt     `yaml:"mqtt"`
+	RedisConfg     Redis    `yaml:"redis"`
+	RabbitMQConfig RabbitMQ `yaml:"rabbitMQ"`
+	MysqlConfig    Mysql    `yaml:"mysql"`
+	WebConfig      Web      `yaml:"web"`
+	SystemConfig   System   `yaml:"system"`
 }
 
 var config = &Config{}
 var ErrConfString error
 
 func init() {
-	fp, err := ioutil.ReadFile("./conf/conf.yml")
+	fp, err := ioutil.ReadFile("./config/conf.yml")
 	if err != nil {
 		ErrConfString = errors.New(fmt.Sprintf("yamlFile.Get err #%v ", err))
 		return
@@ -61,44 +84,37 @@ func init() {
 	}
 }
 
-func GetConfig() *Config {
+func MqttConf() *Mqtt {
 	if ErrConfString != nil {
 		return nil
 	}
-	return config
+	return &(config.MqttConfig)
 }
 
-func (conf *Config) GetMqtt() *Mqtt {
+func MysqlConf() *Mysql {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.MqttConfig)
+	return &(config.MysqlConfig)
 }
 
-func (conf *Config) GetMysql() *Mysql {
+func WebConf() *Web {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.MysqlConfig)
+	return &(config.WebConfig)
 }
 
-func (conf *Config) GetWeb() *Web {
+func SystemConf() *System {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.WebConfig)
+	return &(config.SystemConfig)
 }
 
-func (conf *Config) GetSystem() *System {
+func LogConf() *Log {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.SystemConfig)
-}
-
-func (system *System) GetLog() *Log {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(system.LogConfig)
+	return &(config.SystemConfig.LogConfig)
 }

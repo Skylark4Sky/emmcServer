@@ -1,7 +1,6 @@
-package Service
+package mqtt
 
 import (
-	. "GoServer/mqtt"
 	. "GoServer/utils"
 	"bytes"
 	"fmt"
@@ -37,6 +36,8 @@ var (
 	MaxQueue  = 512
 	JobQueue  chan Job
 )
+
+var client M.Client = nil
 
 func NewWorker(workPool chan chan Job) Worker {
 	return Worker{
@@ -112,9 +113,9 @@ func GetGoroutineID() uint64 {
 }
 
 func (msg *MqMsg) ExecTask() error {
-	ok, packet := MessageHandler(msg.Payload)
+	ok, packet := MessageHandler(msg.Topic, msg.Payload)
 	if ok && packet.JsonData != nil {
-		PrintInfo("==========", msg.Topic, " time:", time.Now().Format(GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
+		PrintInfo("==========", msg.Topic, " time:", time.Now().Format(SystemConf().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		PrintInfo(packet.JsonData.(Protocol).Print())
 	} else {
 		PrintInfo("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
@@ -135,19 +136,36 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	opts := M.NewClientOptions().AddBroker(GetConfig().GetMqtt().Host)
-	opts.SetClientID(GetConfig().GetMqtt().Token)
-	opts.SetUsername(GetConfig().GetMqtt().Name)
-	opts.SetPassword(GetConfig().GetMqtt().Pwsd)
+	opts := M.NewClientOptions().AddBroker(MqttConf().Host)
+	opts.SetClientID(MqttConf().Token)
+	opts.SetUsername(MqttConf().Name)
+	opts.SetPassword(MqttConf().Pwsd)
 	opts.SetDefaultPublishHandler(MessageCb)
 
-	Client := M.NewClient(opts)
-	if token := Client.Connect(); token.Wait() && token.Error() != nil {
+	client = M.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 
-	if token := Client.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 	return nil
+}
+
+func StopMqttService() {
+	if client != nil && client.IsConnected()  {
+
+		client.Disconnect(250)
+		t1 := time.NewTicker(time.Millisecond * 250)
+
+		for exit := false; exit != true;  {
+			select {
+			case <-t1.C:
+				exit = true
+				t1.Stop()
+				break
+			}
+		}
+	}
 }

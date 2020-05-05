@@ -245,6 +245,7 @@ func (json *JosnPacket) FormatData() (data string) {
 	data = ""
 	if json != nil {
 		if len(json.Data) > 0 {
+			//清除base64转义符号
 			data = strings.Replace(json.Data, "\\", "", -1)
 		}
 	}

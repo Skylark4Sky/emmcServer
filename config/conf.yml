@@ -1,0 +1,39 @@
+mqtt:
+    host: 'tcp://139.9.6.174:1883'
+    token: 'f69f58760f3f40da88e3bedd83a84299'
+    name: 'test'
+    pwsd: 'test1'
+    
+redis:   
+    host: '111.231.194.143'
+    port: '6379'
+    auth: 'xyCbwbCcRyjfAHAP'
+    accesstoken: 'R29TZXJ2ZXI='
+    expiredtime: '1464344863'
+
+rabbitMQ:
+    host: '111.231.194.143'
+    name: 'GoServer'
+    pwsd: 'xyCbwbCcRyjfAHAP'
+
+mysql:
+    host: '111.231.194.143'
+    port: '3306'
+    name: 'GoServer'
+    pwsd: 'xyCbwbCcRyjfAHAP'
+    basedata: 'GoServer'
+    debug: true
+
+web:
+    port: ':8882'
+
+system:
+    service:
+        mqtt: false
+        web: true
+    log:
+        enabel: true
+        filepath: './logger/'
+        filename: 'server'
+
+    timeformat: '2006/01/02 15:04:05'

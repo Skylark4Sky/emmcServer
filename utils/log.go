@@ -23,10 +23,10 @@ func (s *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 func init() {
 
-	if logConfig := GetConfig().GetSystem().GetLog(); logConfig != nil {
+	if LogConf() != nil {
 		var fileName string
-		logFilePath := logConfig.Filepath
-		logFileName := logConfig.Filename
+		logFilePath := LogConf().Filepath
+		logFileName := LogConf().Filename
 
 		//相对路径
 		if path.IsAbs(logFilePath) == false {
@@ -84,7 +84,7 @@ func init() {
 }
 
 func PrintInfo(args ...interface{}) {
-	if GetConfig().GetSystem().GetLog().Enabel == true {
+	if LogConf().Enabel == true {
 		logger.Info(args...)
 	}
 }

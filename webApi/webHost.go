@@ -1,0 +1,69 @@
+package Service
+
+import (
+	. "GoServer/utils"
+	. "GoServer/webApi/middleWare"
+	. "GoServer/webApi/router"
+	"context"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"time"
+)
+
+var server *http.Server = nil
+
+func StatrWebService() error {
+	gin.SetMode(gin.DebugMode)
+	router := gin.New()
+
+	if router != nil {
+		router.NoMethod(ExceptionInterceptor)
+		router.NoRoute(ExceptionInterceptor)
+		ApiRegisterManage(router, PrometheusHttp)
+	}
+
+	server = &http.Server {
+		Addr:           WebConf().Port,
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	Listen := make(chan error)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			Listen <- err
+		}
+	}()
+
+	var err error = nil
+	select {
+	case err = <-Listen:
+	case <-time.After(1 * time.Second):
+		break
+	}
+	close(Listen)
+	return err
+}
+
+func StopWebService() {
+	defer DBClose()
+	if server != nil {
+		now := time.Now()
+		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			fmt.Println("err", err)
+		}
+		select {
+		case <-ctx.Done():
+			fmt.Println("timeout of 5 seconds.")
+		default:
+			//fmt.Println("work")
+		}
+		fmt.Println("------exited--------", time.Since(now),ctx)
+	}
+	fmt.Println("StopWebService")
+}

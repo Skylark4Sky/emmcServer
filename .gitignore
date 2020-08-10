@@ -47,4 +47,5 @@ Thumbs.db
 *.sct
 *.map
 *.lnp
-
+/log/
+/build/

@@ -23,10 +23,10 @@ func (s *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 func init() {
 
-	if LogConf() != nil {
+	if logConfig := GetConfig().GetSystem().GetLog(); logConfig != nil {
 		var fileName string
-		logFilePath := LogConf().Filepath
-		logFileName := LogConf().Filename
+		logFilePath := logConfig.Filepath
+		logFileName := logConfig.Filename
 
 		//相对路径
 		if path.IsAbs(logFilePath) == false {
@@ -38,7 +38,6 @@ func init() {
 		}
 
 		fmt.Println("logFilePath:", fileName)
-
 		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
 			fmt.Println("err", err)
@@ -47,6 +46,7 @@ func init() {
 
 		logrus.SetOutput(file)
 		logrus.SetLevel(logrus.DebugLevel)
+		//logrus.SetFormatter(new(CustomFormatter))
 
 		// 设置 rotatelogs
 		logWriter, err := rotatelogs.New(
@@ -84,7 +84,7 @@ func init() {
 }
 
 func PrintInfo(args ...interface{}) {
-	if LogConf().Enabel == true {
+	if GetConfig().GetSystem().GetLog().Enabel == true {
 		logger.Info(args...)
 	}
 }

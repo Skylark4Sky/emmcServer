@@ -1,9 +1,8 @@
 package main
 
 import (
-	. "GoServer/mqtt"
+	. "GoServer/service"
 	. "GoServer/utils"
-	. "GoServer/webApi"
 	"fmt"
 	"os"
 	"os/signal"
@@ -24,55 +23,34 @@ func init() {
 	}
 }
 
-func registerExitSignal() {
-	signals := make(chan os.Signal, 1)
-	exitRun := make(chan bool, 1)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
+func waitSignalExit() {
+	sigs := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		for exit := false; exit != true; {
-			signal := <-signals
-			fmt.Println("signal handle:->",signal)
-			switch signal {
-			case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-				StopMqttService()
-				StopWebService()
-				exitRun <- true
-				exit = true;
-				break
-			case syscall.SIGUSR1:
-				fmt.Println("usr1", signal)
-			case syscall.SIGUSR2:
-				fmt.Println("usr2", signal)
-			default:
-				fmt.Println("other", signal)
-			}
-		}
+		sig := <-sigs
+		fmt.Println(sig)
+		done <- true
 	}()
-	<-exitRun
-	fmt.Println("Server exit")
+	<-done
 }
 
 func main() {
+
 	var err error
 
-	if SystemConf() == nil {
+	if GetConfig() == nil {
 		panic(ErrConfString)
 	}
 
-	if SystemConf().Service.Mqtt {
-		if err = StartMqttService(); err != nil {
-			fmt.Println("StartMqttService err:", err)
-			panic(err)
-		}
+	if err = StartMqttService(); err != nil {
+		fmt.Println("StartMqttService err:", err)
+		panic(err)
 	}
 
-	if SystemConf().Service.Web {
-		if err = StatrWebService(); err != nil {
-			fmt.Println("StatrWebService err:", err)
-			panic(err)
-		}
-		string := fmt.Sprintf("curl -H \"Content-Type: application/json\" -X POST -d '{\"msg\":\"value\"}' \"http://localhost:%s/api/*\"",WebConf().Port)
-		fmt.Println(string)
+	if err = StatrWebService(); err != nil {
+		fmt.Println("StatrWebService err:", err)
+		panic(err)
 	}
-	registerExitSignal()
+	waitSignalExit()
 }

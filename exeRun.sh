@@ -16,13 +16,13 @@ build="build"
 
 if [ $exeName ]; then
 	ulimit -c unlimited
-	export GOTRACEBACK="system ./log/crash"
+	export GOTRACEBACK="system ./crash"
 	env | grep -E "GO111MODULE|GOPROXY|PWD|GOTRACEBACK"
 	runCmd="./$build/$exeName -v"
 
 	if [ $logName ]; then
     #runCmd="${runCmd} > ./build/$logName &"
-    runCmd="${runCmd} 1>/dev/null 2>&1 &"
+	runCmd="${runCmd} 1>/dev/null 2>&1 &"
 	fi
 
 	eval $runCmd

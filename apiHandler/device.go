@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+var (
+	key []byte = []byte("78hrey23y28ogs89")
+	iv  []byte = []byte("1234567890123456")
+)
+
 type RequestParam struct {
 	ClientID string `form:"clientID"`
 	Version  string `form:"version"`
@@ -51,9 +56,6 @@ func DeviceRegister(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	key := []byte("78hrey23y28ogs89")
-	iv := []byte("1234567890123456")
 
 	clientID, err := AES_CBCDecrypt(ciphertext, key, iv)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var (
@@ -75,7 +76,10 @@ func DeviceRegister(context *gin.Context) {
 	clientID = string([]byte(clientID)[:clientIDStringLen2])
 
 	if strings.Compare(clientID, urlParam.ClientID) == 0 {
-		PrintInfo("DeviceRegister ", urlParam.ClientID, " ", postData.SN, " ", urlParam.Version)
+		requestTime := time.Now().Format(GetConfig().GetSystem().Timeformat)
+		requestIP := context.ClientIP()
+		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
+		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)
 		context.AbortWithStatusJSON(200, gin.H{"status": true, "clientID": urlParam.ClientID, "version": urlParam.Version, "deviceSN": postData.SN})
 	} else {
 		context.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error clientID")})

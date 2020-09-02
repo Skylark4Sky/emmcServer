@@ -23,6 +23,7 @@ func init() {
 
 	DBInstance.LogMode(GetMysql().Debug)
 	DBInstance.SingularTable(true)
+
 }
 
 func SqlTime(t time.Time) string {

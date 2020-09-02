@@ -31,10 +31,6 @@ func RetSuccess(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(200, gin.H{"ok": true, "msg": "success"})
 }
 
-//func RetPagination(c *gin.Context, list interface{}, total uint, query *model.PaginationQ) {
-//	c.JSON(200, gin.H{"ok": true, "data": list, "total": total, "page": query.Page, "size": query.Size})
-//}
-
 func ChkError(ctx *gin.Context, err error) bool {
 	if err != nil {
 		RetError(ctx, err.Error())

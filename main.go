@@ -43,14 +43,21 @@ func main() {
 		panic(ErrConfString)
 	}
 
-	if err = StartMqttService(); err != nil {
-		fmt.Println("StartMqttService err:", err)
-		panic(err)
+	if system := GetSystem(); system != nil {
+		if system.Service.Mqtt {
+			if err = StartMqttService(); err != nil {
+				fmt.Println("StartMqttService err:", err)
+				panic(err)
+			}
+		}
+
+		if system.Service.Web {
+			if err = StatrWebService(); err != nil {
+				fmt.Println("StatrWebService err:", err)
+				panic(err)
+			}
+		}
 	}
 
-	if err = StatrWebService(); err != nil {
-		fmt.Println("StatrWebService err:", err)
-		panic(err)
-	}
 	waitSignalExit()
 }

@@ -21,7 +21,10 @@ func ApiRegisterManage(router *gin.Engine, prometheusHttp func(context *gin.Cont
 		// 全局通用接口
 		func(api gin.IRoutes) {
 			//手机验证码
-			api.POST("sms",action.SMSLimiter,action.GetSMS)
+			api.POST("sms", action.SMSLimiter, action.GetSMS)
+			//设备
+			api.POST("device", action.DeviceRegister)
+			api.GET("device", action.DeviceRegister)
 		}(api)
 
 		// 注册用户接口路由
@@ -33,6 +36,5 @@ func ApiRegisterManage(router *gin.Engine, prometheusHttp func(context *gin.Cont
 		// 注册设置接口路由
 		registerSettingRouter(api)
 	}
-
 
 }

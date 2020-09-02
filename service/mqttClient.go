@@ -116,9 +116,9 @@ func GetGoroutineID() uint64 {
 func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 	if ok && packet.JsonData != nil {
-		//fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
+		//fmt.Println("==========", msg.Topic, "time:", time.Now().Format(conf.GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		//fmt.Println(packet.JsonData.(Protocol).Print())
-		PrintInfo("[", msg.Broker, "] =========>>", msg.Topic, " time:", time.Now().Format(GetConfig().GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
+		PrintInfo("[", msg.Broker, "] =========>>", msg.Topic, " time:", time.Now().Format(GetSystem().Timeformat), "=========", GetGoroutineID(), len(JobQueue))
 		PrintInfo(packet.JsonData.(Protocol).Print())
 	} else {
 		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
@@ -144,37 +144,23 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	opts1 := M.NewClientOptions().AddBroker(GetConfig().GetMqtt().Host)
-	opts1.SetClientID(GetConfig().GetMqtt().Token)
-	opts1.SetUsername(GetConfig().GetMqtt().Name)
-	opts1.SetPassword(GetConfig().GetMqtt().Pwsd)
-	opts1.SetAutoReconnect(true)
-	opts1.SetDefaultPublishHandler(MessageCb)
+	for _, mqtt := range GetMqtt() {
 
-	opts2 := M.NewClientOptions().AddBroker("tcp://47.106.235.93:1883")
-	opts2.SetClientID(GetConfig().GetMqtt().Token)
-	opts2.SetUsername(GetConfig().GetMqtt().Name)
-	opts2.SetPassword(GetConfig().GetMqtt().Pwsd)
-	opts2.SetAutoReconnect(true)
-	opts2.SetDefaultPublishHandler(MessageCb)
+		opts := M.NewClientOptions().AddBroker(mqtt.Host)
+		opts.SetClientID(mqtt.Token)
+		opts.SetUsername(mqtt.Name)
+		opts.SetPassword(mqtt.Pwsd)
+		opts.SetAutoReconnect(true)
+		opts.SetDefaultPublishHandler(MessageCb)
 
-	Client1 := M.NewClient(opts1)
-	if token := Client1.Connect(); token.Wait() && token.Error() != nil {
-		return token.Error()
+		Client := M.NewClient(opts)
+		if token := Client.Connect(); token.Wait() && token.Error() != nil {
+			return token.Error()
+		}
+
+		if token := Client.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
+			return token.Error()
+		}
 	}
-
-	if token := Client1.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-
-	Client2 := M.NewClient(opts2)
-	if token := Client2.Connect(); token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-
-	if token := Client2.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-
 	return nil
 }

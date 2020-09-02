@@ -5,6 +5,8 @@ import (
 	"fmt"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
+	"path"
+	"path/filepath"
 )
 
 type Mqtt struct {
@@ -15,9 +17,12 @@ type Mqtt struct {
 }
 
 type Mysql struct {
-	Host string `yaml:"host"`
-	Name string `yaml:"name"`
-	Pwsd string `yaml:"pwsd"`
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	Name     string `yaml:"name"`
+	Pwsd     string `yaml:"pwsd"`
+	Basedata string `yaml:"basedata"`
+	Debug    bool   `yaml:"debug"`
 }
 
 type Web struct {
@@ -25,18 +30,24 @@ type Web struct {
 }
 
 type Log struct {
-	Enabel bool `yaml:"enabel"`
+	Enabel   bool   `yaml:"enabel"`
 	Filepath string `yaml:"filepath"`
 	Filename string `yaml:"filename"`
 }
 
+type ServiceConf struct {
+	Mqtt bool `yaml:"mqtt"`
+	Web bool  `yaml:"web"`
+}
+
 type System struct {
+	Service ServiceConf `yaml:"service"`
 	Timeformat string `yaml:"timeformat"`
-	LogConfig Log `yaml:"log"`
+	LogConfig  Log    `yaml:"log"`
 }
 
 type Config struct {
-	MqttConfig   Mqtt   `yaml:"mqtt"`
+	MqttConfig   []Mqtt `yaml:"mqtt"`
 	MysqlConfig  Mysql  `yaml:"mysql"`
 	WebConfig    Web    `yaml:"web"`
 	SystemConfig System `yaml:"system"`
@@ -46,7 +57,11 @@ var config = &Config{}
 var ErrConfString error
 
 func init() {
-	fp, err := ioutil.ReadFile("./conf/conf.yml")
+
+	exePath, _ := filepath.Abs("./")
+	exeFilePath := path.Join(exePath, "./config/conf.yml")
+
+	fp, err := ioutil.ReadFile(exeFilePath)
 	if err != nil {
 		ErrConfString = errors.New(fmt.Sprintf("yamlFile.Get err #%v ", err))
 		return
@@ -66,37 +81,37 @@ func GetConfig() *Config {
 	return config
 }
 
-func (conf *Config) GetMqtt() *Mqtt {
+func GetMqtt() []Mqtt {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.MqttConfig)
+	return config.MqttConfig
 }
 
-func (conf *Config) GetMysql() *Mysql {
+func GetMysql() *Mysql {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.MysqlConfig)
+	return &(config.MysqlConfig)
 }
 
-func (conf *Config) GetWeb() *Web {
+func GetWeb() *Web {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.WebConfig)
+	return &(config.WebConfig)
 }
 
-func (conf *Config) GetSystem() *System {
+func GetSystem() *System {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(conf.SystemConfig)
+	return &(config.SystemConfig)
 }
 
-func (system *System) GetLog() *Log {
+func GetLog() *Log {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(system.LogConfig)
+	return &(config.SystemConfig.LogConfig)
 }

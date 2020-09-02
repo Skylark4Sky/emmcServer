@@ -32,7 +32,7 @@ run: debug
 	@sh ./exeRun.sh $(BINNAME)
 release:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
-	upx -9 ./build/$(BINNAME)
+#	upx -9 ./build/$(BINNAME)
 debug:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
 clean:

@@ -14,7 +14,7 @@ rabbitMQ:
     pwsd: 'xyCbwbCcRyjfAHAP'
 
 mysql:
-    host: '111.231.194.143'
+    host: '203.195.209.28'
     port: '3306'
     name: 'GoServer'
     pwsd: 'xyCbwbCcRyjfAHAP'

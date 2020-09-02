@@ -24,7 +24,7 @@ type UserBase struct {
 	UserRole       int8   `gorm:"column:user_role;type:tinyint(2) unsigned;not null" json:"user_role"`             // 2正常用户 3禁言用户 4虚拟用户 5运营
 	RegisterSource int8   `gorm:"column:register_source;type:tinyint(4) unsigned;not null" json:"register_source"` // 注册来源：1手机号 2邮箱 3用户名 4qq 5微信 6腾讯微博 7新浪微博
 	UserName       string `gorm:"column:user_name;type:varchar(32);not null" json:"user_name"`                     // 用户账号，必须唯一
-	UserPwsd       string `gorm:"column:user_pwsd;type:varchar(128);not null" json:"user_pwsd"`                     // 用户密码
+	UserPwsd       string `gorm:"column:user_pwsd;type:varchar(128);not null" json:"user_pwsd"`                    // 用户密码
 	NickName       string `gorm:"column:nick_name;type:varchar(32);not null" json:"nick_name"`                     // 用户昵称
 	Gender         int8   `gorm:"column:gender;type:tinyint(1) unsigned;not null" json:"gender"`                   // 用户性别 0-female 1-male
 	Birthday       int64  `gorm:"column:birthday;type:bigint(20) unsigned;not null" json:"birthday"`               // 用户生日
@@ -131,7 +131,7 @@ func (m *UserLogin) Login(ip string) (*JwtObj, error) {
 		return nil, errors.New("password is required")
 	}
 	entity := &m.User
-	cond := fmt.Sprintf("email = '%s' or user_name = '%s' or mobile = '%s'",m.Account,m.Account,m.Account);
+	cond := fmt.Sprintf("email = '%s' or user_name = '%s' or mobile = '%s'", m.Account, m.Account, m.Account)
 	err := DBInstance.Where(cond).First(&entity.UserBase).Error
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -143,5 +143,5 @@ func (m *UserLogin) Login(ip string) (*JwtObj, error) {
 	if err := bcrypt.CompareHashAndPassword([]byte(entity.UserBase.UserPwsd), []byte(m.Pwsd)); err != nil {
 		return nil, err
 	}
-	return JwtGenerateToken(m,entity.UserBase.UId)
+	return JwtGenerateToken(m, entity.UserBase.UId), nil
 }

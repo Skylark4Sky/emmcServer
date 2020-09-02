@@ -2,25 +2,33 @@ package middleWare
 
 import (
 	. "GoServer/utils"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
+	"math/rand"
 	"time"
 )
 
 var DBInstance *gorm.DB
 
 func init() {
-//	var err error
-//	rand.Seed(time.Now().Unix())
-//	connString := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", GetMysql().Name, GetMysql().Pwsd, GetMysql().Host, GetMysql().Port, GetMysql().Basedata)
-//	DBInstance, err = gorm.Open("mysql", connString)
-//	if err != nil {
-//		fmt.Errorf("init MySQL db failed in %s, %s", connString, err)
-//		return
-//	}
-//
-//	DBInstance.LogMode(GetMysql().Debug)
-//	DBInstance.SingularTable(true)
+	var err error
+	rand.Seed(time.Now().Unix())
+	connString := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", GetMysql().Name, GetMysql().Pwsd, GetMysql().Host, GetMysql().Port, GetMysql().Basedata)
+	DBInstance, err = gorm.Open("mysql", connString)
+
+	fmt.Println("123123123123")
+	if err != nil {
+		fmt.Errorf("init MySQL db failed in %s, %s", connString, err)
+		return
+	}
+
+	DBInstance.LogMode(GetMysql().Debug)
+	DBInstance.SingularTable(true)
+	//开启连接池
+	DBInstance.DB().SetMaxIdleConns(100)   //最大空闲连接
+	DBInstance.DB().SetMaxOpenConns(10000) //最大连接数
+	DBInstance.DB().SetConnMaxLifetime(30) //最大生存时间(s)
 }
 
 func SqlTime(t time.Time) string {
@@ -35,8 +43,8 @@ func IsRecordNotFound(err error) bool {
 }
 
 func DBClose() {
-//	fmt.Println("Close Mysql")
-//	if DBInstance != nil {
-//		DBInstance.Close()
-//	}
+	fmt.Println("Close Mysql")
+	if DBInstance != nil {
+		DBInstance.Close()
+	}
 }

@@ -1,10 +1,7 @@
-mqtt:
-    host: 'tcp://139.9.6.174:1883'
-    token: 'f69f58760f3f40da88e3bedd83a84299'
-    name: 'test'
-    pwsd: 'test1'
-    
-redis:   
+mqtt: [{host: 'tcp://120.25.30.124:1883',token: 'f64f58790f3f40db88e3bedd83a84299',name: 'test',pwsd: 'test1'},
+       {host: 'tcp://47.106.235.93:1883',token: '8fe94a290602468fa8f0be6218024077',name: 'test',pwsd: 'test1'}]
+
+redis:
     host: '111.231.194.143'
     port: '6379'
     auth: 'xyCbwbCcRyjfAHAP'
@@ -25,7 +22,7 @@ mysql:
     debug: true
 
 web:
-    port: ':8882'
+    port: ':8888'
 
 system:
     service:
@@ -33,7 +30,7 @@ system:
         web: true
     log:
         enabel: true
-        filepath: './logger/'
+        filepath: './log/'
         filename: 'server'
 
     timeformat: '2006/01/02 15:04:05'

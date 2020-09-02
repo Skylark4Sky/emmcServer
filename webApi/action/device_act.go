@@ -1,4 +1,4 @@
-package apiHandler
+package action
 
 import (
 	. "GoServer/utils"
@@ -76,7 +76,7 @@ func DeviceRegister(context *gin.Context) {
 	clientID = string([]byte(clientID)[:clientIDStringLen2])
 
 	if strings.Compare(clientID, urlParam.ClientID) == 0 {
-		requestTime := time.Now().Format(GetConfig().GetSystem().Timeformat)
+		requestTime := time.Now().Format(GetSystem().Timeformat)
 		requestIP := context.ClientIP()
 		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
 		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)

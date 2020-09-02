@@ -17,7 +17,6 @@ func init() {
 	connString := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", GetMysql().Name, GetMysql().Pwsd, GetMysql().Host, GetMysql().Port, GetMysql().Basedata)
 	DBInstance, err = gorm.Open("mysql", connString)
 
-	fmt.Println("123123123123")
 	if err != nil {
 		fmt.Errorf("init MySQL db failed in %s, %s", connString, err)
 		return

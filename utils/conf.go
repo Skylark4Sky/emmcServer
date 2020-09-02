@@ -35,7 +35,13 @@ type Log struct {
 	Filename string `yaml:"filename"`
 }
 
+type ServiceConf struct {
+	Mqtt bool `yaml:"mqtt"`
+	Web bool  `yaml:"web"`
+}
+
 type System struct {
+	Service ServiceConf `yaml:"service"`
 	Timeformat string `yaml:"timeformat"`
 	LogConfig  Log    `yaml:"log"`
 }

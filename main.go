@@ -38,6 +38,7 @@ func waitSignalExit() {
 func main() {
 
 	var err error
+	var waitExit bool
 
 	if GetConfig() == nil {
 		panic(ErrConfString)
@@ -57,7 +58,14 @@ func main() {
 				panic(err)
 			}
 		}
+
+		if system.Service.Mqtt || system.Service.Web {
+			waitExit = true
+		}
 	}
 
-	waitSignalExit()
+	if waitExit {
+		waitSignalExit()
+	}
+
 }

@@ -143,5 +143,5 @@ func (m *UserLogin) Login(ip string) (*JwtObj, error) {
 	if err := bcrypt.CompareHashAndPassword([]byte(entity.UserBase.UserPwsd), []byte(m.Pwsd)); err != nil {
 		return nil, err
 	}
-	return JwtGenerateToken(m, entity.UserBase.UId), nil
+	return JwtGenerateToken(m, entity.UserBase.UId)
 }

@@ -27,6 +27,7 @@ type Mysql struct {
 
 type Web struct {
 	Port string `yaml:"port"`
+	Mode uint32 `yaml:"runMode"`
 }
 
 type Log struct {
@@ -37,13 +38,13 @@ type Log struct {
 
 type ServiceConf struct {
 	Mqtt bool `yaml:"mqtt"`
-	Web bool  `yaml:"web"`
+	Web  bool `yaml:"web"`
 }
 
 type System struct {
-	Service ServiceConf `yaml:"service"`
-	Timeformat string `yaml:"timeformat"`
-	LogConfig  Log    `yaml:"log"`
+	Service    ServiceConf `yaml:"service"`
+	Timeformat string      `yaml:"timeformat"`
+	LogConfig  Log         `yaml:"log"`
 }
 
 type Config struct {

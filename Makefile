@@ -29,6 +29,7 @@ bg: release
 	@sh ./killExe.sh
 	@sh ./exeRun.sh $(BINNAME) $(TIME)
 run: debug
+	@sh ./killExe.sh
 	@sh ./exeRun.sh $(BINNAME)
 release:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go

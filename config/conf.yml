@@ -23,6 +23,7 @@ mysql:
 
 web:
     port: ':8888'
+    runMode: 0  # 0 - debug # 1 - release # 2 - test 
 
 system:
     service:
@@ -32,5 +33,4 @@ system:
         enabel: true
         filepath: './log/'
         filename: 'server'
-
     timeformat: '2006/01/02 15:04:05'

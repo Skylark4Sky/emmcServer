@@ -13,9 +13,32 @@ import (
 
 var server *http.Server = nil
 
+const (
+	DEBUG_MODE   uint32 = 0
+	RELEASE_MODE uint32 = 1
+	TEST_MODE    uint32 = 2
+)
+
+func setRunMode(mode uint32) {
+	switch mode {
+	case DEBUG_MODE:
+		gin.SetMode(gin.DebugMode)
+		fmt.Println("cur mode gin.DebugMode")
+		break
+	case RELEASE_MODE:
+		gin.SetMode(gin.ReleaseMode)
+		fmt.Println("cur mode gin.ReleaseMode")
+		break
+	case TEST_MODE:
+		gin.SetMode(gin.TestMode)
+		fmt.Println("cur mode gin.TestMode")
+		break
+	}
+}
+
 func StatrWebService() error {
-	gin.SetMode(gin.DebugMode)
 	router := gin.New()
+	setRunMode(GetWeb().Mode)
 
 	if router != nil {
 		router.NoMethod(ExceptionInterceptor)

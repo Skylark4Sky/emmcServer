@@ -18,7 +18,7 @@ func init() {
 	DBInstance, err = gorm.Open("mysql", connString)
 
 	if err != nil {
-		fmt.Errorf("init MySQL db failed in %s, %s", connString, err)
+		fmt.Println("init MySQL db failed in %s, %s", connString, err)
 		return
 	}
 

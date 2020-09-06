@@ -2,35 +2,35 @@ mqtt: [{host: 'tcp://120.25.30.124:1883',token: 'f64f58790f3f40db88e3bedd83a8429
        {host: 'tcp://47.106.235.93:1883',token: '8fe94a290602468fa8f0be6218024070',name: 'test',pwsd: 'test1'}]
 
 redis:
-    host: '111.231.194.143'
-    port: '6379'
-    auth: 'xyCbwbCcRyjfAHAP'
-    accesstoken: 'R29TZXJ2ZXI='
-    expiredtime: '1464344863'
+  host: '111.231.194.143'
+  port: '6379'
+  auth: 'xyCbwbCcRyjfAHAP'
+  accesstoken: 'R29TZXJ2ZXI='
+  expiredtime: '1464344863'
 
 rabbitMQ:
-    host: '111.231.194.143'
-    name: 'GoServer'
-    pwsd: 'xyCbwbCcRyjfAHAP'
+  host: '111.231.194.143'
+  name: 'GoServer'
+  pwsd: 'xyCbwbCcRyjfAHAP'
 
 mysql:
-    host: '203.195.209.28'
-    port: '3306'
-    name: 'GoServer'
-    pwsd: 'xyCbwbCcRyjfAHAP'
-    basedata: 'GoServer'
-    debug: true
+  host: '203.195.209.28'
+  port: '3306'
+  name: 'GoServer'
+  pwsd: 'xyCbwbCcRyjfAHAP'
+  basedata: 'GoServer'
+  debug: false
 
 web:
-    port: ':8888'
-    runMode: 1  # 0 - debug # 1 - release # 2 - test 
+  port: ':8888'
+  runMode: 0  # 0 - debug # 1 - release # 2 - test
 
 system:
-    service:
-        mqtt: true 
-        web: true
-    log:
-        enabel: true
-        filepath: './log/'
-        filename: 'server'
-    timeformat: '2006/01/02 15:04:05'
+  service:
+    mqtt: false
+    web: true
+  log:
+    enabel: true
+    filepath: './log/'
+    filename: 'server'
+  timeformat: '2006/01/02 15:04:05'

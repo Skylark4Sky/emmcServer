@@ -7,23 +7,23 @@ import (
 )
 
 func Login(ctx *gin.Context) {
-	var user model.UserLogin
-	err := ctx.ShouldBind(&user)
+	var userLogin model.UserLogin
+	err := ctx.ShouldBind(&userLogin)
 
 	if ChkError(ctx, err) {
 		return
 	}
 
-	data,err := user.Login(ctx.ClientIP())
+	data,err := userLogin.Login(ctx.ClientIP())
 
 	if ChkError(ctx, err) {
 		return
 	}
 
 	if data == nil && err == nil {
-		RetError(ctx,"用户不存在")
+		RespondError(ctx,"用户不存在")
 		return
 	}
 
-	RetData(ctx,data)
+	RespondData(ctx,data)
 }

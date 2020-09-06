@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ const (
 )
 
 type JwtObj struct {
-	Obj      interface{}
+	User      interface{}
 	Token    string    `json:"token"`
 	Expire   time.Time `json:"expire"`
 	ExpireTs int64     `json:"expire_ts"`
@@ -65,9 +66,9 @@ func JwtGenerateToken(obj interface{}, userID int64) (*JwtObj, error) {
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(AppSecret))
 	if err != nil {
-		//logrus.WithError(err).Error("config is wrong, can not generate jwt")
+		logrus.WithError(err).Error("config is wrong, can not generate jwt")
 	}
-	data := &JwtObj{Obj: obj, Token: tokenString, Expire: expireTime, ExpireTs: expireTime.Unix()}
+	data := &JwtObj{User: obj, Token: tokenString, Expire: expireTime, ExpireTs: expireTime.Unix()}
 	return data, err
 }
 

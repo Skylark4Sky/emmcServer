@@ -2,8 +2,7 @@ package action
 
 import (
 	. "GoServer/utils"
-	"crypto/aes"
-	"crypto/cipher"
+	. "GoServer/webApi/utils"
 	"encoding/hex"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -24,18 +23,6 @@ type RequestParam struct {
 
 type RequestData struct {
 	SN string `form:"deviceSN" json:"deviceSN" binding:"required"`
-}
-
-func AES_CBCDecrypt(cipherText []byte, key []byte, iv []byte) (data string, err error) {
-	//指定解密算法，返回一个AES算法的Block接口对象
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", err
-	}
-	blockMode := cipher.NewCBCDecrypter(block, iv)
-	plainText := make([]byte, len(cipherText))
-	blockMode.CryptBlocks(plainText, cipherText)
-	return string(plainText), nil
 }
 
 //设备登记

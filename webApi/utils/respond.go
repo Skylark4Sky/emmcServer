@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func RetError(ctx *gin.Context, msg interface{}) {
+func RespondError(ctx *gin.Context, msg interface{}) {
 	GaugeVecApiError.WithLabelValues("API").Inc()
 	var ms string
 	switch v := msg.(type) {
@@ -23,8 +23,8 @@ func RetAuthError(ctx *gin.Context, msg interface{}) {
 	ctx.AbortWithStatusJSON(http.StatusPreconditionFailed, gin.H{"ok": false, "msg": msg})
 }
 
-func RetData(ctx *gin.Context, data interface{}) {
-	ctx.AbortWithStatusJSON(200, gin.H{"ok": true, "data": data})
+func RespondData(ctx *gin.Context, data interface{}) {
+	ctx.AbortWithStatusJSON(200, data)
 }
 
 func RetSuccess(ctx *gin.Context) {
@@ -33,7 +33,7 @@ func RetSuccess(ctx *gin.Context) {
 
 func ChkError(ctx *gin.Context, err error) bool {
 	if err != nil {
-		RetError(ctx, err.Error())
+		RespondError(ctx, err.Error())
 		return true
 	}
 	return false

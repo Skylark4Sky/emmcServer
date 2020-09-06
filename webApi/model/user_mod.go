@@ -2,9 +2,16 @@ package model
 
 import (
 	. "GoServer/webApi/middleWare"
+	. "GoServer/webApi/utils"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	//女
+	Female = iota
+	//男
+	Male
 )
 
 // UserAuth 用户授权表
@@ -110,29 +117,35 @@ type UserRegisterLog struct {
 	RegisterClient string `gorm:"column:register_client;type:varchar(16);not null" json:"register_client"`         // 注册客户端
 }
 
-type User struct {
-	UserAuth        UserAuth
-	UserBase        UserBase
-	UserExtra       UserExtra
-	UserInfoUpdate  UserInfoUpdate
-	UserLocation    UserLocation
-	UserLoginLog    UserLoginLog
-	UserRegisterLog UserRegisterLog
+// 登录绑定
+type UserLogin struct {
+	UserBase UserBase
+	Account  string `json:"account"`
+	Pwsd     string `json:"pwsd"`
 }
 
-type UserLogin struct {
-	User    User
-	Account string `json:"account"`
-	Pwsd    string `json:"pwsd"`
+// 登录成功返回
+type userLoginRespond struct {
+	UserID    int64
+	UserName  string
+	NickName  string
+	Gender    int8
+	Birthday  int64
+	Signature string
+	Mobile    string
+	Email     string
+	Face      string
+	Face200   string
+	Srcface   string
 }
 
 func (m *UserLogin) Login(ip string) (*JwtObj, error) {
 	if m.Pwsd == "" {
 		return nil, errors.New("password is required")
 	}
-	entity := &m.User
+	entity := &m.UserBase
 	cond := fmt.Sprintf("email = '%s' or user_name = '%s' or mobile = '%s'", m.Account, m.Account, m.Account)
-	err := DBInstance.Where(cond).First(&entity.UserBase).Error
+	err := DBInstance.Debug().Where(cond).First(&entity).Error
 	if err != nil {
 		if IsRecordNotFound(err) {
 			return nil, nil
@@ -140,8 +153,23 @@ func (m *UserLogin) Login(ip string) (*JwtObj, error) {
 		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(entity.UserBase.UserPwsd), []byte(m.Pwsd)); err != nil {
+	if chkOk := PasswordVerify(m.Pwsd, entity.UserPwsd); chkOk != true {
 		return nil, err
 	}
-	return JwtGenerateToken(m, entity.UserBase.UId)
+
+	LoginRespond := &userLoginRespond {
+		UserID:    entity.UId,
+		UserName:  entity.UserName,
+		NickName:  entity.NickName,
+		Gender:    entity.Gender,
+		Birthday:  entity.Birthday,
+		Signature: entity.Signature,
+		Mobile:    entity.Mobile,
+		Email:     entity.Email,
+		Face:      entity.Face,
+		Face200:   entity.Face200,
+		Srcface:   entity.Srcface,
+	}
+
+	return JwtGenerateToken(LoginRespond, entity.UId)
 }

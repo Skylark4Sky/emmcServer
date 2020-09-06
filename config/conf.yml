@@ -23,11 +23,11 @@ mysql:
 
 web:
     port: ':8888'
-    runMode: 0  # 0 - debug # 1 - release # 2 - test 
+    runMode: 1  # 0 - debug # 1 - release # 2 - test 
 
 system:
     service:
-        mqtt: false
+        mqtt: true 
         web: true
     log:
         enabel: true

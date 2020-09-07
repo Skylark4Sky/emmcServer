@@ -39,3 +39,9 @@ system:
     expireTime: 24
   timeformat: '2006/01/02 15:04:05'
 
+  weApp:
+    CodeToSessURL: 'https://api.weixin.qq.com/sns/jscode2session?appid={appid}&secret={secret}&js_code={code}&grant_type=authorization_code'
+    AppID: 'wx8f1a47ddaa1b61d7'
+    AppSecret: '6f33a02967bf71c4e702f8203879de75'
+
+

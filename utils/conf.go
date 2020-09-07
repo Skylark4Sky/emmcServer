@@ -47,11 +47,18 @@ type JwtConf struct {
 	ExpireTime uint32 `yaml:"expireTime"`
 }
 
+type WeAppConf struct {
+	CodeToSessURL string `yaml:"CodeToSessURL"`
+	AppID         string `yaml:"AppID"`
+	AppSecret     string `yaml:"AppSecret"`
+}
+
 type SystemConf struct {
 	Service    ServiceConf `yaml:"service"`
 	Timeformat string      `yaml:"timeformat"`
 	Log        LogConf     `yaml:"log"`
 	Jwt        JwtConf     `yaml:"jwt"`
+	WeApp      WeAppConf   `yaml:"weApp"`
 }
 
 type Config struct {
@@ -129,4 +136,11 @@ func GetJwt() *JwtConf {
 		return nil
 	}
 	return &(config.System.Jwt)
+}
+
+func GetWeApp() *WeAppConf {
+	if ErrConfString != nil {
+		return nil
+	}
+	return &(config.System.WeApp)
 }

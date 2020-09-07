@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//普通用户登录
 func Login(ctx *gin.Context) {
 	var userLogin handle.UserLogin
 	err := ctx.ShouldBind(&userLogin)
@@ -26,4 +27,9 @@ func Login(ctx *gin.Context) {
 	}
 
 	RespondData(ctx, data)
+}
+
+// 微信小程序登录
+func WeAppLogin(ctx *gin.Context) {
+
 }

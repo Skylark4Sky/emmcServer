@@ -17,7 +17,7 @@ func RespondError(ctx *gin.Context, msg interface{}) {
 	default:
 		ms = ""
 	}
-	ctx.AbortWithStatusJSON(200, gin.H{"ok": false, "msg": ms})
+	ctx.AbortWithStatusJSON(200, gin.H{"error": false, "msg": ms})
 }
 func RetAuthError(ctx *gin.Context, msg interface{}) {
 	ctx.AbortWithStatusJSON(http.StatusPreconditionFailed, gin.H{"ok": false, "msg": msg})

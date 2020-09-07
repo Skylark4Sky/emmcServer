@@ -46,6 +46,18 @@ func createLoginRespond(entity *UserBase) *UserLoginRespond {
 	}
 }
 
+func addLoginLog(ip string,userID int64) {
+	var entity = &UserLoginLog {
+		UId: userID,
+		//CreateTime: now.Unix()
+	}
+	err := DBInstance.Debug().Create(entity).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}
+
 func (M *UserLogin) Login(ip string) (*JwtObj, error) {
 	if M.Pwsd == "" {
 		return nil, errors.New("password is required")
@@ -63,6 +75,8 @@ func (M *UserLogin) Login(ip string) (*JwtObj, error) {
 	if chkOk := PasswordVerify(M.Pwsd, entity.UserPwsd); chkOk != true {
 		return nil, err
 	}
+
+	addLoginLog(ip,entity.UId)
 
 	return JwtGenerateToken(createLoginRespond(entity), entity.UId)
 }

@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 )
 
-type Mqtt struct {
+type MqttConf struct {
 	Host  string `yaml:"host"`
 	Token string `yaml:"token"`
 	Name  string `yaml:"name"`
 	Pwsd  string `yaml:"pwsd"`
 }
 
-type Mysql struct {
+type MysqlConf struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	Name     string `yaml:"name"`
@@ -25,12 +25,12 @@ type Mysql struct {
 	Debug    bool   `yaml:"debug"`
 }
 
-type Web struct {
+type WebConf struct {
 	Port string `yaml:"port"`
 	Mode uint32 `yaml:"runMode"`
 }
 
-type Log struct {
+type LogConf struct {
 	Enabel   bool   `yaml:"enabel"`
 	Filepath string `yaml:"filepath"`
 	Filename string `yaml:"filename"`
@@ -41,17 +41,24 @@ type ServiceConf struct {
 	Web  bool `yaml:"web"`
 }
 
-type System struct {
+type JwtConf struct {
+	AppSecret  string `yaml:"appSecret"`
+	AppIss     string `yaml:"appIss"`
+	ExpireTime uint32 `yaml:"expireTime"`
+}
+
+type SystemConf struct {
 	Service    ServiceConf `yaml:"service"`
 	Timeformat string      `yaml:"timeformat"`
-	LogConfig  Log         `yaml:"log"`
+	Log        LogConf     `yaml:"log"`
+	Jwt        JwtConf     `yaml:"jwt"`
 }
 
 type Config struct {
-	MqttConfig   []Mqtt `yaml:"mqtt"`
-	MysqlConfig  Mysql  `yaml:"mysql"`
-	WebConfig    Web    `yaml:"web"`
-	SystemConfig System `yaml:"system"`
+	Mqtt   []MqttConf `yaml:"mqtt"`
+	Mysql  MysqlConf  `yaml:"mysql"`
+	Web    WebConf    `yaml:"web"`
+	System SystemConf `yaml:"system"`
 }
 
 var config = &Config{}
@@ -82,37 +89,44 @@ func GetConfig() *Config {
 	return config
 }
 
-func GetMqtt() []Mqtt {
+func GetMqtt() []MqttConf {
 	if ErrConfString != nil {
 		return nil
 	}
-	return config.MqttConfig
+	return config.Mqtt
 }
 
-func GetMysql() *Mysql {
+func GetMysql() *MysqlConf {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(config.MysqlConfig)
+	return &(config.Mysql)
 }
 
-func GetWeb() *Web {
+func GetWeb() *WebConf {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(config.WebConfig)
+	return &(config.Web)
 }
 
-func GetSystem() *System {
+func GetSystem() *SystemConf {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(config.SystemConfig)
+	return &(config.System)
 }
 
-func GetLog() *Log {
+func GetLog() *LogConf {
 	if ErrConfString != nil {
 		return nil
 	}
-	return &(config.SystemConfig.LogConfig)
+	return &(config.System.Log)
+}
+
+func GetJwt() *JwtConf {
+	if ErrConfString != nil {
+		return nil
+	}
+	return &(config.System.Jwt)
 }

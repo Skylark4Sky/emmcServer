@@ -1,6 +1,7 @@
 package middleWare
 
 import (
+	. "GoServer/utils"
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
@@ -12,10 +13,12 @@ import (
 	"time"
 )
 
+var Jwt = GetJwt()
+
 var (
-	AppSecret  = "J%df4e8hcjvbkjclkjkklfgki843895iojfdnvufh98"
-	AppIss     = "sshfortress"
-	ExpireTime = time.Hour * 24 * 30
+	AppSecret  = Jwt.AppSecret
+	AppIss     = Jwt.AppIss
+	ExpireTime = time.Hour * time.Duration(Jwt.ExpireTime)
 )
 
 const (
@@ -24,7 +27,7 @@ const (
 )
 
 type JwtObj struct {
-	User      interface{}
+	User     interface{}
 	Token    string    `json:"token"`
 	Expire   time.Time `json:"expire"`
 	ExpireTs int64     `json:"expire_ts"`
@@ -76,10 +79,10 @@ func JwtIntercept(context *gin.Context) {
 	token, ok := context.GetQuery("_t")
 
 	if !ok {
-		fmt.Println("!ok")
+		//		fmt.Println("!ok")
 		hToken := context.GetHeader("Authorization")
 
-		fmt.Println("hToken:", hToken)
+		//		fmt.Println("hToken:", hToken)
 		if len(hToken) < bearerLength {
 			context.AbortWithStatusJSON(http.StatusPreconditionFailed, gin.H{"msg": "header Authorization has not Bearer token"})
 			return
@@ -96,5 +99,5 @@ func JwtIntercept(context *gin.Context) {
 
 	context.Set(jwtCtxUidKey, userId)
 	context.Next()
-	fmt.Println(token)
+	//	fmt.Println(token)
 }

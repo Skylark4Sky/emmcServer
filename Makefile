@@ -14,7 +14,7 @@
 export GO111MODULE=on
 export GOPROXY=https://goproxy.cn/
 
-BINNAME := "GoServer"
+BINNAME := "GoServer-new"
 LDFLAGS := "-s -w -X 'main.BuildTime=$(shell date -u '+%F-%Z/%T')' -X 'main.GoVersion=$(shell go version)'"
 GO ?= go
 GOFMT ?= gofmt "-s"
@@ -26,13 +26,13 @@ TIME := "log"$(shell date +"%Y%m%d")
 exe:
 	@sh ./exeRun.sh $(BINNAME)
 bg: release
-	@sh ./killExe.sh
+	@sh ./killExe.sh $(BINNAME)
 	@sh ./exeRun.sh $(BINNAME) $(TIME)
 run: debug
 	@sh ./exeRun.sh $(BINNAME)
 release:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
-	upx -9 ./build/$(BINNAME)
+	#upx -9 ./build/$(BINNAME)
 debug:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
 clean:

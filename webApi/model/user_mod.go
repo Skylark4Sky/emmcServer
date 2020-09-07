@@ -1,24 +1,28 @@
 package model
 
-import (
-	. "GoServer/webApi/middleWare"
-	. "GoServer/webApi/utils"
-	"errors"
-	"fmt"
-)
+import ()
 
 const (
-	//女
-	Female = iota
-	//男
-	Male
+	Female = iota //女
+	Male          //男
+)
+
+type RegisterMode uint8
+
+const (
+	MOBILE   RegisterMode = 1 + iota //手机注册
+	EMAIL                            //邮箱注册
+	USERNAME                         //用户名注册
+	QQ                               //QQ
+	WECHAT                           //微信
+	WEIBO                            //微博
 )
 
 // UserAuth 用户授权表
 type UserAuth struct {
 	ID           int64  `gorm:"primary_key;column:id;type:bigint(20);not null" json:"-"`
 	UId          int64  `gorm:"unique_index:only;index;column:uid;type:bigint(20) unsigned;not null" json:"uid"`               // 用户id
-	IDentityType int8   `gorm:"unique_index:only;column:identity_type;type:tinyint(4) unsigned;not null" json:"identity_type"` // 1手机号 2邮箱 3用户名 4qq 5微信 6腾讯微博 7新浪微博
+	IDentityType int8   `gorm:"unique_index:only;column:identity_type;type:tinyint(4) unsigned;not null" json:"identity_type"` // 1手机号 2邮箱 3用户名 4qq 5微信 6新浪微博
 	IDentifier   string `gorm:"column:identifier;type:varchar(50);not null" json:"identifier"`                                 // 手机号 邮箱 用户名或第三方应用的唯一标识
 	Certificate  string `gorm:"column:certificate;type:varchar(20);not null" json:"certificate"`                               // 密码凭证(站内的保存密码，站外的不保存或保存token)
 	CreateTime   int    `gorm:"column:create_time;type:int(11) unsigned;not null" json:"create_time"`                          // 绑定时间
@@ -29,7 +33,7 @@ type UserAuth struct {
 type UserBase struct {
 	UId            int64  `gorm:"primary_key;column:uid;type:bigint(20);not null" json:"uid"`                      // 用户ID
 	UserRole       int8   `gorm:"column:user_role;type:tinyint(2) unsigned;not null" json:"user_role"`             // 2正常用户 3禁言用户 4虚拟用户 5运营
-	RegisterSource int8   `gorm:"column:register_source;type:tinyint(4) unsigned;not null" json:"register_source"` // 注册来源：1手机号 2邮箱 3用户名 4qq 5微信 6腾讯微博 7新浪微博
+	RegisterSource int8   `gorm:"column:register_source;type:tinyint(4) unsigned;not null" json:"register_source"` // 注册来源：1手机号 2邮箱 3用户名 4qq 5微信 6新浪微博
 	UserName       string `gorm:"column:user_name;type:varchar(32);not null" json:"user_name"`                     // 用户账号，必须唯一
 	UserPwsd       string `gorm:"column:user_pwsd;type:varchar(128);not null" json:"user_pwsd"`                    // 用户密码
 	NickName       string `gorm:"column:nick_name;type:varchar(32);not null" json:"nick_name"`                     // 用户昵称
@@ -111,65 +115,8 @@ type UserLoginLog struct {
 type UserRegisterLog struct {
 	ID             int64  `gorm:"primary_key;column:id;type:bigint(20);not null" json:"-"`                         // 自增ID
 	UId            int64  `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`                         // 用户ID
-	RegisterMethod uint8  `gorm:"column:register_method;type:tinyint(2) unsigned;not null" json:"register_method"` // 注册方式1手机号 2邮箱 3用户名 4qq 5微信 6腾讯微博 7新浪微博
+	RegisterMethod uint8  `gorm:"column:register_method;type:tinyint(2) unsigned;not null" json:"register_method"` // 注册方式1手机号 2邮箱 3用户名 4qq 5微信 6新浪微博
 	RegisterTime   int    `gorm:"column:register_time;type:int(11);not null" json:"register_time"`                 // 注册时间
 	RegisterIP     string `gorm:"column:register_ip;type:varchar(16);not null" json:"register_ip"`                 // 注册IP
 	RegisterClient string `gorm:"column:register_client;type:varchar(16);not null" json:"register_client"`         // 注册客户端
-}
-
-// 登录绑定
-type UserLogin struct {
-	UserBase UserBase
-	Account  string `json:"account"`
-	Pwsd     string `json:"pwsd"`
-}
-
-// 登录成功返回
-type userLoginRespond struct {
-	UserID    int64
-	UserName  string
-	NickName  string
-	Gender    int8
-	Birthday  int64
-	Signature string
-	Mobile    string
-	Email     string
-	Face      string
-	Face200   string
-	Srcface   string
-}
-
-func (m *UserLogin) Login(ip string) (*JwtObj, error) {
-	if m.Pwsd == "" {
-		return nil, errors.New("password is required")
-	}
-	entity := &m.UserBase
-	cond := fmt.Sprintf("email = '%s' or user_name = '%s' or mobile = '%s'", m.Account, m.Account, m.Account)
-	err := DBInstance.Debug().Where(cond).First(&entity).Error
-	if err != nil {
-		if IsRecordNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if chkOk := PasswordVerify(m.Pwsd, entity.UserPwsd); chkOk != true {
-		return nil, err
-	}
-
-	LoginRespond := &userLoginRespond {
-		UserID:    entity.UId,
-		UserName:  entity.UserName,
-		NickName:  entity.NickName,
-		Gender:    entity.Gender,
-		Birthday:  entity.Birthday,
-		Signature: entity.Signature,
-		Mobile:    entity.Mobile,
-		Email:     entity.Email,
-		Face:      entity.Face,
-		Face200:   entity.Face200,
-		Srcface:   entity.Srcface,
-	}
-
-	return JwtGenerateToken(LoginRespond, entity.UId)
 }

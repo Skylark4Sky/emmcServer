@@ -22,7 +22,7 @@ mysql:
   debug: false
 
 web:
-  port: ':8888'
+  port: ':8880'
   runMode: 0  # 0 - debug # 1 - release # 2 - test
 
 system:
@@ -33,4 +33,9 @@ system:
     enabel: true
     filepath: './log/'
     filename: 'server'
+  jwt:  
+    appSecret: 'Jdf4e8hcjvbkjclkjkklfgki843895iojfdnvufh98'
+    appIss: 'gisunlink'
+    expireTime: 24
   timeformat: '2006/01/02 15:04:05'
+

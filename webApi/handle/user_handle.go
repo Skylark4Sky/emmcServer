@@ -24,6 +24,13 @@ type UserLoginRespond struct {
 	Srcface   string
 }
 
+// 小程序登录结构
+type WeAppLogin struct {
+	Code       string
+	OpenID     string
+	SessionKey string
+}
+
 // 登录绑定
 type UserLogin struct {
 	UserBase UserBase
@@ -114,6 +121,6 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 }
 
 //小程序登录
-func WeAppLogin(ctx *gin.Context) (*JwtObj, *RetMsg) {
+func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 	return nil, nil
 }

@@ -7,15 +7,21 @@ const (
 	Male          //男
 )
 
-type RegisterMode uint8
+type UserType int8
 
 const (
-	MOBILE   RegisterMode = 1 + iota //手机注册
-	EMAIL                            //邮箱注册
-	USERNAME                         //用户名注册
-	QQ                               //QQ
-	WECHAT                           //微信
-	WEIBO                            //微博
+	UNKNOWN  UserType = iota
+	MOBILE            //手机
+	EMAIL             //邮箱
+	USERNAME          //用户名
+	QQ                //QQ
+	WECHAT            //微信
+	WEIBO             //微博
+)
+
+const (
+	LOGIN_SUCCEED  = 1
+	LOGIN_FAILURED = 3
 )
 
 // UserAuth 用户授权表

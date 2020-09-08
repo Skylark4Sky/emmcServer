@@ -3,6 +3,7 @@ module GoServer
 go 1.13
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/gin-contrib/cors v1.3.0

@@ -18,6 +18,16 @@ func Login(ctx *gin.Context) {
 		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 	}
 
+	if userLogin.Account == "" {
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, "账号不能为空"))
+		return
+	}
+
+	if userLogin.Pwsd == "" {
+		RetError(ctx, CreateRetStatus(USER_PWSD_EMPTY, "密码不能为空"))
+		return
+	}
+
 	data, err := userLogin.Login(ctx)
 
 	if err != nil {
@@ -31,9 +41,10 @@ func Login(ctx *gin.Context) {
 // 微信小程序登录
 func WeAppLogin(ctx *gin.Context) {
 	var weApp handle.WeAppLogin
-
 	if err := ctx.ShouldBind(&weApp); err != nil {
+		//if err := ctx.ShouldBind(&weApp); err != nil {
 		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		return
 	}
 
 	if weApp.Code == "" {
@@ -57,22 +68,28 @@ func WeAppLogin(ctx *gin.Context) {
 		return
 	}
 
-	var data map[string]interface{}
+	var respData map[string]interface{}
 
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	err = json.NewDecoder(resp.Body).Decode(&respData)
 	if err != nil {
 		RetError(ctx, CreateRetStatus(SYSTEM_ERROR, err))
 		return
 	}
 
-	weApp.OpenID = data["openid"].(string)
-	weApp.SessionKey = data["session_key"].(string)
+	weApp.OpenID = respData["openid"].(string)
+	weApp.SessionKey = respData["session_key"].(string)
 
-	data, err := weApp.Login(ctx)
-
-	if err != nil {
-		RetError(ctx, err)
+	if weApp.OpenID == "" || weApp.SessionKey == "" {
+		RetError(ctx, CreateRetStatus(SYSTEM_ERROR, "微信认证失败"))
 		return
 	}
 
+	data, loginErr := weApp.Login(ctx)
+
+	if loginErr != nil {
+		RetError(ctx, *loginErr)
+		return
+	}
+
+	RetData(ctx, CreateRetMsg(SUCCESS, nil, data))
 }

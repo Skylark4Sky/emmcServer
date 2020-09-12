@@ -22,11 +22,11 @@ func ApiRegisterManage(router *gin.Engine, prometheusHttp func(context *gin.Cont
 		// 注册用户接口路由
 		registerUserRouter(api)
 		// 注册合作关系接口路由 客户&供应商
-		registerPartnershipRouter(api)
-		// 注册商品接口路由
-		registerProductRouter(api)
-		// 注册设置接口路由
-		registerSettingRouter(api)
+		//		registerPartnershipRouter(api)
+		//		// 注册商品接口路由
+		//		registerProductRouter(api)
+		//		// 注册设置接口路由
+		//		registerSettingRouter(api)
 	}
 
 }

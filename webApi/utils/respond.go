@@ -8,21 +8,23 @@ import (
 )
 
 const (
-	SUCCESS         = 0
-	USER_NO_EXIST   = 100001
-	USER_PWSD_ERROR = 100002
-	USER_PWSD_EMPTY = 100003
-	SYSTEM_ERROR    = 999998
-	PARAM_ERROR     = 999999
+	SUCCESS       = 0
+	USER_NO_EXIST = 100001 + iota
+	USER_PWSD_ERROR
+	USER_ACCOUNT_EMPTY
+	USER_PWSD_EMPTY
+	SYSTEM_ERROR
+	PARAM_ERROR
 )
 
 var retType = map[int64]string{
-	SUCCESS:         "opt Success",
-	USER_NO_EXIST:   "User is no exist",
-	USER_PWSD_ERROR: "User passWord error",
-	USER_PWSD_EMPTY: "User passWord empty",
-	PARAM_ERROR:     "param error",
-	SYSTEM_ERROR:    "",
+	SUCCESS:            "opt Success",
+	USER_NO_EXIST:      "User is no exist",
+	USER_PWSD_ERROR:    "User passWord error",
+	USER_ACCOUNT_EMPTY: "User account error",
+	USER_PWSD_EMPTY:    "User passWord empty",
+	PARAM_ERROR:        "param error",
+	SYSTEM_ERROR:       "",
 }
 
 type RetMsg struct {

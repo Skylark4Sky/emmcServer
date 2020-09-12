@@ -1,10 +1,14 @@
 package model
 
-import ()
+import (
+	//	. "GoServer/webApi/middleWare"
+	. "GoServer/utils"
+)
 
 const (
-	Female = iota //女
-	Male          //男
+	UNKnown_Gender = iota
+	Female         //女
+	Male           //男
 )
 
 type UserType int8
@@ -125,4 +129,28 @@ type UserRegisterLog struct {
 	RegisterTime   int    `gorm:"column:register_time;type:int(11);not null" json:"register_time"`                 // 注册时间
 	RegisterIP     string `gorm:"column:register_ip;type:varchar(16);not null" json:"register_ip"`                 // 注册IP
 	RegisterClient string `gorm:"column:register_client;type:varchar(16);not null" json:"register_client"`         // 注册客户端
+}
+
+func (auth *UserAuth) Create(userID int64, IDentityType int8, IDentifier string, Certificate string) {
+	auth.UId = userID
+	auth.IDentityType = IDentityType
+	auth.IDentifier = IDentifier
+	auth.Certificate = Certificate
+	auth.CreateTime = GetTimestamp()
+}
+
+func (login *UserLoginLog) Create(ip string, Command int8, loginType UserType, userID int64) {
+	login.UId = userID
+	login.Type = int8(loginType)
+	login.CreateTime = GetTimestamp()
+	login.Command = Command
+	login.Lastip = ip
+}
+
+func (m *UserBase) CreateByDefaultInfo(userType UserType) {
+	m.NickName = RandomDigitAndLetters(12)
+	m.Gender = UNKnown_Gender
+	m.UserRole = 1
+	m.RegisterSource = int8(userType)
+	m.CreateTime = GetTimestamp()
 }

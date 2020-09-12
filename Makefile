@@ -26,6 +26,7 @@ TIME := "log"$(shell date +"%Y%m%d")
 exe:
 	@sh ./exeRun.sh $(BINNAME)
 bg: release
+	@sh ./killExe.sh $(BINNAME)
 	@sh ./exeRun.sh $(BINNAME) $(TIME)
 run: debug
 	@sh ./killExe.sh $(BINNAME)

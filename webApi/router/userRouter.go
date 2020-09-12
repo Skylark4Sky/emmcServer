@@ -13,6 +13,7 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 			user.POST("register", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
 			user.POST("login", action.Login)
 			user.POST("weAppLogin", action.WeAppLogin)
+			user.GET("weAppLogin", action.WeAppLogin)
 			user.POST("findpassword")
 		}
 

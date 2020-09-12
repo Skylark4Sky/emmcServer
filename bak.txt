@@ -1,0 +1,20 @@
+if (res.code) {
+	//发起网络请求
+	wx.request({
+url: 'https://sms.gisunlink.com/api/user/weAppLogin',
+data: {
+code: res.code
+},
+success: function (res) {
+resData.sid = res.data.data.sid;
+jsCodeDone = true;
+jsCodeDone && userInfoDone && setUserInfo();
+}
+})
+} else {
+	console.log('登录失败！' + res.errMsg)
+}
+
+https://cli.im/weapp
+https://cli.im/news/37249
+https://www.jianshu.com/p/8b04e641e5dc

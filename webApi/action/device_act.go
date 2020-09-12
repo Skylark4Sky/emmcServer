@@ -26,29 +26,29 @@ type RequestData struct {
 }
 
 //设备登记
-func DeviceRegister(context *gin.Context) {
+func DeviceRegister(ctx *gin.Context) {
 	var urlParam RequestParam
-	if err := context.ShouldBindQuery(&urlParam); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 		return
 	}
 
 	var postData RequestData
-	if err := context.ShouldBind(&postData); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBind(&postData); err != nil {
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 		return
 	}
 
 	ciphertext, err := hex.DecodeString(postData.SN)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 		return
 	}
 
 	clientID, err := AES_CBCDecrypt(ciphertext, key, iv)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 		return
 	}
 
@@ -56,7 +56,8 @@ func DeviceRegister(context *gin.Context) {
 	clientIDStringLen2 := len(urlParam.ClientID)
 
 	if clientIDStringLen1 < clientIDStringLen2 {
-		context.JSON(http.StatusBadRequest, gin.H{"error": errors.New("Error clientID")})
+		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RetError(ctx, CreateRetStatus(AUTH_ERROR, "Error ClientID"))
 		return
 	}
 
@@ -64,11 +65,11 @@ func DeviceRegister(context *gin.Context) {
 
 	if strings.Compare(clientID, urlParam.ClientID) == 0 {
 		requestTime := time.Now().Format(GetSystem().Timeformat)
-		requestIP := context.ClientIP()
+		requestIP := ctx.ClientIP()
 		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
 		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)
-		context.AbortWithStatusJSON(200, gin.H{"status": true, "clientID": urlParam.ClientID, "version": urlParam.Version, "deviceSN": postData.SN})
+		ctx.AbortWithStatusJSON(200, gin.H{"status": true, "clientID": urlParam.ClientID, "version": urlParam.Version, "deviceSN": postData.SN})
 	} else {
-		context.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error clientID")})
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error clientID")})
 	}
 }

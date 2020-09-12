@@ -11,8 +11,9 @@ const (
 	USER_PWSD_ERROR
 	USER_ACCOUNT_EMPTY
 	USER_PWSD_EMPTY
-	SYSTEM_ERROR
 	PARAM_ERROR
+	AUTH_ERROR
+	SYSTEM_ERROR
 )
 
 var retType = map[int64]string{
@@ -22,6 +23,7 @@ var retType = map[int64]string{
 	USER_ACCOUNT_EMPTY: "User account error",
 	USER_PWSD_EMPTY:    "User passWord empty",
 	PARAM_ERROR:        "param error",
+	AUTH_ERROR:         "auth error",
 	SYSTEM_ERROR:       "",
 }
 

@@ -42,7 +42,6 @@ func Login(ctx *gin.Context) {
 func WeAppLogin(ctx *gin.Context) {
 	var weApp handle.WeAppLogin
 	if err := ctx.ShouldBind(&weApp); err != nil {
-		//if err := ctx.ShouldBind(&weApp); err != nil {
 		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
 		return
 	}

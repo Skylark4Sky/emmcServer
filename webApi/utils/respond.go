@@ -2,9 +2,7 @@ package utils
 
 import (
 	. "GoServer/utils"
-	//	. "GoServer/webApi/middleWare"
 	"github.com/gin-gonic/gin"
-	//	"net/http"
 )
 
 const (

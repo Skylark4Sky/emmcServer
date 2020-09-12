@@ -1,8 +1,8 @@
 package Service
 
 import (
+	. "GoServer/middleWare"
 	. "GoServer/utils"
-	. "GoServer/webApi/middleWare"
 	. "GoServer/webApi/router"
 	"context"
 	"fmt"

@@ -1,7 +1,7 @@
 package router
 
 import (
-	. "GoServer/webApi/middleWare"
+	. "GoServer/middleWare"
 	"github.com/gin-gonic/gin"
 )
 

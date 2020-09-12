@@ -1,8 +1,8 @@
 package handle
 
 import (
+	. "GoServer/middleWare"
 	. "GoServer/utils"
-	. "GoServer/webApi/middleWare"
 	. "GoServer/webApi/model"
 	. "GoServer/webApi/utils"
 	"fmt"

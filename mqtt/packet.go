@@ -1,8 +1,9 @@
-package mqtt
+package Mqtt
 
 import (
 	"encoding/base64"
 	"encoding/json"
+	//	"fmt"
 )
 
 type Packet struct {
@@ -47,7 +48,7 @@ func (packet *Packet) AnalysisAction() {
 	}
 }
 
-func MessageHandler(Topic string, Payload []byte) (ok bool, packet *Packet) {
+func MessageHandler(Payload []byte) (ok bool, packet *Packet) {
 	ok = false
 	Json := &JosnPacket{}
 	err := json.Unmarshal(Payload, &Json)
@@ -55,6 +56,7 @@ func MessageHandler(Topic string, Payload []byte) (ok bool, packet *Packet) {
 		ok = true
 		packet = &Packet{}
 		packet.Json = Json
+		//fmt.Println(Json)
 		packet.AnalysisAction()
 		return
 	}

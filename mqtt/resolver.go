@@ -1,32 +1,48 @@
-package mqtt
+package Mqtt
 
 import "bytes"
 
 func BinaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskStartTransfer) {
 	instance = &ComTaskStartTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.comID = getUint8(bytesBuf)
-	instance.token = getUint32(bytesBuf)
-	instance.maxEnergy = getUint32(bytesBuf)
-	instance.maxElectricity = getUint32(bytesBuf)
-	instance.maxTime = getUint32(bytesBuf)
+	instance.comID = (GetUint8(bytesBuf))
+	instance.token = (GetUint32(bytesBuf))
+	instance.maxEnergy = (GetUint32(bytesBuf))
+	instance.maxElectricity = (GetUint32(bytesBuf))
+	instance.maxTime = (GetUint32(bytesBuf))
 	return
 }
 
 func BinaryConversionToTaskStopTransfer(binaryData []byte) (instance *ComTaskStopTransfer) {
 	instance = &ComTaskStopTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.comID = getUint8(bytesBuf)
-	instance.token = getUint32(bytesBuf)
-	instance.forceStop = getUint8(bytesBuf)
+	instance.comID = (GetUint8(bytesBuf))
+	instance.token = (GetUint32(bytesBuf))
+	instance.forceStop = (GetUint8(bytesBuf))
+	return
+}
+
+func getTransferVersion(length int) (version uint16) {
+	version = 0
+	if length == MIN_PROTO_VERSION0 || length == MAX_PROTO_VERSION0 {
+		version = MAX_PROTO_VERSION0
+	} else if length == MIN_PROTO_VERSION1 || length == MAX_PROTO_VERSION1 {
+		version = MAX_PROTO_VERSION1
+	} else if length == MIN_PROTO_VERSION2 || length == MAX_PROTO_VERSION2 {
+		version = MAX_PROTO_VERSION2
+	} else if length == MIN_PROTO_VERSION3 || length == MAX_PROTO_VERSION3 {
+		version = MAX_PROTO_VERSION3
+	} else if length == MIN_PROTO_VERSION3 || length == MAX_PROTO_VERSION4 {
+		version = MAX_PROTO_VERSION3
+	}
 	return
 }
 
 func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *ComList) {
 	instance = &ComList{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-
-	instance.comProtoVer = getProtocolVersion(len(binaryData))
+	dataLen := len(binaryData)
+	instance.comProtoVer = getTransferVersion(dataLen)
 
 	if instance.comProtoVer == 0 {
 		instance = nil
@@ -36,49 +52,49 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 	if instance.comProtoVer == MAX_PROTO_VERSION0 {
 		instance.signal = 0xff
 	} else {
-		instance.signal = (getUint8(bytesBuf) ^ 0xFF) + 1
+		instance.signal = (GetUint8(bytesBuf) ^ 0xFF) + 1
 	}
 
 	instance.comBehavior = behavior
-	instance.comNum = getUint8(bytesBuf)
-	instance.comID = getBtyes(bytesBuf, uint32(instance.comNum))
+	instance.comNum = GetUint8(bytesBuf)
+	instance.comID = GetBtyes(bytesBuf, uint32(instance.comNum))
 	instance.comPort = make([]interface{}, instance.comNum, instance.comNum)
 	instance.enableCount = 0
 
-	for index := range instance.comPort {
+	for index, _ := range instance.comPort {
 		com := ComData{}
-		com.token = getUint32(bytesBuf)
-		com.maxEnergy = getUint32(bytesBuf)
-		com.useEnergy = getUint32(bytesBuf)
-		com.maxTime = getUint32(bytesBuf)
-		com.useTime = getUint32(bytesBuf)
-		com.curElectricity = getUint32(bytesBuf)
+		com.token = GetUint32(bytesBuf)
+		com.maxEnergy = GetUint32(bytesBuf)
+		com.useEnergy = GetUint32(bytesBuf)
+		com.maxTime = GetUint32(bytesBuf)
+		com.useTime = GetUint32(bytesBuf)
+		com.curElectricity = GetUint32(bytesBuf)
 
 		instance.useEnergy += com.useEnergy
 		instance.useElectricity += com.curElectricity
 
 		switch instance.comProtoVer {
 		case MAX_PROTO_VERSION0:
-			com.errCode = getUint8(bytesBuf)
+			com.errCode = GetUint8(bytesBuf)
 			break
 		case MAX_PROTO_VERSION1:
-			com.chipReset = getUint16(bytesBuf)
-			com.maxElectricity = getUint16(bytesBuf)
-			com.errCode = getUint8(bytesBuf)
+			com.chipReset = GetUint16(bytesBuf)
+			com.maxElectricity = GetUint16(bytesBuf)
+			com.errCode = GetUint8(bytesBuf)
 			break
 		case MAX_PROTO_VERSION2:
-			com.chipReset = getUint16(bytesBuf)
-			com.maxElectricity = getUint16(bytesBuf)
-			com.errCode = getUint8(bytesBuf)
-			com.enable = getUint8(bytesBuf)
+			com.chipReset = GetUint16(bytesBuf)
+			com.maxElectricity = GetUint16(bytesBuf)
+			com.errCode = GetUint8(bytesBuf)
+			com.enable = GetUint8(bytesBuf)
 			instance.enableCount += com.enable
 			break
 		case MAX_PROTO_VERSION3:
-			com.chipReset = getUint16(bytesBuf)
-			com.maxElectricity = getUint16(bytesBuf)
-			com.errCode = getUint8(bytesBuf)
-			com.enable = getUint8(bytesBuf)
-			com.behavior = getUint8(bytesBuf)
+			com.chipReset = GetUint16(bytesBuf)
+			com.maxElectricity = GetUint16(bytesBuf)
+			com.errCode = GetUint8(bytesBuf)
+			com.enable = GetUint8(bytesBuf)
+			com.behavior = GetUint8(bytesBuf)
 			instance.enableCount += com.enable
 			break
 		}

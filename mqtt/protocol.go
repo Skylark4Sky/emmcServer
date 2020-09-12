@@ -1,4 +1,4 @@
-package mqtt
+package Mqtt
 
 import (
 	"bytes"
@@ -15,6 +15,20 @@ const DEVICE_INFO = "device_info"
 const TRANSFER = "transfer"
 const TRANSFER_RESULT = "transfer_result"
 const FIRMWARE_UPDATE = "update_state"
+
+const (
+	COM_NO_WORKING     = 0
+	COM_WORKING        = 1
+	MIN_PROTO_VERSION0 = 27
+	MIN_PROTO_VERSION1 = 32
+	MIN_PROTO_VERSION2 = 33
+	MIN_PROTO_VERSION3 = 34
+	MAX_PROTO_VERSION0 = 261
+	MAX_PROTO_VERSION1 = 302
+	MAX_PROTO_VERSION2 = 312
+	MAX_PROTO_VERSION3 = 322
+	MAX_PROTO_VERSION4 = 162
+)
 
 const (
 	//下发
@@ -36,19 +50,6 @@ const (
 	GISUNLINK_COM_NO_UPDATE    = 0x1D //参数没有刷新
 )
 
-const (
-	COM_NO_WORKING     = 0
-	COM_WORKING        = 1
-	MIN_PROTO_VERSION0 = 27
-	MIN_PROTO_VERSION1 = 32
-	MIN_PROTO_VERSION2 = 33
-	MIN_PROTO_VERSION3 = 34
-	MAX_PROTO_VERSION0 = 261
-	MAX_PROTO_VERSION1 = 302
-	MAX_PROTO_VERSION2 = 312
-	MAX_PROTO_VERSION3 = 322
-)
-
 type Protocol interface {
 	Print() (retString string)
 }
@@ -67,7 +68,7 @@ type TransferResult struct {
 
 //信息截取
 type DeviceInfo struct {
-	Imei     string `json:"imei "`
+	Imei     string `json:"imei"`
 	Version  string `json:"version"`
 	DeviceSn string `json:"device_sn"`
 	Sim      struct {
@@ -75,7 +76,7 @@ type DeviceInfo struct {
 		IMEI  string `json:"IMEI"`
 	} `json:"sim"`
 	CellInfo struct {
-		Ci  int    `json:"ci "`
+		Ci  int    `json:"ci"`
 		Lac int    `json:"Lac"`
 		Mnc int    `json:"Mnc"`
 		Mcc int    `json:"Mcc"`
@@ -131,20 +132,6 @@ type JosnPacket struct {
 	Ctime    int    `json:"ctime"`
 	Data     string `json:"data"`
 	Behavior int    `json:"behavior"`
-}
-
-func getProtocolVersion(length int) (version uint16) {
-	version = 0
-	if length == MIN_PROTO_VERSION0 || length == MAX_PROTO_VERSION0 {
-		version = MAX_PROTO_VERSION0
-	} else if length == MIN_PROTO_VERSION1 || length == MAX_PROTO_VERSION1 {
-		version = MAX_PROTO_VERSION1
-	} else if length == MIN_PROTO_VERSION2 || length == MAX_PROTO_VERSION2 {
-		version = MAX_PROTO_VERSION2
-	} else if length == MIN_PROTO_VERSION3 || length == MAX_PROTO_VERSION3 {
-		version = MAX_PROTO_VERSION3
-	}
-	return
 }
 
 func (update *UpdateState) Print() (retString string) {
@@ -245,7 +232,6 @@ func (json *JosnPacket) FormatData() (data string) {
 	data = ""
 	if json != nil {
 		if len(json.Data) > 0 {
-			//清除base64转义符号
 			data = strings.Replace(json.Data, "\\", "", -1)
 		}
 	}

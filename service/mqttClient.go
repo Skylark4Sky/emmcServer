@@ -1,7 +1,7 @@
 package Service
 
 import (
-	. "GoServer/packet"
+	. "GoServer/mqtt"
 	. "GoServer/utils"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"

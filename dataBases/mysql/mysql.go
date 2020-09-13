@@ -1,4 +1,4 @@
-package middleWare
+package mysql
 
 import (
 	. "GoServer/utils"
@@ -25,9 +25,9 @@ func init() {
 	DBInstance.LogMode(GetMysql().Debug)
 	DBInstance.SingularTable(true)
 	//开启连接池
-	DBInstance.DB().SetMaxIdleConns(100)   //最大空闲连接
-	DBInstance.DB().SetMaxOpenConns(10000) //最大连接数
-	DBInstance.DB().SetConnMaxLifetime(30) //最大生存时间(s)
+	DBInstance.DB().SetMaxIdleConns(10)     //最大空闲连接
+	DBInstance.DB().SetMaxOpenConns(100)    //最大连接数
+	DBInstance.DB().SetConnMaxLifetime(120) //最大生存时间(s)
 }
 
 func SqlTime(t time.Time) string {

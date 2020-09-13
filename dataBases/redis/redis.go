@@ -29,7 +29,7 @@ func newRedisClient(index string, re *RedisOptions) error {
 				redis.DialWriteTimeout(time.Duration(re.WriteTimeout)*time.Second))
 
 			if err != nil {
-				zaplog.Info("redis connect fail")
+				WebLog("redis connect fail")
 				return nil, err
 			}
 			return c, nil
@@ -49,7 +49,7 @@ func newRedisClient(index string, re *RedisOptions) error {
 	defer conn.Close()
 
 	if _, err := conn.Do("PING"); err != nil {
-		zaplog.Info("redis ping fail")
+		WebLog("redis ping fail")
 		return err
 	} else {
 		redisPool.Store(index, pool)

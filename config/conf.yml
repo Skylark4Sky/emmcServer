@@ -2,7 +2,7 @@ mqtt: [ { host: 'tcp://120.25.30.124:1883',token: 'e64f58790f3f40db88e3bedd83a84
         { host: 'tcp://47.106.235.93:1883',token: 'afe94a290602468fa8f0be6218024070',name: 'test',pwsd: 'test1' } ]
 
 redis:
-  host: '10.66.113.141' #203.195.209.28
+  host: '203.195.209.28'
   port: '6379'
   auth: 'xyCbwbCcRyjfAHAP'
   maxIdle: 10

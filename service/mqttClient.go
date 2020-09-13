@@ -1,10 +1,12 @@
 package Service
 
 import (
+	. "GoServer/dataBases/redis"
 	. "GoServer/mqtt"
 	. "GoServer/utils"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
+	"go.uber.org/zap"
 	//	"reflect"
 	"time"
 )
@@ -17,6 +19,12 @@ type MqMsg struct {
 
 func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
+	rd := Redis().Get()
+	_, err := rd.Do("SET", msg.Topic, string(msg.Payload))
+	if err != nil {
+		WebLog("lPop websocket user msg from queue failed", zap.String("cacheKey", msg.Topic), zap.Error(err))
+	}
+
 	if ok && packet.JsonData != nil {
 		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 		MqttLog(packet.JsonData.(Protocol).Print())

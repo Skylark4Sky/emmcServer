@@ -32,7 +32,6 @@ func init() {
 		_db.DB().SetMaxOpenConns(100)    //最大连接数
 		_db.DB().SetConnMaxLifetime(120) //最大生存时间(s)
 	}
-
 }
 
 func IsRecordNotFound(err error) bool {

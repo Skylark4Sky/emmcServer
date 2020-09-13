@@ -40,11 +40,13 @@ func main() {
 	var err error
 	var waitExit bool
 
-	if GetConfig() == nil {
-		panic(ErrConfString)
+	if _,err := GetConfig(); err != nil {
+		panic(err)
 	}
 
-	if system := GetSystem(); system != nil {
+
+
+	if system, _ := GetSystem(); system != nil {
 		if system.Service.Mqtt {
 			if err = StartMqttService(); err != nil {
 				fmt.Println("StartMqttService err:", err)

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	. "GoServer/utils"
 	"github.com/gin-gonic/gin"
 )
 

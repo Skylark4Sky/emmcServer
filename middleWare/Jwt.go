@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var Jwt = GetJwt()
+var Jwt,_ = GetJwt()
 
 var (
 	AppSecret  = Jwt.AppSecret

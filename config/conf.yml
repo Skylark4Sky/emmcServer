@@ -1,12 +1,16 @@
-mqtt: [{host: 'tcp://120.25.30.124:1883',token: 'a64f58790f3f40db88e3bedd83a84290',name: 'test',pwsd: 'test1'},
-       {host: 'tcp://47.106.235.93:1883',token: 'bfe94a290602468fa8f0be6218024070',name: 'test',pwsd: 'test1'}]
+mqtt: [ { host: 'tcp://120.25.30.124:1883',token: 'e64f58790f3f40db88e3bedd83a84290',name: 'test',pwsd: 'test1' },
+        { host: 'tcp://47.106.235.93:1883',token: 'afe94a290602468fa8f0be6218024070',name: 'test',pwsd: 'test1' } ]
 
 redis:
   host: '10.66.113.141' #203.195.209.28
   port: '6379'
   auth: 'xyCbwbCcRyjfAHAP'
-  accesstoken: 'R29TZXJ2ZXI='
-  expiredtime: '1464344863'
+  maxIdle: 10
+  maxOpen: 100
+  connect_timeout: 3
+  read_timeout: 10
+  write_timeout: 10
+  idle_timeout: 300
 
 rabbitMQ:
   host: '111.231.194.143'
@@ -27,13 +31,14 @@ web:
 
 system:
   service:
-    mqtt: true 
+    mqtt: true
     web: true
   log:
     enabel: true
-    filepath: './log/'
+    mqttpath: './log/mqtt/'
+    webpath: './log/web/'
     filename: 'server'
-  jwt:  
+  jwt:
     appSecret: 'Jdf4e8hcjvbkjclkjkklfgki843895iojfdnvufh98'
     appIss: 'gisunlink'
     expireTime: 24

@@ -3,7 +3,6 @@ package action
 import (
 	. "GoServer/utils"
 	"GoServer/webApi/handle"
-	. "GoServer/webApi/utils"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -51,7 +50,7 @@ func WeAppLogin(ctx *gin.Context) {
 		return
 	}
 
-	weAppConfig := GetWeApp()
+	weAppConfig , _:= GetWeApp()
 	appID := weAppConfig.AppID
 	secret := weAppConfig.AppSecret
 	CodeToSessURL := weAppConfig.CodeToSessURL

@@ -18,8 +18,8 @@ type MqMsg struct {
 func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 	if ok && packet.JsonData != nil {
-		PrintInfo("[", msg.Broker, "] =========>>", msg.Topic, " time:", time.Now().Format(GetSystem().Timeformat), "=========", GetGoroutineID(), GetWorkerQueueSize())
-		PrintInfo(packet.JsonData.(Protocol).Print())
+		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
+		MqttLog(packet.JsonData.(Protocol).Print())
 	} else {
 		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 	}
@@ -35,8 +35,8 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	for _, mqtt := range GetMqtt() {
-
+	mqttOptions ,_ := GetMqtt()
+	for _, mqtt := range mqttOptions {
 		opts := M.NewClientOptions().AddBroker(mqtt.Host)
 		opts.SetClientID(mqtt.Token)
 		opts.SetUsername(mqtt.Name)

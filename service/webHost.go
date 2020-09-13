@@ -2,12 +2,14 @@ package Service
 
 import (
 	. "GoServer/dataBases/mysql"
-	. "GoServer/middleWare"
+	"GoServer/middleWare"
 	. "GoServer/utils"
 	. "GoServer/webApi/router"
 	"context"
 	"fmt"
+	"github.com/facebookgo/grace/gracehttp"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 )
@@ -39,41 +41,66 @@ func setRunMode(mode uint32) {
 
 func StatrWebService() error {
 	router := gin.New()
-	setRunMode(GetWeb().Mode)
+
+	webOption,_ := GetWeb()
+
+	setRunMode(webOption.Mode)
 
 	if router != nil {
-		router.NoMethod(ExceptionInterceptor)
-		router.NoRoute(ExceptionInterceptor)
-		ApiRegisterManage(router, PrometheusHttp)
+		router.Use(middleWare.Cors())
+		router.Use(middleWare.Recovery())
+		router.Use(middleWare.RequestLogger())
+		router.Use(middleWare.ResponseHandler())
+		router.NoMethod(middleWare.ExceptionInterceptor)
+		router.NoRoute(middleWare.ExceptionInterceptor)
+		ApiRegisterManage(router, middleWare.PrometheusHttp)
 	}
 
 	server = &http.Server{
-		Addr:           GetWeb().Port,
+		Addr:           webOption.Port,
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	Listen := make(chan error)
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			Listen <- err
-		}
-	}()
-
-	var err error = nil
-	select {
-	case err = <-Listen:
-	case <-time.After(1 * time.Second):
-		break
+	// gracehttp可平滑重启
+	if err := gracehttp.Serve(server); err != nil {
+		WebLog("Start Server failed", zap.Error(err))
+		return err
 	}
-	close(Listen)
-	return err
+
+	defer func(srv *http.Server) {
+		err := recover()
+		if err != nil {
+			err := fmt.Errorf("panic %s", err)
+			WebLog("Server Shutdown:", zap.Error(err))
+			return
+		}
+		WebLog("Server Shutdown Success")
+	}(server)
+
+	WebLog("Start Server Success")
+	//
+	//Listen := make(chan error)
+	//go func() {
+	//	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	//		Listen <- err
+	//	}
+	//}()
+	//
+	//var err error = nil
+	//select {
+	//case err = <-Listen:
+	//case <-time.After(1 * time.Second):
+	//	break
+	//}
+	//close(Listen)
+	return nil
 }
 
 func StopWebService() {
-	defer DBClose()
+	defer SQLClose()
 	if server != nil {
 		now := time.Now()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

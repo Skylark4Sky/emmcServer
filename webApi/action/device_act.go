@@ -2,7 +2,6 @@ package action
 
 import (
 	. "GoServer/utils"
-	. "GoServer/webApi/utils"
 	"encoding/hex"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -64,10 +63,10 @@ func DeviceRegister(ctx *gin.Context) {
 	clientID = string([]byte(clientID)[:clientIDStringLen2])
 
 	if strings.Compare(clientID, urlParam.ClientID) == 0 {
-		requestTime := time.Now().Format(GetSystem().Timeformat)
+		requestTime := TimeFormat(time.Now())
 		requestIP := ctx.ClientIP()
-		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
-		PrintInfo("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)
+		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
+		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)
 		ctx.AbortWithStatusJSON(200, gin.H{"status": true, "clientID": urlParam.ClientID, "version": urlParam.Version, "deviceSN": postData.SN})
 	} else {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error clientID")})

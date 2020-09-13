@@ -25,7 +25,7 @@ type dispatcher struct {
 
 var (
 	maxWorker = runtime.NumCPU()
-	maxQueue  = 512
+	maxQueue  = 128
 	jobQueue  chan Job
 )
 

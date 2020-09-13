@@ -43,7 +43,7 @@ func ExceptionInterceptor(ctx *gin.Context) {
 	var buffer bytes.Buffer
 	buffer.WriteString("IP:" + ctx.ClientIP())
 	buffer.WriteString(" -t ")
-	buffer.WriteString(time.Now().Format(GetSystem().Timeformat))
+	buffer.WriteString(TimeFormat(time.Now()))
 	buffer.WriteString(" -a ")
 	buffer.WriteString(ctx.Request.Method)
 	buffer.WriteString(" -p ")

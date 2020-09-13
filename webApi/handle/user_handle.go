@@ -5,7 +5,6 @@ import (
 	. "GoServer/middleWare"
 	. "GoServer/utils"
 	. "GoServer/webApi/model"
-	. "GoServer/webApi/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 )
@@ -47,11 +46,11 @@ type asynSQLTask struct {
 func (task *asynSQLTask) ExecTask() error {
 	switch entity := task.entity.(type) {
 	case UserLoginLog:
-		if err := DBInstance.Create(&entity).Error; err != nil {
+		if err := ExecSQL().Create(&entity).Error; err != nil {
 			fmt.Println("add login log Error:", err.Error())
 		}
 	case UserAuth:
-		if err := DBInstance.Model(&entity).Update("update_time", entity.UpdateTime).Error; err != nil {
+		if err := ExecSQL().Model(&entity).Update("update_time", entity.UpdateTime).Error; err != nil {
 			fmt.Println("update auth time Error:", err.Error())
 		}
 	}
@@ -107,7 +106,7 @@ func updateAuthTime(entity *UserAuth) {
 }
 
 func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
-	tx := DBInstance.Begin()
+	tx := ExecSQL().Begin()
 
 	//建立新用户
 	if err := tx.Create(user).Error; err != nil {
@@ -150,7 +149,7 @@ func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
 // 普通登录
 func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 	entity := &M.UserBase
-	err := DBInstance.Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).First(&entity).Error
+	err := ExecSQL().Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).First(&entity).Error
 	if err != nil {
 		if IsRecordNotFound(err) {
 			return nil, CreateRetStatus(USER_NO_EXIST, nil)
@@ -178,7 +177,7 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 //小程序登录
 func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 	entity := &M.Auth
-	err := DBInstance.Select("uid").Where("identifier = ?", M.OpenID).First(&entity).Error
+	err := ExecSQL().Select("uid").Where("identifier = ?", M.OpenID).First(&entity).Error
 
 	var hasRecord = true
 
@@ -202,7 +201,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 	} else {
 		entity.UpdateTime = GetTimestamp()
 		updateAuthTime(entity)
-		if err := DBInstance.Where("uid = ?", entity.UId).First(&user).Error; err != nil {
+		if err := ExecSQL().Where("uid = ?", entity.UId).First(&user).Error; err != nil {
 			return nil, CreateRetStatus(SYSTEM_ERROR, err)
 		}
 	}

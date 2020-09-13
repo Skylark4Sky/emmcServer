@@ -9,14 +9,26 @@ import (
 	"path/filepath"
 )
 
-type MqttConf struct {
+type MqttOptions struct {
 	Host  string `yaml:"host"`
 	Token string `yaml:"token"`
 	Name  string `yaml:"name"`
 	Pwsd  string `yaml:"pwsd"`
 }
 
-type MysqlConf struct {
+type RedisOptions struct {
+	Host           string `yaml:"host"`
+	Port           string `yaml:"port"`
+	Auth           string `yaml:"auth"`
+	MaxIdle        int    `yaml:"maxIdle"`
+	MaxOpen        int    `yaml:"maxOpen"`
+	ConnectTimeout int    `yaml:"connect_timeout"`
+	ReadTimeout    int    `yaml:"read_timeout"`
+	WriteTimeout   int    `yaml:"write_timeout"`
+	IdleTimeout    int    `yaml:"idle_timeout"`
+}
+
+type MysqlOptions struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	Name     string `yaml:"name"`
@@ -25,51 +37,54 @@ type MysqlConf struct {
 	Debug    bool   `yaml:"debug"`
 }
 
-type WebConf struct {
+type WebOptions struct {
 	Port string `yaml:"port"`
 	Mode uint32 `yaml:"runMode"`
 }
 
-type LogConf struct {
+type LogOptions struct {
 	Enabel   bool   `yaml:"enabel"`
-	Filepath string `yaml:"filepath"`
+	Mqttpath string `yaml:"mqttpath"`
+	Webpath  string `yaml:"webpath"`
 	Filename string `yaml:"filename"`
 }
 
-type ServiceConf struct {
+type ServiceOptions struct {
 	Mqtt bool `yaml:"mqtt"`
 	Web  bool `yaml:"web"`
 }
 
-type JwtConf struct {
+type JwtOptions struct {
 	AppSecret  string `yaml:"appSecret"`
 	AppIss     string `yaml:"appIss"`
 	ExpireTime uint32 `yaml:"expireTime"`
 }
 
-type WeAppConf struct {
+type WeAppOptions struct {
 	CodeToSessURL string `yaml:"CodeToSessURL"`
 	AppID         string `yaml:"AppID"`
 	AppSecret     string `yaml:"AppSecret"`
 }
 
-type SystemConf struct {
-	Service    ServiceConf `yaml:"service"`
-	Timeformat string      `yaml:"timeformat"`
-	Log        LogConf     `yaml:"log"`
-	Jwt        JwtConf     `yaml:"jwt"`
-	WeApp      WeAppConf   `yaml:"weApp"`
+type SystemOptions struct {
+	Service    ServiceOptions `yaml:"service"`
+	Timeformat string         `yaml:"timeformat"`
+	Log        LogOptions     `yaml:"log"`
+	Jwt        JwtOptions     `yaml:"jwt"`
+	WeApp      WeAppOptions   `yaml:"weApp"`
 }
 
-type Config struct {
-	Mqtt   []MqttConf `yaml:"mqtt"`
-	Mysql  MysqlConf  `yaml:"mysql"`
-	Web    WebConf    `yaml:"web"`
-	System SystemConf `yaml:"system"`
+type ConfigOptions struct {
+	Mqtt   []MqttOptions `yaml:"mqtt"`
+	Redis  RedisOptions  `yaml:redis`
+	Mysql  MysqlOptions  `yaml:"mysql"`
+	Web    WebOptions    `yaml:"web"`
+	System SystemOptions `yaml:"system"`
 }
 
-var config = &Config{}
-var ErrConfString error
+var config = &ConfigOptions{}
+
+var errOptionsString error
 
 func init() {
 
@@ -78,69 +93,74 @@ func init() {
 
 	fp, err := ioutil.ReadFile(exeFilePath)
 	if err != nil {
-		ErrConfString = errors.New(fmt.Sprintf("yamlFile.Get err #%v ", err))
+		errOptionsString = errors.New(fmt.Sprintf("yamlFile.Get err #%v ", err))
 		return
 	}
 
 	err = yaml.Unmarshal(fp, config)
 	if err != nil {
-		ErrConfString = errors.New(fmt.Sprintf("yamlFile.Unmarshal err #%v ", err))
+		errOptionsString = errors.New(fmt.Sprintf("yamlFile.Unmarshal err #%v ", err))
 		return
 	}
 }
 
-func GetConfig() *Config {
-	if ErrConfString != nil {
-		return nil
+func chkOption(open error, option interface{}) (err error) {
+	if open != nil && option == nil {
+		err = errors.New("options read failed")
 	}
-	return config
+	return
 }
 
-func GetMqtt() []MqttConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return config.Mqtt
+func GetConfig() (option *ConfigOptions, err error) {
+	option = config
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetMysql() *MysqlConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.Mysql)
+func GetMqtt() (option []MqttOptions, err error) {
+	option = config.Mqtt
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetWeb() *WebConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.Web)
+func GetRedis() (option *RedisOptions, err error) {
+	option = &config.Redis
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetSystem() *SystemConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.System)
+func GetMysql() (option *MysqlOptions, err error) {
+	option = &config.Mysql
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetLog() *LogConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.System.Log)
+func GetWeb() (option *WebOptions, err error) {
+	option = &config.Web
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetJwt() *JwtConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.System.Jwt)
+func GetSystem() (option *SystemOptions, err error) {
+	option = &config.System
+	err = chkOption(errOptionsString, option)
+	return
 }
 
-func GetWeApp() *WeAppConf {
-	if ErrConfString != nil {
-		return nil
-	}
-	return &(config.System.WeApp)
+func GetLog() (option *LogOptions, err error) {
+	option = &config.System.Log
+	err = chkOption(errOptionsString, option)
+	return
+}
+
+func GetJwt() (option *JwtOptions, err error) {
+	option = &config.System.Jwt
+	err = chkOption(errOptionsString, option)
+	return
+}
+
+func GetWeApp() (option *WeAppOptions, err error) {
+	option = &config.System.WeApp
+	err = chkOption(errOptionsString, option)
+	return
 }

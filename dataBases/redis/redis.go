@@ -13,11 +13,11 @@ const (
 
 var (
 	redisPool sync.Map
-	mutex sync.Mutex
+	mutex     sync.Mutex
 )
 
 func newRedisClient(index string, re *RedisOptions) error {
-	pool := &redis.Pool {
+	pool := &redis.Pool{
 		MaxIdle:   re.MaxIdle,
 		MaxActive: re.MaxOpen,
 		Dial: func() (redis.Conn, error) {
@@ -41,7 +41,7 @@ func newRedisClient(index string, re *RedisOptions) error {
 			_, err := c.Do("PING")
 			return err
 		},
-		IdleTimeout: 300 * time.Second,
+		IdleTimeout: 60 * time.Second,
 		Wait:        true,
 	}
 
@@ -78,5 +78,7 @@ func Redis() *redis.Pool {
 
 	poolLoad, _ := redisPool.Load(redisIndex)
 	redisPool := poolLoad.(*redis.Pool)
+
+	WebLog("get redis.Pool-----> unLock")
 	return redisPool
 }

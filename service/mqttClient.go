@@ -17,15 +17,33 @@ type MqMsg struct {
 	Payload []byte
 }
 
-func (msg *MqMsg) ExecTask() error {
-	ok, packet := MessageHandler(msg.Payload)
-	rd := Redis().Get()
-	_, err := rd.Do("SET", msg.Topic, string(msg.Payload))
-	if err != nil {
-		WebLog("lPop websocket user msg from queue failed", zap.String("cacheKey", msg.Topic), zap.Error(err))
+func behaviorHandle(packet *Packet, cacheKey string, playload string) {
+	switch packet.Json.Behavior {
+	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
+		{
+			WebLog("Behavior ---> ", packet.Json.Behavior)
+			rd := Redis().Get()
+			defer rd.Close()
+
+			var timeout int = 45
+			if packet.Json.Behavior == GISUNLINK_CHARGE_LEISURE {
+				timeout = 120
+			}
+
+			_, err := rd.Do("SET", cacheKey, playload, "ex", timeout)
+			if err != nil {
+				WebLog("lPop websocket user msg from queue failed", zap.String("cacheKey", cacheKey), zap.Error(err))
+			}
+		}
 	}
 
+}
+
+func (msg *MqMsg) ExecTask() error {
+	ok, packet := MessageHandler(msg.Payload)
+
 	if ok && packet.JsonData != nil {
+		behaviorHandle(packet, msg.Topic, string(msg.Payload))
 		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 		MqttLog(packet.JsonData.(Protocol).Print())
 	} else {
@@ -43,7 +61,7 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 }
 
 func StartMqttService() error {
-	mqttOptions ,_ := GetMqtt()
+	mqttOptions, _ := GetMqtt()
 	for _, mqtt := range mqttOptions {
 		opts := M.NewClientOptions().AddBroker(mqtt.Host)
 		opts.SetClientID(mqtt.Token)

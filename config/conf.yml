@@ -36,7 +36,7 @@ system:
   log:
     enabel: true
     mqttpath: './log/mqtt/'
-    webpath: './log/web/'
+    systempath: './log/system/'
     filename: 'server'
   jwt:
     appSecret: 'Jdf4e8hcjvbkjclkjkklfgki843895iojfdnvufh98'

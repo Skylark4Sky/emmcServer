@@ -45,7 +45,7 @@ type WebOptions struct {
 type LogOptions struct {
 	Enabel   bool   `yaml:"enabel"`
 	Mqttpath string `yaml:"mqttpath"`
-	Webpath  string `yaml:"webpath"`
+	Webpath  string `yaml:"systempath"`
 	Filename string `yaml:"filename"`
 }
 

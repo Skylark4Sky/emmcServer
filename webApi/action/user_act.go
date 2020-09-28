@@ -14,43 +14,43 @@ func Login(ctx *gin.Context) {
 	var userLogin handle.UserLogin
 
 	if err := ctx.ShouldBind(&userLogin); err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 	}
 
 	if userLogin.Account == "" {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, "账号不能为空"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "账号不能为空"))
 		return
 	}
 
 	if userLogin.Pwsd == "" {
-		RetError(ctx, CreateRetStatus(USER_PWSD_EMPTY, "密码不能为空"))
+		RespondMessage(ctx, CreateErrorMessage(USER_PWSD_EMPTY, "密码不能为空"))
 		return
 	}
 
 	data, err := userLogin.Login(ctx)
 
 	if err != nil {
-		RetError(ctx, *err)
+		RespondMessage(ctx, *err)
 		return
 	}
 
-	RetData(ctx, CreateRetMsg(SUCCESS, nil, data))
+	RespondMessage(ctx, CreateMessage(SUCCESS, data))
 }
 
 // 微信小程序登录
 func WeAppLogin(ctx *gin.Context) {
 	var weApp handle.WeAppLogin
 	if err := ctx.ShouldBind(&weApp); err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
 	if weApp.Code == "" {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, "code不能为空"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "code不能为空"))
 		return
 	}
 
-	weAppConfig , _:= GetWeApp()
+	weAppConfig, _ := GetWeApp()
 	appID := weAppConfig.AppID
 	secret := weAppConfig.AppSecret
 	CodeToSessURL := weAppConfig.CodeToSessURL
@@ -62,7 +62,7 @@ func WeAppLogin(ctx *gin.Context) {
 	defer resp.Body.Close()
 
 	if err != nil || resp.StatusCode != 200 {
-		RetError(ctx, CreateRetStatus(SYSTEM_ERROR, "获取微信用户授权失败"))
+		RespondMessage(ctx, CreateErrorMessage(SYSTEM_ERROR, "获取微信用户授权失败"))
 		return
 	}
 
@@ -70,7 +70,7 @@ func WeAppLogin(ctx *gin.Context) {
 
 	err = json.NewDecoder(resp.Body).Decode(&respData)
 	if err != nil {
-		RetError(ctx, CreateRetStatus(SYSTEM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(SYSTEM_ERROR, err))
 		return
 	}
 
@@ -78,16 +78,16 @@ func WeAppLogin(ctx *gin.Context) {
 	weApp.SessionKey = respData["session_key"].(string)
 
 	if weApp.OpenID == "" || weApp.SessionKey == "" {
-		RetError(ctx, CreateRetStatus(SYSTEM_ERROR, "微信认证失败"))
+		RespondMessage(ctx, CreateErrorMessage(SYSTEM_ERROR, "微信认证失败"))
 		return
 	}
 
 	data, loginErr := weApp.Login(ctx)
 
 	if loginErr != nil {
-		RetError(ctx, *loginErr)
+		RespondMessage(ctx, *loginErr)
 		return
 	}
 
-	RetData(ctx, CreateRetMsg(SUCCESS, nil, data))
+	RespondMessage(ctx, CreateMessage(SUCCESS, data))
 }

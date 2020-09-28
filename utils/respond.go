@@ -26,44 +26,51 @@ var retType = map[int64]string{
 	SYSTEM_ERROR:       "",
 }
 
-type RetMsg struct {
+type MessageEntity struct {
 	Code              int64       `json:"code"`
 	CurrentTimeMillis int64       `json:"currentTimeMillis"`
 	Msg               string      `json:"msg"`
 	Data              interface{} `json:"data"`
 }
 
-func CreateRetStatus(retCode int64, msg interface{}) *RetMsg {
-	return CreateRetMsg(retCode, msg, nil)
-}
-
-func CreateRetMsg(retCode int64, msg interface{}, data interface{}) *RetMsg {
+func messageBuilder(retCode int64, msg interface{}, data interface{}) *MessageEntity {
 	retMsg, ok := retType[retCode]
 	if ok {
-		var msString string
+		var retString string
 		switch v := msg.(type) {
 		case string:
-			msString = v
+			retString = v
 		case error:
-			msString = v.Error()
+			retString = v.Error()
 		default:
-			msString = retMsg
+			retString = retMsg
 		}
-		return &RetMsg{
-			Code:              retCode,
-			Msg:               msString,
-			CurrentTimeMillis: GetTimestampMs(),
-			Data:              data,
+
+		entity := &MessageEntity{}
+		entity.CurrentTimeMillis = GetTimestampMs()
+		entity.Code = retCode
+
+		//code != Success copy error msg
+		if retCode != SUCCESS {
+			entity.Msg = retString
+		} else if data != nil {
+			//else  copy the user data
+			entity.Data = data
 		}
+
+		return entity
 	}
 	return nil
 }
 
-func RetError(ctx *gin.Context, msg interface{}) {
-	data := msg.(RetMsg)
-	ctx.AbortWithStatusJSON(200, gin.H{"code": data.Code, "currentTimeMillis": data.CurrentTimeMillis, "msg": data.Msg})
+func CreateErrorMessage(retCode int64, msg interface{}) *MessageEntity {
+	return messageBuilder(retCode, msg, nil)
 }
 
-func RetData(ctx *gin.Context, data interface{}) {
+func CreateMessage(retCode int64, data interface{}) *MessageEntity {
+	return messageBuilder(retCode, nil, data)
+}
+
+func RespondMessage(ctx *gin.Context, data interface{}) {
 	ctx.AbortWithStatusJSON(200, data)
 }

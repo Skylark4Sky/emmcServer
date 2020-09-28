@@ -42,15 +42,16 @@ func setRunMode(mode uint32) {
 func StatrWebService() error {
 	router := gin.New()
 
-	webOption,_ := GetWeb()
+	webOption, _ := GetWeb()
 
 	setRunMode(webOption.Mode)
 
 	if router != nil {
 		router.Use(middleWare.Cors())
+		//router.Use(gin.Recovery())
 		router.Use(middleWare.Recovery())
 		router.Use(middleWare.RequestLogger())
-		router.Use(middleWare.ResponseHandler())
+		//router.Use(middleWare.ResponseHandler())
 		router.NoMethod(middleWare.ExceptionInterceptor)
 		router.NoRoute(middleWare.ExceptionInterceptor)
 		ApiRegisterManage(router, middleWare.PrometheusHttp)

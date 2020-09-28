@@ -100,4 +100,3 @@ func function(pc uintptr) []byte {
 	name = bytes.Replace(name, centerDot, dot, -1)
 	return name
 }
-

@@ -147,27 +147,27 @@ func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
 }
 
 // 普通登录
-func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
+func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 	entity := &M.UserBase
 	err := ExecSQL().Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).First(&entity).Error
 	if err != nil {
 		if IsRecordNotFound(err) {
-			return nil, CreateRetStatus(USER_NO_EXIST, nil)
+			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
 		}
-		return nil, CreateRetStatus(SYSTEM_ERROR, err)
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
 	var loginType UserType = getLoginType(M.Account, entity)
 
 	if chkOk := PasswordVerify(M.Pwsd, entity.UserPwsd); chkOk != true {
 		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UId)
-		return nil, CreateRetStatus(USER_PWSD_ERROR, nil)
+		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
 
 	JwtData, err := JwtGenerateToken(createLoginRespond(entity), entity.UId)
 	if err != nil {
 		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UId)
-		return nil, CreateRetStatus(SYSTEM_ERROR, err)
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
 	createLoginLog(ctx, LOGIN_SUCCEED, loginType, entity.UId)
@@ -175,7 +175,7 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 }
 
 //小程序登录
-func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
+func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 	entity := &M.Auth
 	err := ExecSQL().Select("uid").Where("identifier = ?", M.OpenID).First(&entity).Error
 
@@ -185,7 +185,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 		if IsRecordNotFound(err) {
 			hasRecord = false
 		} else {
-			return nil, CreateRetStatus(SYSTEM_ERROR, err)
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 	}
 
@@ -195,21 +195,21 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *RetMsg) {
 		// 建立新用户
 		user.CreateByDefaultInfo(WECHAT)
 		if err := createNewWechat(ctx.ClientIP(), &user, M); err != nil {
-			return nil, CreateRetStatus(SYSTEM_ERROR, err)
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 
 	} else {
 		entity.UpdateTime = GetTimestamp()
 		updateAuthTime(entity)
 		if err := ExecSQL().Where("uid = ?", entity.UId).First(&user).Error; err != nil {
-			return nil, CreateRetStatus(SYSTEM_ERROR, err)
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 	}
 
 	JwtData, err := JwtGenerateToken(createLoginRespond(&user), entity.UId)
 	if err != nil {
 		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, entity.UId)
-		return nil, CreateRetStatus(SYSTEM_ERROR, err)
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
 	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, entity.UId)

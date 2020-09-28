@@ -21,33 +21,35 @@ type RequestParam struct {
 }
 
 type RequestData struct {
-	SN string `form:"deviceSN" json:"deviceSN" binding:"required"`
+	DeviceNo string `form:"deviceNo" json:"deviceNo" binding:"required"`
+	Token    string `form:"token" json:"token" binding:"required"`
 }
 
 //设备登记
 func DeviceRegister(ctx *gin.Context) {
 	var urlParam RequestParam
 	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
 	var postData RequestData
 	if err := ctx.ShouldBind(&postData); err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
-	ciphertext, err := hex.DecodeString(postData.SN)
+	ciphertext, err := hex.DecodeString(postData.Token)
+
 	if err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
 	clientID, err := AES_CBCDecrypt(ciphertext, key, iv)
 
 	if err != nil {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
@@ -55,8 +57,8 @@ func DeviceRegister(ctx *gin.Context) {
 	clientIDStringLen2 := len(urlParam.ClientID)
 
 	if clientIDStringLen1 < clientIDStringLen2 {
-		RetError(ctx, CreateRetStatus(PARAM_ERROR, err))
-		RetError(ctx, CreateRetStatus(AUTH_ERROR, "Error ClientID"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "Error Token"))
 		return
 	}
 
@@ -66,9 +68,16 @@ func DeviceRegister(ctx *gin.Context) {
 		requestTime := TimeFormat(time.Now())
 		requestIP := ctx.ClientIP()
 		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
-		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.SN, " ", urlParam.Version)
-		ctx.AbortWithStatusJSON(200, gin.H{"status": true, "clientID": urlParam.ClientID, "version": urlParam.Version, "deviceSN": postData.SN})
+		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.Token, " ", urlParam.Version)
+		//		ctx.AbortWithStatusJSON(200, gin.H{"code": 0, "url": "http://www.gisunlink.com/GiSunLink.v2_to_v3.ota.bin", "size": 527300})
+
+		data := map[string]string{
+			"url":  "http://www.gisunlink.com/GiSunLink.v2_to_v3.ota.bin",
+			"size": "527300",
+		}
+
+		RespondMessage(ctx, CreateMessage(SUCCESS, data))
 	} else {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error clientID")})
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error Token")})
 	}
 }

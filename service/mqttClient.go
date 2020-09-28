@@ -7,7 +7,6 @@ import (
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
-	//	"reflect"
 	"time"
 )
 
@@ -21,7 +20,6 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
 		{
-			WebLog("Behavior ---> ", packet.Json.Behavior)
 			rd := Redis().Get()
 			defer rd.Close()
 
@@ -30,7 +28,9 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 				timeout = 120
 			}
 
-			_, err := rd.Do("SET", cacheKey, playload, "ex", timeout)
+			key := cacheKey[11:]
+
+			_, err := rd.Do("SET", key, playload, "ex", timeout)
 			if err != nil {
 				WebLog("lPop websocket user msg from queue failed", zap.String("cacheKey", cacheKey), zap.Error(err))
 			}

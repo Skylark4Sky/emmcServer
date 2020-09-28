@@ -29,20 +29,20 @@ type RequestData struct {
 func DeviceRegister(ctx *gin.Context) {
 	var urlParam RequestParam
 	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
 		return
 	}
 
 	var postData RequestData
 	if err := ctx.ShouldBind(&postData); err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
 		return
 	}
 
 	ciphertext, err := hex.DecodeString(postData.Token)
 
 	if err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
 		return
 	}
 
@@ -69,7 +69,6 @@ func DeviceRegister(ctx *gin.Context) {
 		requestIP := ctx.ClientIP()
 		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
 		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.Token, " ", urlParam.Version)
-		//		ctx.AbortWithStatusJSON(200, gin.H{"code": 0, "url": "http://www.gisunlink.com/GiSunLink.v2_to_v3.ota.bin", "size": 527300})
 
 		data := map[string]string{
 			"url":  "http://www.gisunlink.com/GiSunLink.v2_to_v3.ota.bin",
@@ -78,6 +77,6 @@ func DeviceRegister(ctx *gin.Context) {
 
 		RespondMessage(ctx, CreateMessage(SUCCESS, data))
 	} else {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": false, "error": errors.New("Error Token")})
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "认证失败"))
 	}
 }

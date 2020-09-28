@@ -59,7 +59,7 @@ func (task *asynSQLTask) ExecTask() error {
 
 func createLoginRespond(entity *UserBase) *UserLoginRespond {
 	return &UserLoginRespond{
-		UserID:    entity.UId,
+		UserID:    entity.UID,
 		UserName:  entity.UserName,
 		NickName:  entity.NickName,
 		Gender:    entity.Gender,
@@ -115,9 +115,9 @@ func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
 	}
 
 	auth := &UserAuth{
-		UId:          user.UId,
-		IDentityType: int8(WECHAT),
-		IDentifier:   M.OpenID,
+		UID:          user.UID,
+		IdentityType: int8(WECHAT),
+		Identifier:   M.OpenID,
 		Certificate:  M.SessionKey,
 		CreateTime:   GetTimestamp(),
 	}
@@ -130,8 +130,8 @@ func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
 
 	// 登记日志
 	log := &UserRegisterLog{
-		UId:            user.UId,
-		RegisterMethod: uint8(WECHAT),
+		UID:            user.UID,
+		RegisterMethod: int8(WECHAT),
 		RegisterTime:   GetTimestamp(),
 		RegisterIP:     ip,
 		//	RegisterClient string
@@ -160,17 +160,17 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 	var loginType UserType = getLoginType(M.Account, entity)
 
 	if chkOk := PasswordVerify(M.Pwsd, entity.UserPwsd); chkOk != true {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UId)
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
 		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
 
-	JwtData, err := JwtGenerateToken(createLoginRespond(entity), entity.UId)
+	JwtData, err := JwtGenerateToken(createLoginRespond(entity), entity.UID)
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UId)
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, loginType, entity.UId)
+	createLoginLog(ctx, LOGIN_SUCCEED, loginType, entity.UID)
 	return JwtData, nil
 }
 
@@ -201,17 +201,17 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 	} else {
 		entity.UpdateTime = GetTimestamp()
 		updateAuthTime(entity)
-		if err := ExecSQL().Where("uid = ?", entity.UId).First(&user).Error; err != nil {
+		if err := ExecSQL().Where("uid = ?", entity.UID).First(&user).Error; err != nil {
 			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 	}
 
-	JwtData, err := JwtGenerateToken(createLoginRespond(&user), entity.UId)
+	JwtData, err := JwtGenerateToken(createLoginRespond(&user), entity.UID)
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, entity.UId)
+		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, entity.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, entity.UId)
+	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, entity.UID)
 	return JwtData, nil
 }

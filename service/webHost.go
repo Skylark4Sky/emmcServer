@@ -1,10 +1,11 @@
 package Service
 
 import (
-	. "GoServer/dataBases/mysql"
-	"GoServer/middleWare"
-	. "GoServer/utils"
-	. "GoServer/webApi/router"
+	. "GoServer/api"
+	. "GoServer/middleWare/dataBases/mysql"
+	"GoServer/middleWare/extension"
+	. "GoServer/utils/config"
+	. "GoServer/utils/log"
 	"context"
 	"fmt"
 	"github.com/facebookgo/grace/gracehttp"
@@ -67,7 +68,7 @@ func StatrWebService() error {
 
 	// gracehttp可平滑重启
 	if err := gracehttp.Serve(server); err != nil {
-		WebLog("Start Server failed", zap.Error(err))
+		SystemLog("Start Server failed", zap.Error(err))
 		return err
 	}
 
@@ -75,13 +76,13 @@ func StatrWebService() error {
 		err := recover()
 		if err != nil {
 			err := fmt.Errorf("panic %s", err)
-			WebLog("Server Shutdown:", zap.Error(err))
+			SystemLog("Server Shutdown:", zap.Error(err))
 			return
 		}
-		WebLog("Server Shutdown Success")
+		SystemLog("Server Shutdown Success")
 	}(server)
 
-	WebLog("Start Server Success")
+	SystemLog("Start Server Success")
 	//
 	//Listen := make(chan error)
 	//go func() {

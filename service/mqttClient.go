@@ -1,9 +1,12 @@
 package Service
 
 import (
-	. "GoServer/dataBases/redis"
+	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/mqtt"
-	. "GoServer/utils"
+	. "GoServer/utils/config"
+	. "GoServer/utils/log"
+	. "GoServer/utils/threadWorker"
+	. "GoServer/utils/time"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
@@ -32,7 +35,7 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 
 			_, err := rd.Do("SET", key, playload, "ex", timeout)
 			if err != nil {
-				WebLog("lPop websocket user msg from queue failed", zap.String("cacheKey", cacheKey), zap.Error(err))
+				SystemLog("set redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
 			}
 		}
 	}

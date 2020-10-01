@@ -24,13 +24,13 @@ GOFILES := $(shell find . -name "*.go" -type f -not -path "./vendor/*")
 TIME := "log"$(shell date +"%Y%m%d")
 
 exe:
-	@sh ./exeRun.sh $(BINNAME)
+	@sh ./utils/shell/exeRun.sh $(BINNAME)
 bg: release
-	@sh ./killExe.sh $(BINNAME)
-	@sh ./exeRun.sh $(BINNAME) $(TIME)
+	@sh ./utils/shell/killExe.sh $(BINNAME)
+	@sh ./utils/shell/exeRun.sh $(BINNAME) $(TIME)
 run: debug
-	@sh ./killExe.sh $(BINNAME)
-	@sh ./exeRun.sh $(BINNAME)
+	@sh ./utils/shell/killExe.sh $(BINNAME)
+	@sh ./utils/shell/exeRun.sh $(BINNAME)
 release:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
 	#upx -9 ./build/$(BINNAME)

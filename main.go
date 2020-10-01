@@ -2,7 +2,7 @@ package main
 
 import (
 	. "GoServer/service"
-	. "GoServer/utils"
+	. "GoServer/utils/config"
 	"fmt"
 	"os"
 	"os/signal"
@@ -40,11 +40,9 @@ func main() {
 	var err error
 	var waitExit bool
 
-	if _,err := GetConfig(); err != nil {
+	if _, err := GetConfig(); err != nil {
 		panic(err)
 	}
-
-
 
 	if system, _ := GetSystem(); system != nil {
 		if system.Service.Mqtt {

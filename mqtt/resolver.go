@@ -42,26 +42,26 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 	instance = &ComList{}
 	bytesBuf := bytes.NewBuffer(binaryData)
 	dataLen := len(binaryData)
-	instance.comProtoVer = getTransferVersion(dataLen)
+	instance.ComProtoVer = getTransferVersion(dataLen)
 
-	if instance.comProtoVer == 0 {
+	if instance.ComProtoVer == 0 {
 		instance = nil
 		return
 	}
 
-	if instance.comProtoVer == MAX_PROTO_VERSION0 {
-		instance.signal = 0xff
+	if instance.ComProtoVer == MAX_PROTO_VERSION0 {
+		instance.Signal = 0xff
 	} else {
-		instance.signal = (GetUint8(bytesBuf) ^ 0xFF) + 1
+		instance.Signal = (GetUint8(bytesBuf) ^ 0xFF) + 1
 	}
 
-	instance.comBehavior = behavior
-	instance.comNum = GetUint8(bytesBuf)
-	instance.comID = GetBtyes(bytesBuf, uint32(instance.comNum))
-	instance.comPort = make([]interface{}, instance.comNum, instance.comNum)
-	instance.enableCount = 0
+	instance.ComBehavior = behavior
+	instance.ComNum = GetUint8(bytesBuf)
+	instance.ComID = GetBtyes(bytesBuf, uint32(instance.ComNum))
+	instance.ComPort = make([]interface{}, instance.ComNum, instance.ComNum)
+	instance.EnableCount = 0
 
-	for index, _ := range instance.comPort {
+	for index, _ := range instance.ComPort {
 		com := ComData{}
 		com.token = GetUint32(bytesBuf)
 		com.maxEnergy = GetUint32(bytesBuf)
@@ -70,10 +70,10 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 		com.useTime = GetUint32(bytesBuf)
 		com.curElectricity = GetUint32(bytesBuf)
 
-		instance.useEnergy += com.useEnergy
-		instance.useElectricity += com.curElectricity
+		instance.UseEnergy += com.useEnergy
+		instance.UseElectricity += com.curElectricity
 
-		switch instance.comProtoVer {
+		switch instance.ComProtoVer {
 		case MAX_PROTO_VERSION0:
 			com.errCode = GetUint8(bytesBuf)
 			break
@@ -87,7 +87,7 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			com.maxElectricity = GetUint16(bytesBuf)
 			com.errCode = GetUint8(bytesBuf)
 			com.enable = GetUint8(bytesBuf)
-			instance.enableCount += com.enable
+			instance.EnableCount += com.enable
 			break
 		case MAX_PROTO_VERSION3:
 			com.chipReset = GetUint16(bytesBuf)
@@ -95,11 +95,11 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			com.errCode = GetUint8(bytesBuf)
 			com.enable = GetUint8(bytesBuf)
 			com.behavior = GetUint8(bytesBuf)
-			instance.enableCount += com.enable
+			instance.EnableCount += com.enable
 			break
 		}
 
-		instance.comPort[index] = com
+		instance.ComPort[index] = com
 	}
 	return
 }

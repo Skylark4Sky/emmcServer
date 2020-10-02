@@ -33,9 +33,21 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 
 			key := cacheKey[11:]
 
-			_, err := rd.Do("SET", key, playload, "ex", timeout)
+			var err error
+
+			 comList  := packet.JsonData.(ComList)
+
+			_, err = rd.Do("HSET", key, "rawData",playload,"Signal",comList.Signal,"Version",comList.ComProtoVer)
+
 			if err != nil {
-				SystemLog("set redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
+				SystemLog("HSET redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
+				return
+			}
+
+			_, err = rd.Do("expire", key, timeout)
+			if err != nil {
+				SystemLog("HSET redis expire", zap.String("cacheKey", cacheKey), zap.Error(err))
+				return
 			}
 		}
 	}

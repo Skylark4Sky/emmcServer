@@ -115,15 +115,15 @@ type ComData struct {
 }
 
 type ComList struct {
-	signal         uint8
-	comNum         uint8
-	comID          []byte
-	comPort        []interface{}
-	comBehavior    uint8
-	comProtoVer    uint16
-	useEnergy      uint32
-	useElectricity uint32
-	enableCount    uint8
+	Signal         uint8
+	ComNum         uint8
+	ComID          []byte
+	ComPort        []interface{}
+	ComBehavior    uint8
+	ComProtoVer    uint16
+	UseEnergy      uint32
+	UseElectricity uint32
+	EnableCount    uint8
 }
 
 type JosnPacket struct {
@@ -153,14 +153,14 @@ func (device *DeviceInfo) Print() (retString string) {
 func (comList *ComList) Print() (retString string) {
 	var buffer bytes.Buffer
 	if comList != nil {
-		headString := fmt.Sprintf("signal:-%d comNum:%02d comIDs:%s TaskBehavior:%d Version:%d useEnergy:%d useElectricity:%d enableCount:%d\n", comList.signal, comList.comNum, hex.EncodeToString(comList.comID), comList.comBehavior, comList.comProtoVer, comList.useEnergy, comList.useElectricity, comList.enableCount)
+		headString := fmt.Sprintf("signal:-%d comNum:%02d comIDs:%s TaskBehavior:%d Version:%d useEnergy:%d useElectricity:%d enableCount:%d\n", comList.Signal, comList.ComNum, hex.EncodeToString(comList.ComID), comList.ComBehavior, comList.ComProtoVer, comList.UseEnergy, comList.UseElectricity, comList.EnableCount)
 		buffer.WriteString(headString)
 		//buffer.WriteString("=====================================================\n")
-		for comID, data := range comList.comPort {
+		for comID, data := range comList.ComPort {
 			comData := data.(ComData)
 			var comString string
 
-			switch comList.comProtoVer {
+			switch comList.ComProtoVer {
 			case MAX_PROTO_VERSION0:
 				{
 					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Uelectricity:%06d errCode:%03d\n", comID, comData.token, comData.maxEnergy, comData.useEnergy,

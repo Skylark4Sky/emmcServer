@@ -1,6 +1,8 @@
 package string
 
 import (
+	"fmt"
+	"go.uber.org/zap"
 	"math/rand"
 )
 
@@ -35,4 +37,15 @@ func RandomWord(n int) string {
 
 func RandEmail() string {
 	return RandomWord(6) + "@" + RandomWord(4) + "." + RandomWord(3)
+}
+
+func ArgsToJsonData(args []interface{}) zap.Field {
+	det := make([]string, 0)
+	if len(args) > 0 {
+		for _, v := range args {
+			det = append(det, fmt.Sprintf("%+v", v))
+		}
+	}
+	zap := zap.Any("detail", det)
+	return zap
 }

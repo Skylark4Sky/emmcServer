@@ -3,7 +3,9 @@ package redis
 import (
 	. "GoServer/utils/config"
 	. "GoServer/utils/log"
+	. "GoServer/utils/string"
 	"github.com/gomodule/redigo/redis"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -80,4 +82,18 @@ func Redis() *redis.Pool {
 	poolLoad, _ := redisPool.Load(redisIndex)
 	redisPool := poolLoad.(*redis.Pool)
 	return redisPool
+}
+
+func SetRedisItem(pool *redis.Pool,commandName string, args ...interface{}) (err error) {
+	client := pool.Get()
+	defer client.Close()
+	_, err = client.Do(commandName, args...)
+	if err != nil {
+		SystemLog("redis command",zap.String("cmd",commandName),ArgsToJsonData(args), zap.Error(err))
+	}
+	return
+}
+
+func GetRedisItem() {
+
 }

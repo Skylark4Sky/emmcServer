@@ -84,9 +84,7 @@ func Redis() *redis.Pool {
 	return redisPool
 }
 
-func SetRedisItem(pool *redis.Pool,commandName string, args ...interface{}) (err error) {
-	client := pool.Get()
-	defer client.Close()
+func SetRedisItem(client redis.Conn,commandName string, args ...interface{}) (err error) {
 	_, err = client.Do(commandName, args...)
 	if err != nil {
 		SystemLog("redis command",zap.String("cmd",commandName),ArgsToJsonData(args), zap.Error(err))

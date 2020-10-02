@@ -26,6 +26,7 @@ require (
 	github.com/ugorji/go v1.1.7 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/text v0.3.0
 	golang.org/x/tools/gopls v0.4.4 // indirect
 	gopkg.in/yaml.v2 v2.2.4
 )

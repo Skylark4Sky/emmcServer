@@ -63,39 +63,39 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 
 	for index, _ := range instance.ComPort {
 		com := ComData{}
-		com.token = GetUint32(bytesBuf)
-		com.maxEnergy = GetUint32(bytesBuf)
-		com.useEnergy = GetUint32(bytesBuf)
-		com.maxTime = GetUint32(bytesBuf)
-		com.useTime = GetUint32(bytesBuf)
-		com.curElectricity = GetUint32(bytesBuf)
+		com.Token = GetUint32(bytesBuf)
+		com.MaxEnergy = GetUint32(bytesBuf)
+		com.UseEnergy = GetUint32(bytesBuf)
+		com.MaxTime = GetUint32(bytesBuf)
+		com.UseTime = GetUint32(bytesBuf)
+		com.CurElectricity = GetUint32(bytesBuf)
 
-		instance.UseEnergy += com.useEnergy
-		instance.UseElectricity += com.curElectricity
+		instance.UseEnergy += com.UseEnergy
+		instance.UseElectricity += com.CurElectricity
 
 		switch instance.ComProtoVer {
 		case MAX_PROTO_VERSION0:
-			com.errCode = GetUint8(bytesBuf)
+			com.ErrCode = GetUint8(bytesBuf)
 			break
 		case MAX_PROTO_VERSION1:
-			com.chipReset = GetUint16(bytesBuf)
-			com.maxElectricity = GetUint16(bytesBuf)
-			com.errCode = GetUint8(bytesBuf)
+			com.ChipReset = GetUint16(bytesBuf)
+			com.MaxElectricity = GetUint16(bytesBuf)
+			com.ErrCode = GetUint8(bytesBuf)
 			break
 		case MAX_PROTO_VERSION2:
-			com.chipReset = GetUint16(bytesBuf)
-			com.maxElectricity = GetUint16(bytesBuf)
-			com.errCode = GetUint8(bytesBuf)
-			com.enable = GetUint8(bytesBuf)
-			instance.EnableCount += com.enable
+			com.ChipReset = GetUint16(bytesBuf)
+			com.MaxElectricity = GetUint16(bytesBuf)
+			com.ErrCode = GetUint8(bytesBuf)
+			com.Enable = GetUint8(bytesBuf)
+			instance.EnableCount += com.Enable
 			break
 		case MAX_PROTO_VERSION3:
-			com.chipReset = GetUint16(bytesBuf)
-			com.maxElectricity = GetUint16(bytesBuf)
-			com.errCode = GetUint8(bytesBuf)
-			com.enable = GetUint8(bytesBuf)
-			com.behavior = GetUint8(bytesBuf)
-			instance.EnableCount += com.enable
+			com.ChipReset = GetUint16(bytesBuf)
+			com.MaxElectricity = GetUint16(bytesBuf)
+			com.ErrCode = GetUint8(bytesBuf)
+			com.Enable = GetUint8(bytesBuf)
+			com.Behavior = GetUint8(bytesBuf)
+			instance.EnableCount += com.Enable
 			break
 		}
 

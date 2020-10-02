@@ -100,19 +100,19 @@ type ComTaskStopTransfer struct {
 }
 
 type ComData struct {
-	Id             uint8
-	token          uint32
-	maxEnergy      uint32
-	useEnergy      uint32
-	maxTime        uint32
-	useTime        uint32
-	curElectricity uint32
-	chipReset      uint16
-	maxElectricity uint16
-	errCode        uint8
-	enable         uint8
-	behavior       uint8
-}
+	Id             uint8 `json:"id"`
+	Token          uint32 `json:"token"`
+	MaxEnergy      uint32 `json:"maxEnergy"`
+	UseEnergy      uint32 `json:"useEnergy"`
+	MaxTime        uint32 `json:"maxTime"`
+	UseTime        uint32 `json:"useTime"`
+	CurElectricity uint32 `json:"curElectricity"`
+	ChipReset      uint16 `json:"chipReset"`
+	MaxElectricity uint16 `json:"maxElectricity"`
+	ErrCode        uint8 `json:"errCode"`
+	Enable         uint8 `json:"enable"`
+	Behavior       uint8 `json:"behavior"`
+ }
 
 type ComList struct {
 	Signal         uint8
@@ -163,31 +163,31 @@ func (comList *ComList) Print() (retString string) {
 			switch comList.ComProtoVer {
 			case MAX_PROTO_VERSION0:
 				{
-					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Uelectricity:%06d errCode:%03d\n", comID, comData.token, comData.maxEnergy, comData.useEnergy,
-						comData.maxTime, comData.useTime, comData.curElectricity, comData.errCode)
+					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Uelectricity:%06d errCode:%03d\n", comID, comData.Token, comData.MaxEnergy, comData.UseEnergy,
+						comData.MaxTime, comData.UseTime, comData.CurElectricity, comData.ErrCode)
 					break
 				}
 			case MAX_PROTO_VERSION1:
 				{
-					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d \n", comID, comData.token, comData.maxEnergy, comData.useEnergy,
-						comData.maxTime, comData.useTime, comData.maxElectricity,
-						comData.curElectricity, comData.chipReset, comData.errCode)
+					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d \n", comID, comData.Token, comData.MaxEnergy, comData.UseEnergy,
+						comData.MaxTime, comData.UseTime, comData.MaxElectricity,
+						comData.CurElectricity, comData.ChipReset, comData.ErrCode)
 					break
 				}
 			case MAX_PROTO_VERSION2:
 				{
-					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d enable:%01d \n", comID, comData.token, comData.maxEnergy, comData.useEnergy,
-						comData.maxTime, comData.useTime, comData.maxElectricity,
-						comData.curElectricity, comData.chipReset, comData.errCode,
-						comData.enable)
+					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d enable:%01d \n", comID, comData.Token, comData.MaxEnergy, comData.UseEnergy,
+						comData.MaxTime, comData.UseTime, comData.MaxElectricity,
+						comData.CurElectricity, comData.ChipReset, comData.ErrCode,
+						comData.Enable)
 					break
 				}
 			case MAX_PROTO_VERSION3:
 				{
-					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d enable:%01d behavior:%03d \n", comID, comData.token, comData.maxEnergy, comData.useEnergy,
-						comData.maxTime, comData.useTime, comData.maxElectricity,
-						comData.curElectricity, comData.chipReset, comData.errCode,
-						comData.enable, comData.behavior)
+					comString = fmt.Sprintf("comID:%02d token:%012d Menergy:%06d Uenergy:%06d Mtime:%08d Utime:%08d Melectricity:%06d Uelectricity:%06d reset:%06d errCode:%03d enable:%01d behavior:%03d \n", comID, comData.Token, comData.MaxEnergy, comData.UseEnergy,
+						comData.MaxTime, comData.UseTime, comData.MaxElectricity,
+						comData.CurElectricity, comData.ChipReset, comData.ErrCode,
+						comData.Enable, comData.Behavior)
 					break
 				}
 			}

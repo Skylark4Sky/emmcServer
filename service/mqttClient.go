@@ -7,9 +7,13 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/threadWorker"
 	. "GoServer/utils/time"
+	"encoding/json"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
+	//"golang.org/x/text/collate/build"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,23 +35,38 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 				timeout = 120
 			}
 
-			key := cacheKey[11:]
-
 			var err error
 
-			 comList  := packet.JsonData.(ComList)
+			comList := packet.JsonData.(ComList)
 
-			_, err = rd.Do("HSET", key, "rawData",playload,"Signal",comList.Signal,"Version",comList.ComProtoVer)
+			_, err = rd.Do("HSET", cacheKey, "rawData",playload,"Status",comList.ComBehavior,"Signal",comList.Signal,"Version",comList.ComProtoVer)
 
 			if err != nil {
 				SystemLog("HSET redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
 				return
 			}
 
-			_, err = rd.Do("expire", key, timeout)
+			_, err = rd.Do("expire", cacheKey, timeout)
 			if err != nil {
 				SystemLog("HSET redis expire", zap.String("cacheKey", cacheKey), zap.Error(err))
 				return
+			}
+
+			for comID, data := range comList.ComPort {
+				comData := data.(ComData)
+				strconv.Itoa(comID)
+				var jsonByte []byte
+				var comIDString strings.Builder
+				comIDString.WriteString("comPort")
+				comIDString.WriteString(strconv.Itoa(comID))
+
+				jsonByte, err = json.Marshal(comData)
+				if err == nil {
+					_, err = rd.Do("HSET", cacheKey, comIDString.String(),string(jsonByte))
+					if err != nil {
+						SystemLog("HSET redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
+					}
+				}
 			}
 		}
 	}
@@ -58,7 +77,7 @@ func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 
 	if ok && packet.JsonData != nil {
-		behaviorHandle(packet, msg.Topic, string(msg.Payload))
+		behaviorHandle(packet, msg.Topic[11:], string(msg.Payload))
 		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 		MqttLog(packet.JsonData.(Protocol).Print())
 	} else {

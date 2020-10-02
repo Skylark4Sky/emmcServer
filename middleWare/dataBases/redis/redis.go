@@ -92,6 +92,11 @@ func SetRedisItem(client redis.Conn,commandName string, args ...interface{}) (er
 	return
 }
 
-func GetRedisItem() {
-
+func GetRedisItem(client redis.Conn,commandName string, args ...interface{}) (reply interface{}) {
+	reply, err := client.Do(commandName, args...)
+	if err != nil {
+		reply = nil
+		SystemLog("redis command",zap.String("cmd",commandName),ArgsToJsonData(args), zap.Error(err))
+	}
+	return
 }

@@ -1,5 +1,5 @@
-mqtt: [ { host: 'tcp://120.25.30.124:1883',token: '264f58790f3f40db88e3bedd83a84291',name: 'test',pwsd: 'test1' },
-        { host: 'tcp://47.106.235.93:1883',token: '2fe94a290602468fa8f0be6218024071',name: 'test',pwsd: 'test1' } ]
+mqtt: [ { host: 'tcp://120.25.30.124:1883',token: '264f58790f3f40db88e3bedd83a84290',name: 'test',pwsd: 'test1' },
+        { host: 'tcp://47.106.235.93:1883',token: '2fe94a290602468fa8f0be6218024070',name: 'test',pwsd: 'test1' } ]
 
 redis:
   host: '172.16.0.8'

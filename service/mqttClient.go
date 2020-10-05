@@ -1,20 +1,29 @@
 package Service
 
 import (
+	. "GoServer/handle/device"
 	. "GoServer/middleWare/dataBases/redis"
+	deviceModel "GoServer/model/device"
 	. "GoServer/mqtt"
 	. "GoServer/utils/config"
 	. "GoServer/utils/log"
+	. "GoServer/utils/string"
 	. "GoServer/utils/threadWorker"
 	. "GoServer/utils/time"
 	"encoding/json"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
-	"go.uber.org/zap"
-	//"golang.org/x/text/collate/build"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
+)
+
+var serverMap = make(map[string]interface{})
+
+const (
+	CHARGEING_TIME = 45
+	LEISURE_TIME   = 120
 )
 
 type MqMsg struct {
@@ -30,46 +39,61 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 			rd := Redis().Get()
 			defer rd.Close()
 
-			var timeout int = 45
+			var timeout int = CHARGEING_TIME
 			if packet.Json.Behavior == GISUNLINK_CHARGE_LEISURE {
-				timeout = 120
+				timeout = LEISURE_TIME
 			}
 
-			var err error
+			comList := packet.JsonData.(*ComList)
 
-			comList := packet.JsonData.(ComList)
+			deviceInfo := fmt.Sprintf("{\"status\"%d,\"signal\":%d,\"version\":%d}", comList.ComBehavior, int8(comList.Signal), comList.ComProtoVer)
 
-			_, err = rd.Do("HSET", cacheKey, "rawData",playload,"Status",comList.ComBehavior,"Signal",comList.Signal,"Version",comList.ComProtoVer)
-
-			if err != nil {
-				SystemLog("HSET redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
+			if SetRedisItem(rd, "HSET", cacheKey, "rawData", playload, "deviceInfo", deviceInfo) != nil {
 				return
 			}
 
-			_, err = rd.Do("expire", cacheKey, timeout)
-			if err != nil {
-				SystemLog("HSET redis expire", zap.String("cacheKey", cacheKey), zap.Error(err))
+			if SetRedisItem(rd, "expire", cacheKey, timeout) != nil {
 				return
 			}
 
-			for comID, data := range comList.ComPort {
-				comData := data.(ComData)
-				strconv.Itoa(comID)
+			for _, comID := range comList.ComID {
+
+				var index uint8 = comID
+				if comList.ComNum <= 5 {
+					index = (comID % 5)
+				}
+
+				comData := (comList.ComPort[int(index)]).(ComData)
+				comData.Id = comID
+
 				var jsonByte []byte
 				var comIDString strings.Builder
 				comIDString.WriteString("comPort")
-				comIDString.WriteString(strconv.Itoa(comID))
+				comIDString.WriteString(strconv.Itoa(int(comID)))
 
-				jsonByte, err = json.Marshal(comData)
+				jsonByte, err := json.Marshal(comData)
 				if err == nil {
-					_, err = rd.Do("HSET", cacheKey, comIDString.String(),string(jsonByte))
-					if err != nil {
-						SystemLog("HSET redis value", zap.String("cacheKey", cacheKey), zap.Error(err))
-					}
+					SetRedisItem(rd, "HSET", cacheKey, comIDString.String(), string(jsonByte))
 				}
 			}
 		}
 	}
+}
+
+func saveTransferData(serverNode string, device_sn string, packet *Packet) {
+	comList := packet.JsonData.(*ComList)
+	log := &deviceModel.DeviceTransferLog{
+		TransferID:   int64(packet.Json.ID),
+		TransferAct:  packet.Json.Act,
+		DeviceSN:     device_sn,
+		ComNum:       int64(comList.ComNum),
+		TransferData: packet.Json.Data,
+		Behavior:     int64(packet.Json.Behavior),
+		ServerNode:   serverNode,
+		TransferTime: int64(packet.Json.Ctime),
+	}
+
+	CreateDeviceTransferLog(log)
 
 }
 
@@ -77,7 +101,9 @@ func (msg *MqMsg) ExecTask() error {
 	ok, packet := MessageHandler(msg.Payload)
 
 	if ok && packet.JsonData != nil {
-		behaviorHandle(packet, msg.Topic[11:], string(msg.Payload))
+		deviceSN := GetDeviceSN(msg.Topic)
+		saveTransferData(msg.Broker, deviceSN, packet)
+		behaviorHandle(packet, deviceSN, string(msg.Payload))
 		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 		MqttLog(packet.JsonData.(Protocol).Print())
 	} else {
@@ -92,6 +118,16 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 	broker := servers[0]
 	var work Job = &MqMsg{Broker: broker.Host, Topic: msg.Topic(), Payload: msg.Payload()}
 	InsertAsynTask(work)
+}
+
+func GetMqttClient(brokerHost string) *M.Client {
+	broker := serverMap[brokerHost]
+
+	if broker != nil {
+		return broker.(*M.Client)
+	}
+
+	return nil
 }
 
 func StartMqttService() error {
@@ -111,6 +147,13 @@ func StartMqttService() error {
 
 		if token := Client.Subscribe("/#", 0, nil); token.Wait() && token.Error() != nil {
 			return token.Error()
+		}
+
+		URL, err := url.Parse(mqtt.Host)
+
+		if err == nil {
+			key := URL.Host
+			serverMap[key] = Client
 		}
 	}
 	return nil

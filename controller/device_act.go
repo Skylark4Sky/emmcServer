@@ -2,14 +2,14 @@ package action
 
 import (
 	. "GoServer/handle/device"
-	. "GoServer/utils/log"
+	//	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
-	. "GoServer/utils/time"
+	//	. "GoServer/utils/time"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"strings"
-	"time"
+	//	"time"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 )
 
 //设备登记
-func DeviceRegister(ctx *gin.Context) {
+func DeviceConnect(ctx *gin.Context) {
 	var urlParam RequestParam
 	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
@@ -31,7 +31,7 @@ func DeviceRegister(ctx *gin.Context) {
 		return
 	}
 
-	ciphertext, err := hex.DecodeString(postData.Token)
+	ciphertext, err := hex.DecodeString(postData.ModuleSN)
 
 	if err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
@@ -56,17 +56,13 @@ func DeviceRegister(ctx *gin.Context) {
 	clientID = string([]byte(clientID)[:clientIDStringLen2])
 
 	if strings.Compare(clientID, urlParam.ClientID) == 0 {
-		requestTime := TimeFormat(time.Now())
-		requestIP := ctx.ClientIP()
-		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceConnect ", urlParam.ClientID)
-		MqttLog("[", requestIP, "] =========>> ", requestTime, " DeviceInfo ", postData.Token, " ", urlParam.Version)
-		//	data := &FirmwareInfo{
-		//		URL:  "http://www.gisunlink.com/GiSunLink.ota.bin",
-		//		Size: 476448,
-		//	}
-
-		RespondMessage(ctx, CreateMessage(SUCCESS, nil))
+		respond := postData.Connect(ctx, urlParam.ClientID)
+		RespondMessage(ctx, respond)
 	} else {
 		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "认证失败"))
 	}
+}
+
+func DeviceList(ctx *gin.Context) {
+
 }

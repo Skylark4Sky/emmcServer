@@ -3,12 +3,12 @@ package user
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/extension"
+	. "GoServer/model"
 	. "GoServer/model/user"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/threadWorker"
 	. "GoServer/utils/time"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,24 +40,6 @@ type UserLogin struct {
 	UserBase UserBase
 	Account  string `json:"account"`
 	Pwsd     string `json:"pwsd"`
-}
-
-type asynSQLTask struct {
-	entity interface{}
-}
-
-func (task *asynSQLTask) ExecTask() error {
-	switch entity := task.entity.(type) {
-	case UserLoginLog:
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			fmt.Println("add login log Error:", err.Error())
-		}
-	case UserAuth:
-		if err := ExecSQL().Model(&entity).Update("update_time", entity.UpdateTime).Error; err != nil {
-			fmt.Println("update auth time Error:", err.Error())
-		}
-	}
-	return nil
 }
 
 func createLoginRespond(entity *UserBase) *UserLoginRespond {
@@ -92,18 +74,18 @@ func getLoginType(account string, entity *UserBase) UserType {
 }
 
 func createLoginLog(ctx *gin.Context, Command int8, loginType UserType, userID int64) {
-	var task asynSQLTask
+	var task AsynSQLTask
 	var log UserLoginLog
 
 	log.Create(ctx.ClientIP(), Command, loginType, userID)
-	task.entity = log
+	task.Entity = log
 	var work Job = &task
 	InsertAsynTask(work)
 }
 
 func updateAuthTime(entity *UserAuth) {
-	var task asynSQLTask
-	task.entity = *entity
+	var task AsynSQLTask
+	task.Entity = *entity
 	var work Job = &task
 	InsertAsynTask(work)
 }

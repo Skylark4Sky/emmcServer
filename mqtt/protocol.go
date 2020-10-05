@@ -100,7 +100,7 @@ type ComTaskStopTransfer struct {
 }
 
 type ComData struct {
-	Id             uint8 `json:"id"`
+	Id             uint8  `json:"id"`
 	Token          uint32 `json:"token"`
 	MaxEnergy      uint32 `json:"maxEnergy"`
 	UseEnergy      uint32 `json:"useEnergy"`
@@ -109,10 +109,10 @@ type ComData struct {
 	CurElectricity uint32 `json:"curElectricity"`
 	ChipReset      uint16 `json:"chipReset"`
 	MaxElectricity uint16 `json:"maxElectricity"`
-	ErrCode        uint8 `json:"errCode"`
-	Enable         uint8 `json:"enable"`
-	Behavior       uint8 `json:"behavior"`
- }
+	ErrCode        uint8  `json:"errCode"`
+	Enable         uint8  `json:"enable"`
+	Behavior       uint8  `json:"behavior"`
+}
 
 type ComList struct {
 	Signal         uint8

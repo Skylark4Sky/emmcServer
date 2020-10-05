@@ -14,7 +14,7 @@
 export GO111MODULE=on
 export GOPROXY=https://goproxy.cn/
 
-BINNAME := "GoServer-new"
+BINNAME := "GoServer"
 LDFLAGS := "-s -w -X 'main.BuildTime=$(shell date -u '+%F-%Z/%T')' -X 'main.GoVersion=$(shell go version)'"
 GO ?= go
 GOFMT ?= gofmt "-s"

@@ -11,15 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RequestParam struct {
-	ClientID string `form:"clientID" json:"type" binding:"required"`
-}
-
 type RequestData struct {
-	AccessWay AccesswayType `form:"type" json:"type" binding:"required"`
-	DeviceSN  string        `form:"deviceNo" json:"deviceNo" binding:"required"`
-	ModuleSN  string        `form:"token" json:"token" binding:"required"`
-	Version   string        `form:"version" json:"version" binding:"required"`
+	AccessWay     AccesswayType `form:"type" json:"type" binding:"required"`
+	ModuleSN      string        `form:"module_sn" json:"module_sn" binding:"required"`
+	ModuleVersion string        `form:"module_version" json:"module_version" binding:"required"`
+	DeviceSN      string        `form:"device_sn" json:"device_sn" binding:"required"`
+	DeviceVersion string        `form:"device_version" json:"device_version" binding:"required"`
+	Token         string        `form:"token" json:"token" binding:"required"`
 }
 
 type FirmwareInfo struct {
@@ -37,11 +35,11 @@ func createConnectLog(ctx *gin.Context, device_id int64, accessway AccesswayType
 	InsertAsynTask(work)
 }
 
-func (data *RequestData) Connect(ctx *gin.Context, clientID string) interface{} {
+func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 
 	var device DeviceInfo
 
-	err := ExecSQL().Where("module_sn = ?", clientID).First(&device).Error
+	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(&device).Error
 
 	var hasRecord = true
 
@@ -55,13 +53,19 @@ func (data *RequestData) Connect(ctx *gin.Context, clientID string) interface{} 
 
 	if !hasRecord {
 		// 建立新记录
-		device.Create(data.AccessWay, 0, clientID, data.DeviceSN, data.Version)
+		device.Create(data.AccessWay, 0, data.ModuleSN, data.DeviceSN, data.ModuleVersion, data.DeviceVersion)
 		if err := ExecSQL().Create(&device).Error; err != nil {
 			return CreateMessage(SYSTEM_ERROR, err)
 		}
+	} else {
+		device.Update(data.ModuleVersion, data.DeviceVersion)
+		updateMap := map[string]interface{}{"module_version": data.ModuleVersion, "device_version": data.DeviceVersion, "update_time": device.UpdateTime}
+		if err := ExecSQL().Model(&device).Updates(updateMap).Error; err != nil {
+			return CreateErrorMessage(SYSTEM_ERROR, err)
+		}
 	}
 
-	createConnectLog(ctx, device.ID, data.AccessWay, clientID)
+	createConnectLog(ctx, device.ID, data.AccessWay, data.ModuleSN)
 
 	//	data := &FirmwareInfo{
 	//		URL:  "http://www.gisunlink.com/GiSunLink.ota.bin",

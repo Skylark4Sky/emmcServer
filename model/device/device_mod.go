@@ -23,17 +23,18 @@ type DeviceConnectLog struct {
 }
 
 type DeviceInfo struct {
-	ID         int64         `json:"id" gorm:"pk autoincr comment('设备ID') BIGINT(20) 'id'"`
-	UID        int64         `json:"uid" gorm:"default NULL comment('对应关系用户') BIGINT(20) 'uid'"`
-	AccessWay  AccesswayType `json:"access_way" gorm:"default NULL comment('接入方式') TINYINT(1) 'access_way'"`
-	Type       int8          `json:"type" gorm:"default NULL comment('设备类型') TINYINT(1) 'type'"`
-	ModuleSN   string        `json:"module_sn" gorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
-	DeviceSN   string        `json:"device_sn" gorm:"default 'NULL' comment('设备序列号') VARCHAR(64) 'device_sn'"`
-	Remark     string        `json:"remark" gorm:"default 'NULL' comment('设备备注') VARCHAR(255) 'remark'"`
-	Localtion  string        `json:"localtion" gorm:"default 'NULL' comment('所在位置') VARCHAR(255) 'localtion'"`
-	Version    string        `json:"version" gorm:"default 'NULL' comment('固件版本') VARCHAR(64) 'version'"`
-	CreateTime int64         `json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
-	UpdateTime int64         `json:"update_time" gorm:"default NULL comment('最后一次更新时间') BIGINT(13) 'update_time'"`
+	ID            int64         `json:"id" gorm:"pk autoincr comment('设备ID') BIGINT(20) 'id'"`
+	UID           int64         `json:"uid" gorm:"default NULL comment('对应关系用户') BIGINT(20) 'uid'"`
+	AccessWay     AccesswayType `json:"access_way" gorm:"default NULL comment('接入方式') TINYINT(1) 'access_way'"`
+	Type          int8          `json:"type" gorm:"default NULL comment('设备类型') TINYINT(1) 'type'"`
+	ModuleSN      string        `json:"module_sn" gorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
+	DeviceSN      string        `json:"device_sn" gorm:"default 'NULL' comment('设备序列号') VARCHAR(64) 'device_sn'"`
+	Remark        string        `json:"remark" gorm:"default 'NULL' comment('设备备注') VARCHAR(255) 'remark'"`
+	Localtion     string        `json:"localtion" gorm:"default 'NULL' comment('所在位置') VARCHAR(255) 'localtion'"`
+	ModuleVersion string        `json:"module_version" gorm:"default 'NULL' comment('模组固件版本') VARCHAR(32) 'module_version'"`
+	DeviceVersion string        `json:"device_version" gorm:"default 'NULL' comment('设备固件版本') VARCHAR(32) 'device_version'"`
+	CreateTime    int64         `json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
+	UpdateTime    int64         `json:"update_time" gorm:"default NULL comment('最后一次更新时间') BIGINT(13) 'update_time'"`
 }
 
 type DeviceTransferLog struct {
@@ -57,13 +58,20 @@ func (log *DeviceConnectLog) Create(deviceID int64, accessway AccesswayType, mod
 	log.CreateTime = GetTimestampMs()
 }
 
-func (device *DeviceInfo) Create(accessway AccesswayType, deviceType int8, moduleSN string, deviceSN string, version string) {
+func (device *DeviceInfo) Create(accessway AccesswayType, deviceType int8, moduleSN string, deviceSN string, module_version string, device_version string) {
 	device.AccessWay = accessway
 	device.Type = deviceType
 	device.ModuleSN = moduleSN
 	device.DeviceSN = deviceSN
-	device.Version = version
+	device.ModuleVersion = module_version
+	device.DeviceVersion = device_version
 	device.CreateTime = GetTimestampMs()
+}
+
+func (device *DeviceInfo) Update(module_version string, device_version string) {
+	device.ModuleVersion = module_version
+	device.DeviceVersion = device_version
+	device.UpdateTime = GetTimestampMs()
 }
 
 func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_sn string, data string, serverIP string, behavior int64, transferTime int64) {

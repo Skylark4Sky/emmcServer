@@ -19,44 +19,43 @@ var (
 
 //设备登记
 func DeviceConnect(ctx *gin.Context) {
-	var urlParam RequestParam
-	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
-		return
-	}
-
+	//	var urlParam RequestParam
+	//	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
+	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误1"))
+	//		return
+	//	}
 	var postData RequestData
 	if err := ctx.ShouldBind(&postData); err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误1"))
 		return
 	}
 
-	ciphertext, err := hex.DecodeString(postData.ModuleSN)
+	ciphertext, err := hex.DecodeString(postData.Token)
 
 	if err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误2"))
 		return
 	}
 
-	clientID, err := AES_CBCDecrypt(ciphertext, key, iv)
+	ModuleSN, err := AES_CBCDecrypt(ciphertext, key, iv)
 
 	if err != nil {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误3"))
 		return
 	}
 
-	clientIDStringLen1 := len(clientID)
-	clientIDStringLen2 := len(urlParam.ClientID)
+	SNStringLen1 := len(ModuleSN)
+	SNStringLen2 := len(postData.ModuleSN)
 
-	if clientIDStringLen1 < clientIDStringLen2 {
+	if SNStringLen1 < SNStringLen2 {
 		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "Error Token"))
 		return
 	}
 
-	clientID = string([]byte(clientID)[:clientIDStringLen2])
+	ModuleSN = string([]byte(ModuleSN)[:SNStringLen2])
 
-	if strings.Compare(clientID, urlParam.ClientID) == 0 {
-		respond := postData.Connect(ctx, urlParam.ClientID)
+	if strings.Compare(ModuleSN, postData.ModuleSN) == 0 {
+		respond := postData.Connect(ctx)
 		RespondMessage(ctx, respond)
 	} else {
 		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "认证失败"))

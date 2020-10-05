@@ -86,44 +86,56 @@ type DeviceInfo struct {
 }
 
 type ComTaskStartTransfer struct {
-	comID          uint8
-	token          uint32
-	maxEnergy      uint32
-	maxElectricity uint32
-	maxTime        uint32
+	comID          uint8	//端口号
+	token          uint32	//令牌
+	maxEnergy      uint32	//最大充电电量
+	maxElectricity uint32	//最大充电电流
+	maxTime        uint32	//最大充电时间
 }
 
 type ComTaskStopTransfer struct {
-	comID     uint8
-	token     uint32
-	forceStop uint8
+	comID     uint8		//端口号
+	token     uint32 	//令牌
+	forceStop uint8		//是否强制停止 是 停止并清空当前端口数据
+}
+
+type ComTaskStatusQueryTransfer struct {
+	comID     uint8 //端口号 0 - 9  大于9 查全部
+}
+
+type DeviceONLoadTimeSetConfigTransfer struct {
+	time     uint8 //空载时间 秒
+}
+
+type DeviceReStartTaskTransfer struct {
+
 }
 
 type ComData struct {
-	Id             uint8  `json:"id"`
-	Token          uint32 `json:"token"`
-	MaxEnergy      uint32 `json:"maxEnergy"`
-	UseEnergy      uint32 `json:"useEnergy"`
-	MaxTime        uint32 `json:"maxTime"`
-	UseTime        uint32 `json:"useTime"`
-	CurElectricity uint32 `json:"curElectricity"`
-	ChipReset      uint16 `json:"chipReset"`
-	MaxElectricity uint16 `json:"maxElectricity"`
-	ErrCode        uint8  `json:"errCode"`
-	Enable         uint8  `json:"enable"`
-	Behavior       uint8  `json:"behavior"`
+	Id             uint8  `json:"id"`				//端口ID
+	Token          uint32 `json:"token"`			//令牌
+	MaxEnergy      uint32 `json:"maxEnergy"`		//最大充电电量
+	UseEnergy      uint32 `json:"useEnergy"`		//当前已冲电量
+	MaxTime        uint32 `json:"maxTime"`			//最大充电时间
+	UseTime        uint32 `json:"useTime"`			//当前已冲时间
+	CurElectricity uint32 `json:"curElectricity"`	//最大充电电流
+	MaxElectricity uint16 `json:"maxElectricity"`	//当前充电电流
+	ChipReset      uint16 `json:"chipReset"`		//芯片复位统计
+	ErrCode        uint8  `json:"errCode"`			//错误码
+	Enable         uint8  `json:"enable"`			//是否启用
+	Behavior       uint8  `json:"behavior"`			//最后状态行为
 }
 
 type ComList struct {
-	Signal         uint8
-	ComNum         uint8
-	ComID          []byte
-	ComPort        []interface{}
-	ComBehavior    uint8
-	ComProtoVer    uint16
-	UseEnergy      uint32
-	UseElectricity uint32
-	EnableCount    uint8
+	Signal         uint8			//设备网络信号
+	ComNum         uint8			//端口数量
+	ComID          []byte			//端口ID数列
+	ComPort        []interface{}	//端口数据
+	ComBehavior    uint8			//上报行为
+	ComProtoVer    uint16			//上报协议版本
+	UseEnergy      uint32			//当前使用电量
+	UseElectricity uint32			//当前使用电流
+	EnableCount    uint8			//充电统计
 }
 
 type JosnPacket struct {
@@ -137,7 +149,6 @@ type JosnPacket struct {
 func (update *UpdateState) Print() (retString string) {
 	retString = "update_state"
 	return
-
 }
 
 func (result *TransferResult) Print() (retString string) {
@@ -216,6 +227,37 @@ func (taskStop *ComTaskStopTransfer) Print() (retString string) {
 		buffer.WriteString(comString)
 	}
 	retString = buffer.String()
+	return
+}
+
+func (taskStatusQuery *ComTaskStatusQueryTransfer) Print() (retString string) {
+	var buffer bytes.Buffer
+	var comString string
+
+	if taskStatusQuery != nil {
+		if taskStatusQuery.comID < 10 {
+			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> comID:%02d\n", taskStatusQuery.comID)
+		} else {
+			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> Query All Com:%02d\n", taskStatusQuery.comID)
+		}
+		buffer.WriteString(comString)
+	}
+	retString = buffer.String()
+	return
+}
+
+func (taskSetConfig *DeviceONLoadTimeSetConfigTransfer) Print() (retString string) {
+	var buffer bytes.Buffer
+	if taskSetConfig != nil {
+		comString := fmt.Sprintf("DeviceONLoadTimeSetConfigTransfer----------> on_load time:%02d\n", taskSetConfig.time)
+		buffer.WriteString(comString)
+	}
+	retString = buffer.String()
+	return
+}
+
+func (restart *DeviceReStartTaskTransfer) Print() (retString string) {
+	retString = "reStart Device"
 	return
 }
 

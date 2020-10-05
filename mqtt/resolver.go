@@ -22,6 +22,25 @@ func BinaryConversionToTaskStopTransfer(binaryData []byte) (instance *ComTaskSto
 	return
 }
 
+func BinaryConversionToTaskStatusQueryTransfer(binaryData []byte) (instance *ComTaskStatusQueryTransfer) {
+	instance = &ComTaskStatusQueryTransfer{}
+	bytesBuf := bytes.NewBuffer(binaryData)
+	instance.comID = (GetUint8(bytesBuf))
+	return
+}
+
+func BinaryConversionToTaskSetConfigTransfer(binaryData []byte) (instance *DeviceONLoadTimeSetConfigTransfer) {
+	instance = &DeviceONLoadTimeSetConfigTransfer{}
+	bytesBuf := bytes.NewBuffer(binaryData)
+	instance.time = (GetUint8(bytesBuf))
+	return
+}
+
+func BinaryConversionToReStartDeviceTaskTransfer(binaryData []byte) (instance *DeviceReStartTaskTransfer) {
+	instance = &DeviceReStartTaskTransfer{}
+	return
+}
+
 func getTransferVersion(length int) (version uint16) {
 	version = 0
 	if length == MIN_PROTO_VERSION0 || length == MAX_PROTO_VERSION0 {
@@ -112,13 +131,16 @@ func BinaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 		instance = BinaryConversionToTaskStartTransfer(binaryData)
 		break
 	case GISUNLINK_DEVIDE_STATUS: //查询
+		instance = BinaryConversionToTaskStatusQueryTransfer(binaryData)
 		break
 	case GISUNLINK_EXIT_CHARGE_TASK: //终止
 		instance = BinaryConversionToTaskStopTransfer(binaryData)
 		break
 	case GISUNLINK_SET_CONFIG: //配置
+		instance = BinaryConversionToTaskSetConfigTransfer(binaryData)
 		break
 	case GISUNLINK_RESTART: //重启
+	instance = BinaryConversionToReStartDeviceTaskTransfer(binaryData)
 		break
 	//上报
 	case GISUNLINK_START_CHARGE: //开始
@@ -149,6 +171,7 @@ func BinaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 		instance = BinaryConversionToComList(binaryData, GISUNLINK_STOP_CHARGE)
 		break
 	case GISUNLINK_COM_NO_UPDATE: //参数没有刷新
+		instance = BinaryConversionToComList(binaryData, GISUNLINK_COM_NO_UPDATE)
 		break
 	}
 	return

@@ -8,13 +8,10 @@ import (
 	"strings"
 )
 
-const GISUNLINK_RECV_TOPIC = "/device"
-const GISUNLINK_SEND_TOPIC = "/device_state"
-
 const DEVICE_INFO = "device_info"
 const TRANSFER = "transfer"
-const TRANSFER_RESULT = "transfer_result"
-const FIRMWARE_UPDATE = "update_state"
+const TRANSFER_RESULT = "resp"
+const FIRMWARE_UPDATE = "update_ver"
 
 const (
 	COM_NO_WORKING     = 0

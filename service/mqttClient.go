@@ -81,12 +81,19 @@ func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 }
 
 func saveTransferData(serverNode string, device_sn string, packet *Packet) {
-	comList := packet.JsonData.(*ComList)
+	var comNum int64 = 0
+	switch packet.Json.Behavior {
+	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
+		comList := packet.JsonData.(*ComList)
+		comNum = int64(comList.ComNum)
+		break
+	}
+
 	log := &deviceModel.DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
 		TransferAct:  packet.Json.Act,
 		DeviceSN:     device_sn,
-		ComNum:       int64(comList.ComNum),
+		ComNum:       comNum,
 		TransferData: packet.Json.Data,
 		Behavior:     int64(packet.Json.Behavior),
 		ServerNode:   serverNode,
@@ -104,7 +111,7 @@ func (msg *MqMsg) ExecTask() error {
 		deviceSN := GetDeviceSN(msg.Topic)
 		saveTransferData(msg.Broker, deviceSN, packet)
 		behaviorHandle(packet, deviceSN, string(msg.Payload))
-		MqttLog("[", msg.Broker, "] =========>>", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
+		MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 		MqttLog(packet.JsonData.(Protocol).Print())
 	} else {
 		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)

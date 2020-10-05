@@ -56,7 +56,6 @@ func MessageHandler(Payload []byte) (ok bool, packet *Packet) {
 		ok = true
 		packet = &Packet{}
 		packet.Json = Json
-		//fmt.Println(Json)
 		packet.AnalysisAction()
 		return
 	}

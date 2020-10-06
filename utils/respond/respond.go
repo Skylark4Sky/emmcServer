@@ -29,7 +29,7 @@ var retType = map[int64]string{
 
 type MessageEntity struct {
 	Code              int64       `json:"code"`
-	CurrentTimeMillis int64       `json:"currentTimeMillis"`
+	CurrentTimeMillis uint64      `json:"currentTimeMillis"`
 	Msg               string      `json:"msg"`
 	Data              interface{} `json:"data"`
 }
@@ -48,7 +48,7 @@ func messageBuilder(retCode int64, msg interface{}, data interface{}) *MessageEn
 		}
 
 		entity := &MessageEntity{}
-		entity.CurrentTimeMillis = GetTimestampMs()
+		entity.CurrentTimeMillis = uint64(GetTimestampMs())
 		entity.Code = retCode
 
 		//code != Success copy error msg

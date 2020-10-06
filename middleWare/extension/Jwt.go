@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	jwtCtxUidKey = "authedUserId"
+	JwtCtxUidKey = "authedUserId"
 	bearerLength = len("Bearer ")
 )
 
@@ -33,7 +33,7 @@ type JwtObj struct {
 	ExpireTs int64     `json:"expire_ts"`
 }
 
-func jwtTokenVerify(tokenString string) (uint, error) {
+func jwtTokenVerify(tokenString string) (int64, error) {
 	if tokenString == "" {
 		return 0, errors.New("no token is found in Authorization Bearer")
 	}
@@ -54,7 +54,7 @@ func jwtTokenVerify(tokenString string) (uint, error) {
 		return 0, errors.New("token's issuer is wrong")
 	}
 	uid, err := strconv.ParseUint(claims.Id, 10, 64)
-	return uint(uid), err
+	return int64(uid), err
 }
 
 func JwtGenerateToken(obj interface{}, userID int64) (*JwtObj, error) {
@@ -97,7 +97,6 @@ func JwtIntercept(context *gin.Context) {
 		return
 	}
 
-	context.Set(jwtCtxUidKey, userId)
+	context.Set(JwtCtxUidKey, userId)
 	context.Next()
-	//	fmt.Println(token)
 }

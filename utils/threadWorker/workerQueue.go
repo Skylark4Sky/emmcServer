@@ -102,7 +102,7 @@ func GetGoroutineID() uint64 {
 	return n
 }
 
-func InsertAsynTask(jobTask Job) {
+func InsertAsyncTask(jobTask Job) {
 	jobQueue <- jobTask
 }
 

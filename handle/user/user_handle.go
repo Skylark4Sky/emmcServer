@@ -7,7 +7,6 @@ import (
 	. "GoServer/model/user"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
-	. "GoServer/utils/threadWorker"
 	. "GoServer/utils/time"
 	"github.com/gin-gonic/gin"
 )
@@ -42,6 +41,18 @@ type UserLogin struct {
 	Pwsd     string `json:"pwsd"`
 }
 
+//小程序更新用户信息
+type WeAppUptdae struct {
+	NickName string `json:"nickName"`
+	Gender   int8   `json:"gender"`
+	Language string `json:"language"`
+	Face200  string `json:"avatarUrl"`
+	City     string `json:"city"`
+	Province string `json:"province"`
+	Country  string `json:"country"`
+	UserID   int64  `json:"userID"`
+}
+
 func createLoginRespond(entity *UserBase) *UserLoginRespond {
 	return &UserLoginRespond{
 		UserID:    entity.UID,
@@ -74,61 +85,51 @@ func getLoginType(account string, entity *UserBase) UserType {
 }
 
 func createLoginLog(ctx *gin.Context, Command int8, loginType UserType, userID int64) {
-	var task AsynSQLTask
 	var log UserLoginLog
-
 	log.Create(ctx.ClientIP(), Command, loginType, userID)
-	task.Entity = log
-	var work Job = &task
-	InsertAsynTask(work)
+	CreateAsyncSQLTask(ASYNC_USER_LOGIN_LOG, log)
 }
 
-func updateAuthTime(entity *UserAuth) {
-	var task AsynSQLTask
-	task.Entity = *entity
-	var work Job = &task
-	InsertAsynTask(work)
+func updateAuthTime(entity UserAuth) {
+	CreateAsyncSQLTask(ASYNC_UP_USER_AUTH_TIME, entity)
 }
 
-func createNewWechat(ip string, user *UserBase, M *WeAppLogin) error {
-	tx := ExecSQL().Begin()
-
-	//建立新用户
-	if err := tx.Create(user).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	auth := &UserAuth{
+func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
+	// 用户授权
+	auth := UserAuth{
 		UID:          user.UID,
 		IdentityType: int8(WECHAT),
 		Identifier:   M.OpenID,
 		Certificate:  M.SessionKey,
-		CreateTime:   GetTimestamp(),
+		CreateTime:   user.CreateTime,
 	}
 
-	//登记授权
-	if err := tx.Create(&auth).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+	CreateAsyncSQLTask(ASYNC_CREATE_USER_AUTH, auth)
 
 	// 登记日志
-	log := &UserRegisterLog{
+	log := UserRegisterLog{
 		UID:            user.UID,
 		RegisterMethod: int8(WECHAT),
-		RegisterTime:   GetTimestamp(),
+		RegisterTime:   user.CreateTime,
 		RegisterIP:     ip,
-		//	RegisterClient string
 	}
 
-	if err := tx.Create(&log).Error; err != nil {
-		tx.Rollback()
-		return err
+	CreateAsyncSQLTask(ASYNC_CREATE_USER_REGISTER_LOG, log)
+
+	// 拓展字段
+	extra := UserExtra{
+		UID:        user.UID,
+		CreateTime: user.CreateTime,
 	}
 
-	tx.Commit()
-	return nil
+	CreateAsyncSQLTask(ASYNC_CREATE_USER_EXTRA, extra)
+
+	// 地址
+	location := UserLocation{
+		UID: user.UID,
+	}
+
+	CreateAsyncSQLTask(ASYNC_CREATE_USER_LOCATION, location)
 }
 
 // 普通登录
@@ -179,24 +180,51 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 	if !hasRecord {
 		// 建立新用户
 		user.CreateByDefaultInfo(WECHAT)
-		if err := createNewWechat(ctx.ClientIP(), &user, M); err != nil {
+
+		lastID, err := CreateSQLAndRetLastID(user)
+
+		if err != nil {
 			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 
+		user.UID = lastID
+
+		//建立其它关联表
+		createNewWechatUser(ctx.ClientIP(), &user, M)
 	} else {
 		entity.UpdateTime = GetTimestamp()
-		updateAuthTime(entity)
+		updateAuthTime(*entity)
 		if err := ExecSQL().Where("uid = ?", entity.UID).First(&user).Error; err != nil {
 			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 		}
 	}
 
-	JwtData, err := JwtGenerateToken(createLoginRespond(&user), entity.UID)
+	JwtData, err := JwtGenerateToken(createLoginRespond(&user), user.UID)
+
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, entity.UID)
+		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, user.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, entity.UID)
+	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, user.UID)
 	return JwtData, nil
+}
+
+func (weApp *WeAppUptdae) Save() {
+	userBase := UserBase{
+		NickName: weApp.NickName,
+		Gender:   weApp.Gender,
+		Face200:  weApp.Face200,
+	}
+
+	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_INFO, weApp.UserID, userBase)
+
+	userLocation := UserLocation{
+		CurrNation:   weApp.Country,
+		CurrProvince: weApp.Province,
+		CurrCity:     weApp.City,
+	}
+
+	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_LOCAL, weApp.UserID, userLocation)
+	//	Language string `json:"language"`
 }

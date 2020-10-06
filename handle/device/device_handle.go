@@ -6,7 +6,6 @@ import (
 	. "GoServer/model/device"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
-	. "GoServer/utils/threadWorker"
 	. "GoServer/utils/time"
 	"github.com/gin-gonic/gin"
 )
@@ -26,13 +25,9 @@ type FirmwareInfo struct {
 }
 
 func createConnectLog(ctx *gin.Context, device_id int64, accessway AccesswayType, moduleSN string) {
-	var task AsynSQLTask
 	var log DeviceConnectLog
-
 	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
-	task.Entity = log
-	var work Job = &task
-	InsertAsynTask(work)
+	CreateAsyncSQLTask(ASYNC_DEV_CONNECT_LOG, log)
 }
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {

@@ -2,6 +2,7 @@ package action
 
 import (
 	. "GoServer/handle/user"
+	. "GoServer/middleWare/extension"
 	. "GoServer/utils/config"
 	. "GoServer/utils/respond"
 	"encoding/json"
@@ -91,4 +92,25 @@ func WechatLogin(ctx *gin.Context) {
 	}
 
 	RespondMessage(ctx, CreateMessage(SUCCESS, data))
+}
+
+func WeChatUpdateUserInfo(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
+
+	var weApp WeAppUptdae
+	if err := ctx.ShouldBind(&weApp); err != nil {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		return
+	}
+
+	if userID != weApp.UserID {
+		RespondMessage(ctx, CreateErrorMessage(SYSTEM_ERROR, "参数错误"))
+		return
+	}
+
+	//更新数据
+	weApp.Save()
+
+	//返回成功
+	RespondMessage(ctx, nil)
 }

@@ -19,6 +19,7 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 
 		authUser := user.Use(JwtIntercept)
 		{
+			authUser.POST("setWeAppUser", action.WeChatUpdateUserInfo)
 			authUser.POST("modify", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
 			authUser.POST("info", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
 		}

@@ -33,8 +33,8 @@ type UserAuth struct {
 	ID           int64  `json:"id" gorm:"pk autoincr BIGINT(20) 'id'"`
 	UID          int64  `json:"uid" gorm:"not null default 0 comment('用户id') BIGINT(20) 'uid'"`
 	IdentityType int8   `json:"identity_type" gorm:"default 1 comment('1手机号 2邮箱 3用户名 4qq 5微信 6腾讯微博 7新浪微博') TINYINT(1) 'identity_type'"`
-	Identifier   string `json:"identifier" gorm:"default 'NULL' comment('手机号 邮箱 用户名或第三方应用的唯一标识') VARCHAR(50) 'identifier'"`
-	Certificate  string `json:"certificate" gorm:"default 'NULL' comment('密码凭证(站内的保存密码，站外的不保存或保存token)') VARCHAR(20) 'certificate'"`
+	Identifier   string `json:"identifier" gorm:"default 'NULL' comment('手机号 邮箱 用户名或第三方应用的唯一标识') VARCHAR(64) 'identifier'"`
+	Certificate  string `json:"certificate" gorm:"default 'NULL' comment('密码凭证(站内的保存密码，站外的不保存或保存token)') VARCHAR(64) 'certificate'"`
 	CreateTime   int    `json:"create_time" gorm:"not null default 0 comment('绑定时间') INT(14) 'create_time'"`
 	UpdateTime   int    `json:"update_time" gorm:"not null default 0 comment('更新绑定时间') INT(14) 'update_time'"`
 }
@@ -94,15 +94,15 @@ type UserInfoUpdate struct {
 
 // UserLocation 用户定位表
 type UserLocation struct {
-	UID          int64  `json:"uid" gorm:"not null pk comment('用户ID') BIGINT(20) 'uid'"`
-	CurrNation   string `json:"curr_nation" gorm:"default 'NULL' comment('所在地国') VARCHAR(10) 'curr_nation'"`
-	CurrProvince string `json:"curr_province" gorm:"default 'NULL' comment('所在地省') VARCHAR(10) 'curr_province'"`
-	CurrCity     string `json:"curr_city" gorm:"default 'NULL' comment('所在地市') VARCHAR(10) 'curr_city'"`
-	CurrDistrict string `json:"curr_district" gorm:"default 'NULL' comment('所在地地区') VARCHAR(20) 'curr_district'"`
-	Location     string `json:"location" gorm:"default 'NULL' comment('具体地址') VARCHAR(255) 'location'"`
-	Longitude    string `json:"longitude" gorm:"default NULL comment('经度') DECIMAL(10,6) 'longitude'"`
-	Latitude     string `json:"latitude" gorm:"default NULL comment('纬度') DECIMAL(10,6) 'latitude'"`
-	UpdateTime   int    `json:"update_time" gorm:"not null default 0 comment('修改时间') INT(11) 'update_time'"`
+	UID          int64   `json:"uid" gorm:"not null pk comment('用户ID') BIGINT(20) 'uid'"`
+	CurrNation   string  `json:"curr_nation" gorm:"default 'NULL' comment('所在地国') VARCHAR(10) 'curr_nation'"`
+	CurrProvince string  `json:"curr_province" gorm:"default 'NULL' comment('所在地省') VARCHAR(10) 'curr_province'"`
+	CurrCity     string  `json:"curr_city" gorm:"default 'NULL' comment('所在地市') VARCHAR(10) 'curr_city'"`
+	CurrDistrict string  `json:"curr_district" gorm:"default 'NULL' comment('所在地地区') VARCHAR(20) 'curr_district'"`
+	Location     string  `json:"location" gorm:"default 'NULL' comment('具体地址') VARCHAR(255) 'location'"`
+	Longitude    float64 `json:"longitude" gorm:"default NULL comment('经度') DECIMAL(10,6) 'longitude'"`
+	Latitude     float64 `json:"latitude" gorm:"default NULL comment('纬度') DECIMAL(10,6) 'latitude'"`
+	UpdateTime   int     `json:"update_time" gorm:"not null default 0 comment('修改时间') INT(11) 'update_time'"`
 }
 
 // UserLoginLog 登陆日志表

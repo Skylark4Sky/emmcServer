@@ -124,7 +124,7 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 	servers := rOps.Servers()
 	broker := servers[0]
 	var work Job = &MqMsg{Broker: broker.Host, Topic: msg.Topic(), Payload: msg.Payload()}
-	InsertAsynTask(work)
+	InsertAsyncTask(work)
 }
 
 func GetMqttClient(brokerHost string) *M.Client {

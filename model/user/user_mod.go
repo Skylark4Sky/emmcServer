@@ -66,6 +66,7 @@ type UserBase struct {
 type UserExtra struct {
 	UID           int64  `json:"uid" gorm:"not null pk comment('用户 ID') BIGINT(20) 'uid'"`
 	Vendor        string `json:"vendor" gorm:"default 'NULL' comment('手机厂商：apple|htc|samsung，很少用') VARCHAR(64) 'vendor'"`
+	Language      string `json:"language" gorm:"default 'NULL' comment('客户端语言设置') VARCHAR(32) 'language'"`
 	ClientName    string `json:"client_name" gorm:"default 'NULL' comment('客户端名称，如hjskang') VARCHAR(50) 'client_name'"`
 	ClientVersion string `json:"client_version" gorm:"default 'NULL' comment('客户端版本号，如7.0.1') VARCHAR(50) 'client_version'"`
 	OsName        string `json:"os_name" gorm:"default 'NULL' comment('设备号:android|ios') VARCHAR(16) 'os_name'"`

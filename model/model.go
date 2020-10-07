@@ -19,6 +19,7 @@ const (
 	ASYNC_DEV_CONNECT_LOG                           //连接日志
 	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址
 	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料
+	ASYNC_UPDATA_USER_EXTRA                         //更新用户扩展资料
 	ASYNC_CREATE_USER_AUTH                          //建立授权记录
 	ASYNC_CREATE_USER_REGISTER_LOG                  //建立用户注册日志
 	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录
@@ -80,26 +81,29 @@ func (task *AsyncSQLTask) ExecTask() error {
 			SystemLog("update userBase Error:", zap.Error(err))
 		}
 		break
+	case ASYNC_UPDATA_USER_EXTRA:
+		entity := task.Entity.(user.UserExtra)
+		if err := ExecSQL().Model(&entity).Where("uid = ?", task.RecordID).Updates(entity).Error; err != nil {
+			SystemLog("update userExtra Error:", zap.Error(err))
+		}
+		break
 	case ASYNC_CREATE_USER_AUTH:
 		entity := task.Entity.(user.UserAuth)
 		if err := ExecSQL().Create(&entity).Error; err != nil {
 			SystemLog("add UserAuth Error", zap.Error(err))
 		}
-
 		break
 	case ASYNC_CREATE_USER_REGISTER_LOG:
 		entity := task.Entity.(user.UserRegisterLog)
 		if err := ExecSQL().Create(&entity).Error; err != nil {
 			SystemLog("add UserRegisterLog Error", zap.Error(err))
 		}
-
 		break
 	case ASYNC_CREATE_USER_EXTRA:
 		entity := task.Entity.(user.UserExtra)
 		if err := ExecSQL().Create(&entity).Error; err != nil {
 			SystemLog("add UserExtra Error", zap.Error(err))
 		}
-
 		break
 	case ASYNC_CREATE_USER_LOCATION:
 		entity := task.Entity.(user.UserLocation)

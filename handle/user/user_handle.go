@@ -211,10 +211,14 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 }
 
 func (weApp *WeAppUptdae) Save() {
+
+	var curTimestam int = GetTimestamp()
+
 	userBase := UserBase{
-		NickName: weApp.NickName,
-		Gender:   weApp.Gender,
-		Face200:  weApp.Face200,
+		NickName:   weApp.NickName,
+		Gender:     weApp.Gender,
+		Face200:    weApp.Face200,
+		UpdateTime: curTimestam,
 	}
 
 	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_INFO, weApp.UserID, userBase)
@@ -223,8 +227,17 @@ func (weApp *WeAppUptdae) Save() {
 		CurrNation:   weApp.Country,
 		CurrProvince: weApp.Province,
 		CurrCity:     weApp.City,
+		UpdateTime:   curTimestam,
 	}
 
 	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_LOCAL, weApp.UserID, userLocation)
+
+	userExtra := UserExtra{
+		Language:   weApp.Language,
+		UpdateTime: curTimestam,
+	}
+
+	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_USER_EXTRA, weApp.UserID, userExtra)
+
 	//	Language string `json:"language"`
 }

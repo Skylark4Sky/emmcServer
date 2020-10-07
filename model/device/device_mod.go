@@ -41,6 +41,7 @@ type DeviceInfo struct {
 	Remark        string 		`json:"remark" gorm:"default 'NULL' comment('设备备注') VARCHAR(255) 'remark'"`
 	Localtion     string 		`json:"localtion" gorm:"default 'NULL' comment('设备所在地址') VARCHAR(255) 'localtion'"`
 	CreateTime    int64  		`json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
+	UpdateTime 	  int64         `json:"update_time" gorm:"default NULL comment('最后一次更新时间') BIGINT(13) 'update_time'"`
 }
 
 type DeviceTransferLog struct {
@@ -59,6 +60,7 @@ type DeviceTransferLog struct {
 type CreateDeviceInfo struct {
 	Module ModuleInfo
 	Device DeviceInfo
+	Log ModuleConnectLog
 }
 
 func (log *ModuleConnectLog) Create(deviceID int64, accessway AccesswayType, moduleSN string, ip string) {
@@ -85,6 +87,12 @@ func (device *DeviceInfo) Create(sn string,version string) {
 func (module *ModuleInfo) Update(module_version string) {
 	module.ModuleVersion = module_version
 	module.UpdateTime = GetTimestampMs()
+}
+
+func (device *DeviceInfo) Update(id int64,version string,time int64) {
+	device.ID = id
+	device.DeviceVersion = version
+	device.UpdateTime = time
 }
 
 func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_sn string, data string, serverIP string, behavior int64, transferTime int64) {

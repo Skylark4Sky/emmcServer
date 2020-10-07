@@ -20,6 +20,7 @@ const (
 	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间
 	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志
 	ASYNC_UP_MODULE_VERSION							//更新模组版本
+	ASYNC_UP_DEVICE_VERSION							//更新设备版本
 	ASYNC_DEV_AND_MODULE_CREATE						//建立设备与模组关系
 	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址
 	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料
@@ -99,6 +100,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 
 	device := entity.Device
 	module := entity.Module
+	log := entity.Log
 
 	err := ExecSQL().Where("device_sn = ?", device.DeviceSn).First(&device).Error
 	var hasRecord = true
@@ -114,11 +116,29 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 
 	if hasRecord {
 		//设备已存在，单独建立模组信息
+		tx := ExecSQL().Begin()
+
 		module.DeviceID = device.ID
-		if err := ExecSQL().Create(&module).Error; err != nil {
+		if err := tx.Create(&module).Error; err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
+			tx.Rollback()
 			return err
 		}
+		var id []int64
+		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+			SystemLog("get LastID Error", zap.Error(err))
+			tx.Rollback()
+			return err
+		}
+
+		var ModuleID int64 = id[0]
+		log.ModuleID = ModuleID
+		if err := tx.Create(&log).Error; err != nil {
+			SystemLog("add module connect log Error", zap.Error(err))
+			tx.Rollback()
+			return err
+		}
+		tx.Commit()
 	} else {
 		//事务建立 模组 和 设备信息
 		var id []int64
@@ -139,6 +159,20 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 		module.DeviceID = DeviceID
 		if err := tx.Create(&module).Error; err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
+			tx.Rollback()
+			return err
+		}
+
+		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+			SystemLog("get LastID Error", zap.Error(err))
+			tx.Rollback()
+			return err
+		}
+
+		var ModuleID int64 = id[0]
+		log.ModuleID = ModuleID
+		if err := tx.Create(&log).Error; err != nil {
+			SystemLog("add module connect log Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
@@ -190,6 +224,13 @@ func (task *AsyncSQLTask) ExecTask() error {
 		updateMap := map[string]interface{}{"module_version": entity.ModuleVersion, "update_time": entity.UpdateTime}
 		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
 			SystemLog("update module version Error", zap.Error(err))
+		}
+		break
+	case ASYNC_UP_DEVICE_VERSION:
+		entity := task.Entity.(device.DeviceInfo)
+		updateMap := map[string]interface{}{"device_version": entity.DeviceVersion, "update_time": entity.UpdateTime}
+		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
+			SystemLog("update device version Error", zap.Error(err))
 		}
 		break
 	case ASYNC_DEV_AND_MODULE_CREATE:

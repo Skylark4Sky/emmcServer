@@ -27,14 +27,24 @@ var retType = map[int64]string{
 	SYSTEM_ERROR:       "",
 }
 
-type MessageEntity struct {
+type MessageSucceedEntityWithData struct {
 	Code              int64       `json:"code"`
 	CurrentTimeMillis uint64      `json:"currentTimeMillis"`
-	Msg               string      `json:"msg"`
 	Data              interface{} `json:"data"`
 }
 
-func messageBuilder(retCode int64, msg interface{}, data interface{}) *MessageEntity {
+type MessageSucceedEntity struct {
+	Code              int64  `json:"code"`
+	CurrentTimeMillis uint64 `json:"currentTimeMillis"`
+}
+
+type MessageFailedEntity struct {
+	Code              int64  `json:"code"`
+	CurrentTimeMillis uint64 `json:"currentTimeMillis"`
+	Msg               string `json:"msg"`
+}
+
+func messageBuilder(retCode int64, msg interface{}, data interface{}) interface{} {
 	retMsg, ok := retType[retCode]
 	if ok {
 		var retString string
@@ -47,28 +57,36 @@ func messageBuilder(retCode int64, msg interface{}, data interface{}) *MessageEn
 			retString = retMsg
 		}
 
-		entity := &MessageEntity{}
-		entity.CurrentTimeMillis = uint64(GetTimestampMs())
-		entity.Code = retCode
-
 		//code != Success copy error msg
 		if retCode != SUCCESS {
+			entity := &MessageFailedEntity{}
+			entity.CurrentTimeMillis = uint64(GetTimestampMs())
+			entity.Code = retCode
 			entity.Msg = retString
-		} else if data != nil {
-			//else  copy the user data
-			entity.Data = data
+			return entity
+		} else {
+			if data != nil {
+				entity := &MessageSucceedEntityWithData{}
+				entity.CurrentTimeMillis = uint64(GetTimestampMs())
+				entity.Code = retCode
+				entity.Data = data
+				return entity
+			} else {
+				entity := &MessageSucceedEntity{}
+				entity.CurrentTimeMillis = uint64(GetTimestampMs())
+				entity.Code = retCode
+				return entity
+			}
 		}
-
-		return entity
 	}
 	return nil
 }
 
-func CreateErrorMessage(retCode int64, msg interface{}) *MessageEntity {
+func CreateErrorMessage(retCode int64, msg interface{}) interface{} {
 	return messageBuilder(retCode, msg, nil)
 }
 
-func CreateMessage(retCode int64, data interface{}) *MessageEntity {
+func CreateMessage(retCode int64, data interface{}) interface{} {
 	return messageBuilder(retCode, nil, data)
 }
 

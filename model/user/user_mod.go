@@ -132,6 +132,14 @@ type UserRegisterLog struct {
 	RegisterClient string `json:"register_client" gorm:"default 'NULL' comment('注册客户端') VARCHAR(16) 'register_client'"`
 }
 
+type CreateUserInfo struct {
+	Auth     UserAuth //第三方授权登录需要
+	Base     UserBase
+	Extra    UserExtra
+	Location UserLocation
+	Log      UserRegisterLog
+}
+
 func (auth *UserAuth) Create(userID int64, IDentityType int8, IDentifier string, Certificate string) {
 	auth.UID = userID
 	auth.IdentityType = IDentityType
@@ -151,7 +159,7 @@ func (login *UserLoginLog) Create(ip string, Command int8, loginType UserType, u
 func (m *UserBase) CreateByDefaultInfo(userType UserType) {
 	m.NickName = RandomDigitAndLetters(12)
 	m.Gender = UNKnown_Gender
-	m.UserRole = 1
+	m.UserRole = 2
 	m.RegisterSource = int8(userType)
 	m.CreateTime = GetTimestamp()
 }

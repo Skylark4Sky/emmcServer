@@ -5,11 +5,77 @@ import (
 	. "GoServer/middleWare/extension"
 	. "GoServer/utils/config"
 	. "GoServer/utils/respond"
+	. "GoServer/utils/security"
+	. "GoServer/utils/string"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 )
+
+//用户注册
+func Register(ctx *gin.Context) {
+	var user UserRegister
+	if err := ctx.ShouldBind(&user); err != nil {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		return
+	}
+
+	if user.Name == "" && user.Mobile == "" && user.Email == "" {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
+		return
+	}
+
+	userNameLen := len([]rune(user.Name))
+	if userNameLen > 0 && userNameLen < 6 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "用户名小于6位"))
+		return
+	}
+
+	PwsdLen := len([]rune(user.Pwsd))
+
+	if PwsdLen == 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "密码不能空"))
+		return
+	} else if PwsdLen > 0 && PwsdLen < 6 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "密码小于6位"))
+		return
+	}
+
+	Pwsd, err := PasswordHash(user.Pwsd)
+	if err != nil {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
+		return
+	}
+
+	user.Pwsd = Pwsd
+
+	MobileLen := len([]rune(user.Mobile))
+	if MobileLen > 0 && VerifyMobileFormat(user.Mobile) == false {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "手机格式错误"))
+		return
+	}
+
+	EmailLen := len([]rune(user.Email))
+	if EmailLen > 0 && VerifyEmailFormat(user.Email) == false {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "邮箱格式错误"))
+		return
+	}
+
+	hasRecord, err := CheckUserIsExist(&user)
+
+	if err != nil {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		return
+	}
+
+	if hasRecord == true {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "用户已存在"))
+		return
+	}
+
+	RespondMessage(ctx, user.Register(ctx))
+}
 
 //普通用户登录
 func Login(ctx *gin.Context) {
@@ -17,6 +83,7 @@ func Login(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&userLogin); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
+		return
 	}
 
 	if userLogin.Account == "" {
@@ -32,7 +99,7 @@ func Login(ctx *gin.Context) {
 	data, err := userLogin.Login(ctx)
 
 	if err != nil {
-		RespondMessage(ctx, *err)
+		RespondMessage(ctx, err)
 		return
 	}
 
@@ -87,7 +154,7 @@ func WechatLogin(ctx *gin.Context) {
 	data, loginErr := weApp.Login(ctx)
 
 	if loginErr != nil {
-		RespondMessage(ctx, *loginErr)
+		RespondMessage(ctx, loginErr)
 		return
 	}
 
@@ -112,5 +179,5 @@ func WeChatUpdateUserInfo(ctx *gin.Context) {
 	weApp.Save()
 
 	//返回成功
-	RespondMessage(ctx, nil)
+	RespondMessage(ctx, CreateMessage(SUCCESS, nil))
 }

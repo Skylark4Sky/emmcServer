@@ -12,18 +12,8 @@ import (
 	//	"time"
 )
 
-var (
-	key []byte = []byte("78hrey23y28ogs89")
-	iv  []byte = []byte("1234567890123456")
-)
-
 //设备登记
 func DeviceConnect(ctx *gin.Context) {
-	//	var urlParam RequestParam
-	//	if err := ctx.ShouldBindQuery(&urlParam); err != nil {
-	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误1"))
-	//		return
-	//	}
 	var postData RequestData
 	if err := ctx.ShouldBind(&postData); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误1"))
@@ -37,7 +27,7 @@ func DeviceConnect(ctx *gin.Context) {
 		return
 	}
 
-	ModuleSN, err := AES_CBCDecrypt(ciphertext, key, iv)
+	ModuleSN, err := AES_CBCDecrypt(ciphertext)
 
 	if err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误3"))

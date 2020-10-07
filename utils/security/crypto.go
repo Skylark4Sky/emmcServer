@@ -6,7 +6,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func AES_CBCDecrypt(cipherText []byte, key []byte, iv []byte) (data string, err error) {
+var (
+	key []byte = []byte("78hrey23y28ogs89")
+	iv  []byte = []byte("1234567890123456")
+)
+
+func AES_CBCDecrypt(cipherText []byte) (data string, err error) {
 	//指定解密算法，返回一个AES算法的Block接口对象
 	block, err := aes.NewCipher(key)
 	if err != nil {

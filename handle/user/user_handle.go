@@ -7,6 +7,7 @@ import (
 	. "GoServer/model/user"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
+	. "GoServer/utils/string"
 	. "GoServer/utils/time"
 	"github.com/gin-gonic/gin"
 )
@@ -29,16 +30,29 @@ type UserLoginRespond struct {
 // 小程序登录结构
 type WeAppLogin struct {
 	Auth       UserAuth
-	Code       string `form:"code"`
+	Code       string `form:"code" json:"code" binding:"required"`
 	OpenID     string
 	SessionKey string
 }
 
-// 登录绑定
+// 用户注册
+type UserRegister struct {
+	Source    int8   `form:"source" json:"source" binding:"required"`
+	Name      string `form:"userName" json:"userName"`
+	Pwsd      string `form:"userPwsd" json:"userPwsd" binding:"required"`
+	NickName  string `form:"nickName" json:"nickName"`
+	Gender    int8   `form:"gender" json:"gender"`
+	Birthday  int64  `form:"birthDay" json:"birthDay"`
+	Signature string `form:"signature" json:"signature"`
+	Mobile    string `form:"mobile" json:"mobile"`
+	Email     string `form:"email" json:"email"`
+}
+
+// 用户登录
 type UserLogin struct {
 	UserBase UserBase
-	Account  string `json:"account"`
-	Pwsd     string `json:"pwsd"`
+	Account  string `form:"account" json:"account" binding:"required"`
+	Pwsd     string `form:"pwsd" json:"pwsd" binding:"required"`
 }
 
 //小程序更新用户信息
@@ -94,18 +108,7 @@ func updateAuthTime(entity UserAuth) {
 	CreateAsyncSQLTask(ASYNC_UP_USER_AUTH_TIME, entity)
 }
 
-func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
-	// 用户授权
-	auth := UserAuth{
-		UID:          user.UID,
-		IdentityType: int8(WECHAT),
-		Identifier:   M.OpenID,
-		Certificate:  M.SessionKey,
-		CreateTime:   user.CreateTime,
-	}
-
-	CreateAsyncSQLTask(ASYNC_CREATE_USER_AUTH, auth)
-
+func createUserExtraInfo(ip string, user *UserBase) {
 	// 登记日志
 	log := UserRegisterLog{
 		UID:            user.UID,
@@ -132,8 +135,101 @@ func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
 	CreateAsyncSQLTask(ASYNC_CREATE_USER_LOCATION, location)
 }
 
+func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
+	// 用户授权
+	auth := UserAuth{
+		UID:          user.UID,
+		IdentityType: int8(WECHAT),
+		Identifier:   M.OpenID,
+		Certificate:  M.SessionKey,
+		CreateTime:   user.CreateTime,
+	}
+
+	CreateAsyncSQLTask(ASYNC_CREATE_USER_AUTH, auth)
+	createUserExtraInfo(ip, user)
+}
+
+func CheckUserIsExist(user *UserRegister) (bool, error) {
+	entity := UserBase{}
+
+	dict := make(map[string]string)
+
+	if user.Name != "" {
+		dict["user_name"] = user.Name
+	}
+
+	if user.Email != "" {
+		dict["email"] = user.Email
+	}
+
+	if user.Mobile != "" {
+		dict["mobile"] = user.Mobile
+	}
+
+	index := 0
+
+	var itemValue []interface{}
+	var condString string = ""
+
+	for key, value := range dict {
+		if index == 0 {
+			condString = StringJoin([]interface{}{key, " = ?"})
+		} else {
+			condString = StringJoin([]interface{}{condString, " OR ", key, " = ?"})
+		}
+		itemValue = append(itemValue, value)
+		index += 1
+	}
+
+	err := ExecSQL().Where(condString, itemValue...).First(&entity).Error
+	var hasRecord = true
+	if err != nil {
+		if IsRecordNotFound(err) {
+			hasRecord = false
+		} else {
+			return hasRecord, err
+		}
+	}
+
+	return hasRecord, nil
+}
+
+func (M *UserRegister) Register(ctx *gin.Context) interface{} {
+
+	var user CreateUserInfo
+	user.Base = UserBase{
+		RegisterSource: M.Source,
+		UserRole:       2,
+		UserName:       M.Name,
+		UserPwsd:       M.Pwsd,
+		NickName:       M.NickName,
+		Gender:         M.Gender,
+		Birthday:       M.Birthday,
+		Signature:      M.Signature,
+		Mobile:         M.Mobile,
+		Email:          M.Email,
+		CreateTime:     GetTimestamp(),
+	}
+
+	user.Log = UserRegisterLog{
+		RegisterMethod: M.Source,
+		RegisterTime:   user.Base.CreateTime,
+		RegisterIP:     ctx.ClientIP(),
+	}
+
+	user.Extra = UserExtra{
+		CreateTime: user.Base.CreateTime,
+	}
+
+	user.Location = UserLocation{}
+
+	CreateAsyncSQLTask(ASYNC_CREATE_NORMAL_USER, user)
+
+	return CreateMessage(SUCCESS, nil)
+}
+
 // 普通登录
-func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
+func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 	entity := &M.UserBase
 	err := ExecSQL().Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).First(&entity).Error
 	if err != nil {
@@ -161,7 +257,7 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 }
 
 //小程序登录
-func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
+func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 	entity := &M.Auth
 	err := ExecSQL().Select("uid").Where("identifier = ?", M.OpenID).First(&entity).Error
 
@@ -211,7 +307,6 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, *MessageEntity) {
 }
 
 func (weApp *WeAppUptdae) Save() {
-
 	var curTimestam int = GetTimestamp()
 
 	userBase := UserBase{
@@ -220,7 +315,6 @@ func (weApp *WeAppUptdae) Save() {
 		Face200:    weApp.Face200,
 		UpdateTime: curTimestam,
 	}
-
 	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_INFO, weApp.UserID, userBase)
 
 	userLocation := UserLocation{
@@ -229,15 +323,11 @@ func (weApp *WeAppUptdae) Save() {
 		CurrCity:     weApp.City,
 		UpdateTime:   curTimestam,
 	}
-
 	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_LOCAL, weApp.UserID, userLocation)
 
 	userExtra := UserExtra{
 		Language:   weApp.Language,
 		UpdateTime: curTimestam,
 	}
-
 	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_USER_EXTRA, weApp.UserID, userExtra)
-
-	//	Language string `json:"language"`
 }

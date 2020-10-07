@@ -14,6 +14,8 @@ type AsyncSQLTaskType uint64
 
 const (
 	UNKNOWN_ASYNC_SQL_TASK         AsyncSQLTaskType = iota
+	ASYNC_CREATE_THIRD_USER                         //建立第三方用户数据
+	ASYNC_CREATE_NORMAL_USER                        //建立用户数据
 	ASYNC_USER_LOGIN_LOG                            //用户登录日志
 	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间
 	ASYNC_DEV_CONNECT_LOG                           //连接日志
@@ -40,6 +42,57 @@ func CreateAsyncSQLTask(asyncType AsyncSQLTaskType, entity interface{}) {
 	InsertAsyncTask(work)
 }
 
+func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error {
+	var id []int64
+	tx := ExecSQL().Begin()
+	if err := tx.Create(&entity.Base).Error; err != nil {
+		SystemLog("add UserBase Error", zap.Error(err))
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+		SystemLog("get LastID Error", zap.Error(err))
+		tx.Rollback()
+		return err
+	}
+
+	var userID int64 = id[0]
+
+	if hasAuth == true {
+		entity.Auth.UID = userID
+		if err := tx.Create(&entity.Auth).Error; err != nil {
+			SystemLog("add UserAuth Error", zap.Error(err))
+			tx.Rollback()
+			return err
+		}
+	}
+
+	entity.Log.UID = userID
+	if err := tx.Create(&entity.Log).Error; err != nil {
+		SystemLog("add UserRegisterLog Error", zap.Error(err))
+		tx.Rollback()
+		return err
+	}
+
+	entity.Extra.UID = userID
+	if err := tx.Create(&entity.Extra).Error; err != nil {
+		SystemLog("add UserExtra Error", zap.Error(err))
+		tx.Rollback()
+		return err
+	}
+
+	entity.Location.UID = userID
+	if err := tx.Create(&entity.Location).Error; err != nil {
+		SystemLog("add UserLocation Error", zap.Error(err))
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
+}
+
 func CreateAsyncSQLTaskWithRecordID(asyncType AsyncSQLTaskType, recordID int64, entity interface{}) {
 	var task AsyncSQLTask
 	task.Entity = entity
@@ -51,6 +104,15 @@ func CreateAsyncSQLTaskWithRecordID(asyncType AsyncSQLTaskType, recordID int64, 
 
 func (task *AsyncSQLTask) ExecTask() error {
 	switch task.Type {
+
+	case ASYNC_CREATE_THIRD_USER:
+		entity := task.Entity.(user.CreateUserInfo)
+		transactionCreateUserInfo(&entity, true)
+		break
+	case ASYNC_CREATE_NORMAL_USER:
+		entity := task.Entity.(user.CreateUserInfo)
+		transactionCreateUserInfo(&entity, false)
+		break
 	case ASYNC_USER_LOGIN_LOG:
 		entity := task.Entity.(user.UserLoginLog)
 		if err := ExecSQL().Create(&entity).Error; err != nil {

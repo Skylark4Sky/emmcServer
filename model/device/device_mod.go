@@ -46,6 +46,7 @@ type DeviceInfo struct {
 
 type DeviceTransferLog struct {
 	ID           int64  `json:"id" gorm:"pk autoincr BIGINT(20) 'id'"`
+	DeviceID     int64  `json:"device_id" gorm:"default NULL comment('对应设备关系') BIGINT(20) 'device_id'"`
 	TransferID   int64  `json:"transfer_id" gorm:"default NULL comment('传输ID') BIGINT(20) 'transfer_id'"`
 	TransferAct  string `json:"transfer_act" gorm:"default NULL comment('设备行为') VARCHAR(32) 'transfer_act'"`
 	DeviceSN     string `json:"device_sn" gorm:"default NULL comment('设备ID') VARCHAR(64) 'device_sn'"`

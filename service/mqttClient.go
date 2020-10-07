@@ -32,7 +32,7 @@ type MqMsg struct {
 	Payload []byte
 }
 
-func behaviorHandle(packet *Packet, cacheKey string, playload string) {
+func behaviorHandle( packet *Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
 		{
@@ -89,8 +89,19 @@ func saveTransferData(serverNode string, device_sn string, packet *Packet) {
 		break
 	}
 
+	rd := Redis().Get()
+	defer rd.Close()
+
+	var deviceID int64 = 0
+	ItemValue := GetRedisItem(rd,"HGET",device_sn,"deviceID")
+	if ItemValue != nil {
+		deviceID = ItemValue.(int64)
+		fmt.Println("%v",ItemValue)
+	}
+
 	log := &deviceModel.DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
+		DeviceID: deviceID,
 		TransferAct:  packet.Json.Act,
 		DeviceSN:     device_sn,
 		ComNum:       comNum,

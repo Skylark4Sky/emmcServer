@@ -5,7 +5,7 @@ import (
 	"GoServer/model/device"
 	"GoServer/model/user"
 	. "GoServer/utils/log"
-
+	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/utils/threadWorker"
 	"go.uber.org/zap"
 )
@@ -96,6 +96,22 @@ func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error 
 	return nil
 }
 
+func updateDeviceIDToRedisByDeviceSN(deviceSN string,deviceID int64) {
+	if deviceSN != "" && deviceID != 0 {
+		rd := Redis().Get()
+		defer rd.Close()
+
+		//更新redis 设备对应ID
+		if SetRedisItem(rd, "HSET", deviceSN, "deviceID", deviceID) != nil {
+			return
+		}
+
+		if SetRedisItem(rd, "expire", deviceSN, 120) != nil {
+			return
+		}
+	}
+}
+
 func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 
 	device := entity.Device
@@ -156,6 +172,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 		}
 
 		var DeviceID int64 = id[0]
+		device.ID = DeviceID
 		module.DeviceID = DeviceID
 		if err := tx.Create(&module).Error; err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
@@ -178,6 +195,9 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 		}
 		tx.Commit()
 	}
+
+	updateDeviceIDToRedisByDeviceSN(device.DeviceSn,device.ID)
+
 	return nil
 }
 
@@ -232,6 +252,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
 			SystemLog("update device version Error", zap.Error(err))
 		}
+		updateDeviceIDToRedisByDeviceSN(entity.DeviceSn,entity.ID)
 		break
 	case ASYNC_DEV_AND_MODULE_CREATE:
 		entity := task.Entity.(device.CreateDeviceInfo)

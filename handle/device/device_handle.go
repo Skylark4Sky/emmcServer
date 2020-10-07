@@ -44,7 +44,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 	}
 
 	if !hasRecord {
-		//创建对应关系
+		//创建对应关系 第一次连接仅建立关系，版本检测下次连接时在进行处理
 		var info CreateDeviceInfo
 		curTimestampMs := GetTimestampMs()
 		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
@@ -59,6 +59,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		CreateAsyncSQLTask(ASYNC_UP_MODULE_VERSION, module)
 		var device DeviceInfo
 		device.Update(module.DeviceID,data.DeviceVersion,module.UpdateTime)
+		device.DeviceSn = data.DeviceSN
 		CreateAsyncSQLTask(ASYNC_UP_DEVICE_VERSION, device)
 		// 检测并返回固件版本
 		// 返回版本升级格式

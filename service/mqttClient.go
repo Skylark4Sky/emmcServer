@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gomodule/redigo/redis"
 	"net/url"
 	"strconv"
 	"strings"
@@ -94,9 +95,9 @@ func saveTransferData(serverNode string, device_sn string, packet *Packet) {
 
 	var deviceID int64 = 0
 	ItemValue := GetRedisItem(rd,"HGET",device_sn,"deviceID")
+	
 	if ItemValue != nil {
-		deviceID = ItemValue.(int64)
-		fmt.Println("%v",ItemValue)
+		deviceID ,_= redis.Int64(ItemValue,nil)
 	}
 
 	log := &deviceModel.DeviceTransferLog{

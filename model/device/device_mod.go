@@ -13,28 +13,34 @@ const (
 	BLUETOOTH
 )
 
-type DeviceConnectLog struct {
-	ID         int64         `json:"id" xorm:"pk autoincr BIGINT(20) 'id'"`
-	DeviceID   int64         `json:"device_id" xorm:"default NULL comment('设备id') BIGINT(20) 'device_id'"`
-	AccessWay  AccesswayType `json:"access_way" xorm:"default NULL comment('接入方式 1 GSM， 2，WIFI 3蓝牙') TINYINT(1) 'access_way'"`
-	ModuleSN   string        `json:"module_sn" xorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
-	IP         string        `json:"ip" xorm:"default 'NULL' comment('连接时IP') VARCHAR(16) 'ip'"`
-	CreateTime int64         `json:"create_time" xorm:"default NULL comment('连接时间') BIGINT(13) 'create_time'"`
+type ModuleConnectLog struct {
+	ID         int64         `json:"id" gorm:"pk autoincr BIGINT(20) 'id'"`
+	ModuleID   int64         `json:"module_id" gorm:"default NULL comment('模组id') BIGINT(20) 'module_id'"`
+	AccessWay  AccesswayType `json:"access_way" gorm:"default NULL comment('接入方式 1 GSM， 2，WIFI 3蓝牙') TINYINT(1) 'access_way'"`
+	ModuleSN   string        `json:"module_sn" gorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
+	IP         string        `json:"ip" gorm:"default 'NULL' comment('连接时IP') VARCHAR(16) 'ip'"`
+	CreateTime int64         `json:"create_time" gorm:"default NULL comment('连接时间') BIGINT(13) 'create_time'"`
 }
+
+type ModuleInfo struct {
+	ID            int64         `json:"id" gorm:"pk autoincr comment('设备ID') BIGINT(20) 'id'"`
+	DeviceID      int64         `json:"device_id" gorm:"default NULL comment('对应设备关系') BIGINT(20) 'device_id'"`
+	AccessWay     AccesswayType `json:"access_way" gorm:"default NULL comment('接入方式') TINYINT(1) 'access_way'"`
+	ModuleSN      string        `json:"module_sn" gorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
+	ModuleVersion string        `json:"module_version" gorm:"default 'NULL' comment('模组固件版本') VARCHAR(32) 'module_version'"`
+	CreateTime    int64         `json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
+	UpdateTime    int64         `json:"update_time" gorm:"default NULL comment('最后一次更新时间') BIGINT(13) 'update_time'"`
+}
+
 
 type DeviceInfo struct {
 	ID            int64         `json:"id" gorm:"pk autoincr comment('设备ID') BIGINT(20) 'id'"`
-	UID           int64         `json:"uid" gorm:"default NULL comment('对应关系用户') BIGINT(20) 'uid'"`
-	AccessWay     AccesswayType `json:"access_way" gorm:"default NULL comment('接入方式') TINYINT(1) 'access_way'"`
-	Type          int8          `json:"type" gorm:"default NULL comment('设备类型') TINYINT(1) 'type'"`
-	ModuleSN      string        `json:"module_sn" gorm:"default 'NULL' comment('模组序列号') VARCHAR(64) 'module_sn'"`
-	DeviceSN      string        `json:"device_sn" gorm:"default 'NULL' comment('设备序列号') VARCHAR(64) 'device_sn'"`
-	Remark        string        `json:"remark" gorm:"default 'NULL' comment('设备备注') VARCHAR(255) 'remark'"`
-	Localtion     string        `json:"localtion" gorm:"default 'NULL' comment('所在位置') VARCHAR(255) 'localtion'"`
-	ModuleVersion string        `json:"module_version" gorm:"default 'NULL' comment('模组固件版本') VARCHAR(32) 'module_version'"`
-	DeviceVersion string        `json:"device_version" gorm:"default 'NULL' comment('设备固件版本') VARCHAR(32) 'device_version'"`
-	CreateTime    int64         `json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
-	UpdateTime    int64         `json:"update_time" gorm:"default NULL comment('最后一次更新时间') BIGINT(13) 'update_time'"`
+	Type          int64  		`json:"type" gorm:"default 0 comment('设备类型') TINYINT(2) 'type'"`
+	DeviceSn      string 		`json:"device_sn" gorm:"default 'NULL' comment('设备序列号') VARCHAR(64) 'device_sn'"`
+	DeviceVersion string 		`json:"device_version" gorm:"default 'NULL' comment('设备固件版本') VARCHAR(32) 'device_version'"`
+	Remark        string 		`json:"remark" gorm:"default 'NULL' comment('设备备注') VARCHAR(255) 'remark'"`
+	Localtion     string 		`json:"localtion" gorm:"default 'NULL' comment('设备所在地址') VARCHAR(255) 'localtion'"`
+	CreateTime    int64  		`json:"create_time" gorm:"default NULL comment('创建时间') BIGINT(13) 'create_time'"`
 }
 
 type DeviceTransferLog struct {
@@ -50,28 +56,35 @@ type DeviceTransferLog struct {
 	CreateTime   int64  `json:"create_time" gorm:"default NULL comment('建立时间') BIGINT(13) 'create_time'"`
 }
 
-func (log *DeviceConnectLog) Create(deviceID int64, accessway AccesswayType, moduleSN string, ip string) {
-	log.DeviceID = deviceID
+type CreateDeviceInfo struct {
+	Module ModuleInfo
+	Device DeviceInfo
+}
+
+func (log *ModuleConnectLog) Create(deviceID int64, accessway AccesswayType, moduleSN string, ip string) {
+	log.ModuleID = deviceID
 	log.AccessWay = accessway
 	log.ModuleSN = moduleSN
 	log.IP = ip
 	log.CreateTime = GetTimestampMs()
 }
 
-func (device *DeviceInfo) Create(accessway AccesswayType, deviceType int8, moduleSN string, deviceSN string, module_version string, device_version string) {
-	device.AccessWay = accessway
-	device.Type = deviceType
-	device.ModuleSN = moduleSN
-	device.DeviceSN = deviceSN
-	device.ModuleVersion = module_version
-	device.DeviceVersion = device_version
+func (module *ModuleInfo) Create(accessway AccesswayType, moduleSN string,module_version string) {
+	module.AccessWay = accessway
+	module.ModuleSN = moduleSN
+	module.ModuleVersion = module_version
+	module.CreateTime = GetTimestampMs()
+}
+
+func (device *DeviceInfo) Create(sn string,version string) {
+	device.DeviceSn = sn
+	device.DeviceVersion = version
 	device.CreateTime = GetTimestampMs()
 }
 
-func (device *DeviceInfo) Update(module_version string, device_version string) {
-	device.ModuleVersion = module_version
-	device.DeviceVersion = device_version
-	device.UpdateTime = GetTimestampMs()
+func (module *ModuleInfo) Update(module_version string) {
+	module.ModuleVersion = module_version
+	module.UpdateTime = GetTimestampMs()
 }
 
 func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_sn string, data string, serverIP string, behavior int64, transferTime int64) {

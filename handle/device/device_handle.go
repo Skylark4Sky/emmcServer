@@ -25,17 +25,14 @@ type FirmwareInfo struct {
 }
 
 func createConnectLog(ctx *gin.Context, device_id int64, accessway AccesswayType, moduleSN string) {
-	var log DeviceConnectLog
+	var log ModuleConnectLog
 	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
-	CreateAsyncSQLTask(ASYNC_DEV_CONNECT_LOG, log)
+	CreateAsyncSQLTask(ASYNC_MODULE_CONNECT_LOG, log)
 }
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {
-
-	var device DeviceInfo
-
-	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(&device).Error
-
+	var module ModuleInfo
+	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(&module).Error
 	var hasRecord = true
 
 	if err != nil {
@@ -47,26 +44,27 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 	}
 
 	if !hasRecord {
-		// 建立新记录
-		device.Create(data.AccessWay, 0, data.ModuleSN, data.DeviceSN, data.ModuleVersion, data.DeviceVersion)
-		if err := ExecSQL().Create(&device).Error; err != nil {
-			return CreateMessage(SYSTEM_ERROR, err)
-		}
+		//创建对应关系
+		var info CreateDeviceInfo
+		curTimestampMs := GetTimestampMs()
+		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
+		info.Device.Create(data.DeviceSN, data.DeviceVersion)
+		info.Module.CreateTime = curTimestampMs
+		info.Device.CreateTime = curTimestampMs
+		CreateAsyncSQLTask(ASYNC_DEV_AND_MODULE_CREATE, info)
+		return CreateMessage(SUCCESS, nil)
 	} else {
-		device.Update(data.ModuleVersion, data.DeviceVersion)
-		updateMap := map[string]interface{}{"module_version": data.ModuleVersion, "device_version": data.DeviceVersion, "update_time": device.UpdateTime}
-		if err := ExecSQL().Model(&device).Updates(updateMap).Error; err != nil {
-			return CreateErrorMessage(SYSTEM_ERROR, err)
-		}
+		module.Update(data.ModuleVersion)
+		CreateAsyncSQLTask(ASYNC_UP_MODULE_VERSION, module)
+		// 检测并返回固件版本
+		// 返回版本升级格式
+		//	data := &FirmwareInfo{
+		//		URL:  "http://www.gisunlink.com/GiSunLink.ota.bin",
+		//		Size: 476448,
+		//	}
+		createConnectLog(ctx, module.ID, data.AccessWay, data.ModuleSN)
+		return CreateMessage(SUCCESS, nil)
 	}
-
-	createConnectLog(ctx, device.ID, data.AccessWay, data.ModuleSN)
-
-	//	data := &FirmwareInfo{
-	//		URL:  "http://www.gisunlink.com/GiSunLink.ota.bin",
-	//		Size: 476448,
-	//	}
-
 	return CreateMessage(SUCCESS, nil)
 }
 

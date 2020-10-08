@@ -14,6 +14,7 @@ import (
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gomodule/redigo/redis"
+	"github.com/prometheus/common/log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -31,6 +32,14 @@ type MqMsg struct {
 	Broker  string
 	Topic   string
 	Payload []byte
+}
+
+func init() {
+	RedisNotify.Subscribe("__keyevent@0__:expired", TestPubCallback)
+}
+
+func TestPubCallback(patter , chann, msg string){
+	log.Debug( "TestPubCallback patter : " + patter + " channel : ", chann, " message : ", msg)
 }
 
 func behaviorHandle( packet *Packet, cacheKey string, playload string) {

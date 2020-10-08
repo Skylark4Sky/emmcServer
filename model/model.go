@@ -106,6 +106,7 @@ func updateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID int64) {
 			return
 		}
 
+		//设置一个超长的过期值,改值会等到设备第一个报文上报后根据状态修改.
 		if SetRedisItem(rd, "expire", deviceSN, 3600) != nil {
 			return
 		}

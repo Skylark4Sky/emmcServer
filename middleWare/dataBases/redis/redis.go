@@ -22,13 +22,13 @@ var (
 	mutex     sync.Mutex
 )
 
-type PSubscribeCallback func (pattern, channel, message string)
+type PSubscribeCallback func(pattern, channel, message string)
 
 var RedisNotify RedisSubscriber
 
 type RedisSubscriber struct {
 	client redis.PubSubConn
-	cbMap map[string]PSubscribeCallback
+	cbMap  map[string]PSubscribeCallback
 }
 
 func init() {
@@ -63,7 +63,7 @@ func init() {
 			case redis.Subscription:
 				fmt.Printf("%s: %s %d\n", res.Channel, res.Kind, res.Count)
 			case error:
-				log.Error("error handle...")
+				//				log.Error("error handle...")
 				continue
 			}
 		}
@@ -71,9 +71,9 @@ func init() {
 
 }
 
-func (redisNotify *RedisSubscriber)Subscribe(channel interface{}, cb PSubscribeCallback) {
+func (redisNotify *RedisSubscriber) Subscribe(channel interface{}, cb PSubscribeCallback) {
 	err := redisNotify.client.PSubscribe(channel)
-	if err != nil{
+	if err != nil {
 		log.Error("redis Subscribe error.")
 		return
 	}
@@ -145,19 +145,19 @@ func Redis() *redis.Pool {
 	return redisPool
 }
 
-func SetRedisItem(client redis.Conn,commandName string, args ...interface{}) (err error) {
+func SetRedisItem(client redis.Conn, commandName string, args ...interface{}) (err error) {
 	_, err = client.Do(commandName, args...)
 	if err != nil {
-		SystemLog("redis command",zap.String("cmd",commandName),ArgsToJsonData(args), zap.Error(err))
+		SystemLog("redis command", zap.String("cmd", commandName), ArgsToJsonData(args), zap.Error(err))
 	}
 	return
 }
 
-func GetRedisItem(client redis.Conn,commandName string, args ...interface{}) (reply interface{}) {
+func GetRedisItem(client redis.Conn, commandName string, args ...interface{}) (reply interface{}) {
 	reply, err := client.Do(commandName, args...)
 	if err != nil {
 		reply = nil
-		SystemLog("redis command",zap.String("cmd",commandName),ArgsToJsonData(args), zap.Error(err))
+		SystemLog("redis command", zap.String("cmd", commandName), ArgsToJsonData(args), zap.Error(err))
 	}
 	return
 }

@@ -2,7 +2,6 @@ package action
 
 import (
 	. "GoServer/handle/device"
-	//	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	//	. "GoServer/utils/time"
@@ -50,8 +49,4 @@ func DeviceConnect(ctx *gin.Context) {
 	} else {
 		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "认证失败"))
 	}
-}
-
-func DeviceList(ctx *gin.Context) {
-
 }

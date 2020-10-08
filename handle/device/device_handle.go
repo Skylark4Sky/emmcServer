@@ -2,13 +2,28 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
+	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/model"
 	. "GoServer/model/device"
+	mqtt "GoServer/mqtt"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
+	"encoding/json"
+	"fmt"
+	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
+	"github.com/gomodule/redigo/redis"
+	"strconv"
+	"strings"
 )
+
+const (
+	CHARGEING_TIME = 45
+	LEISURE_TIME   = 120
+)
+
+var serverMap = make(map[string]interface{})
 
 type RequestData struct {
 	AccessWay     AccesswayType `form:"type" json:"type" binding:"required"`
@@ -22,6 +37,20 @@ type RequestData struct {
 type FirmwareInfo struct {
 	Size int64  `json:"size"`
 	URL  string `json:"url"`
+}
+
+func GetMqttClient(brokerHost string) *M.Client {
+	broker := serverMap[brokerHost]
+	if broker != nil {
+		return broker.(*M.Client)
+	}
+	return nil
+}
+
+func SetMqttClient(brokerHost string,handle interface{})  {
+	if brokerHost != "" && handle != nil {
+		serverMap[brokerHost] = handle
+	}
 }
 
 func createConnectLog(ctx *gin.Context, device_id int64, accessway AccesswayType, moduleSN string) {
@@ -73,7 +102,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 	return CreateMessage(SUCCESS, nil)
 }
 
-func CreateDeviceTransferLog(transfer *DeviceTransferLog) {
+func createDeviceTransferLog(transfer *DeviceTransferLog) {
 	if transfer == nil {
 		return
 	}
@@ -81,5 +110,94 @@ func CreateDeviceTransferLog(transfer *DeviceTransferLog) {
 	transfer.CreateTime = GetTimestampMs()
 	if err := ExecSQL().Create(&transfer).Error; err != nil {
 		SystemLog("CreateDeviceTransferLog", err)
+	}
+}
+
+//保存上报数据入库
+func SaveDeviceTransferData(serverNode string, device_sn string, packet *mqtt.Packet) {
+	var comNum int64 = 0
+	switch packet.Json.Behavior {
+	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
+		comList := packet.JsonData.(*mqtt.ComList)
+		comNum = int64(comList.ComNum)
+		break
+	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
+		comList := packet.JsonData.(*mqtt.ComList)
+		comNum = int64(comList.ComNum)
+		for _, comID := range comList.ComID {
+			comNum = int64(comID)
+		}
+		break
+	}
+
+	rd := Redis().Get()
+	defer rd.Close()
+
+	var deviceID int64 = 0
+	ItemValue := GetRedisItem(rd, "HGET", device_sn, "deviceID")
+
+	if ItemValue != nil {
+		deviceID, _ = redis.Int64(ItemValue, nil)
+	}
+
+	log := &DeviceTransferLog{
+		TransferID:   int64(packet.Json.ID),
+		DeviceID:     deviceID,
+		TransferAct:  packet.Json.Act,
+		DeviceSN:     device_sn,
+		ComNum:       comNum,
+		TransferData: packet.Json.Data,
+		Behavior:     int64(packet.Json.Behavior),
+		ServerNode:   serverNode,
+		TransferTime: int64(packet.Json.Ctime),
+	}
+	createDeviceTransferLog(log)
+}
+
+func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playload string) {
+	switch packet.Json.Behavior {
+	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
+		{
+			rd := Redis().Get()
+			defer rd.Close()
+
+			var timeout int = CHARGEING_TIME
+			if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
+				timeout = LEISURE_TIME
+			}
+
+			comList := packet.JsonData.(*mqtt.ComList)
+
+			deviceInfo := fmt.Sprintf("{\"status\"%d,\"signal\":%d,\"version\":%d}", comList.ComBehavior, int8(comList.Signal), comList.ComProtoVer)
+
+			if SetRedisItem(rd, "HSET", cacheKey, "rawData", playload, "deviceInfo", deviceInfo) != nil {
+				return
+			}
+
+			if SetRedisItem(rd, "expire", cacheKey, timeout) != nil {
+				return
+			}
+
+			for _, comID := range comList.ComID {
+
+				var index uint8 = comID
+				if comList.ComNum <= 5 {
+					index = (comID % 5)
+				}
+
+				comData := (comList.ComPort[int(index)]).(mqtt.ComData)
+				comData.Id = comID
+
+				var jsonByte []byte
+				var comIDString strings.Builder
+				comIDString.WriteString("comPort")
+				comIDString.WriteString(strconv.Itoa(int(comID)))
+
+				jsonByte, err := json.Marshal(comData)
+				if err == nil {
+					SetRedisItem(rd, "HSET", cacheKey, comIDString.String(), string(jsonByte))
+				}
+			}
+		}
 	}
 }

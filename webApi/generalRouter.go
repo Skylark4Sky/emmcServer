@@ -11,5 +11,5 @@ func registerGeneralRouter(generalRouter *gin.RouterGroup) {
 	//设备
 	generalRouter.POST("device", action.DeviceConnect)
 	generalRouter.GET("device", action.DeviceConnect)
-	generalRouter.GET("deviceList", action.DeviceList)
+	//generalRouter.GET("deviceList", action.DeviceList)
 }

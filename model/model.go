@@ -2,10 +2,10 @@ package model
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
+	. "GoServer/middleWare/dataBases/redis"
 	"GoServer/model/device"
 	"GoServer/model/user"
 	. "GoServer/utils/log"
-	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/utils/threadWorker"
 	"go.uber.org/zap"
 )
@@ -19,9 +19,9 @@ const (
 	ASYNC_USER_LOGIN_LOG                            //用户登录日志
 	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间
 	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志
-	ASYNC_UP_MODULE_VERSION							//更新模组版本
-	ASYNC_UP_DEVICE_VERSION							//更新设备版本
-	ASYNC_DEV_AND_MODULE_CREATE						//建立设备与模组关系
+	ASYNC_UP_MODULE_VERSION                         //更新模组版本
+	ASYNC_UP_DEVICE_VERSION                         //更新设备版本
+	ASYNC_DEV_AND_MODULE_CREATE                     //建立设备与模组关系
 	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址
 	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料
 	ASYNC_UPDATA_USER_EXTRA                         //更新用户扩展资料
@@ -96,7 +96,7 @@ func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error 
 	return nil
 }
 
-func updateDeviceIDToRedisByDeviceSN(deviceSN string,deviceID int64) {
+func updateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID int64) {
 	if deviceSN != "" && deviceID != 0 {
 		rd := Redis().Get()
 		defer rd.Close()
@@ -106,7 +106,7 @@ func updateDeviceIDToRedisByDeviceSN(deviceSN string,deviceID int64) {
 			return
 		}
 
-		if SetRedisItem(rd, "expire", deviceSN, 120) != nil {
+		if SetRedisItem(rd, "expire", deviceSN, 3600) != nil {
 			return
 		}
 	}
@@ -196,7 +196,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 		tx.Commit()
 	}
 
-	updateDeviceIDToRedisByDeviceSN(device.DeviceSn,device.ID)
+	updateDeviceIDToRedisByDeviceSN(device.DeviceSn, device.ID)
 
 	return nil
 }
@@ -248,11 +248,11 @@ func (task *AsyncSQLTask) ExecTask() error {
 		break
 	case ASYNC_UP_DEVICE_VERSION:
 		entity := task.Entity.(device.DeviceInfo)
-		updateMap := map[string]interface{}{"device_version": entity.DeviceVersion, "update_time": entity.UpdateTime}
+		updateMap := map[string]interface{}{"access_way": entity.AccessWay, "device_version": entity.DeviceVersion, "update_time": entity.UpdateTime}
 		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
 			SystemLog("update device version Error", zap.Error(err))
 		}
-		updateDeviceIDToRedisByDeviceSN(entity.DeviceSn,entity.ID)
+		updateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
 		break
 	case ASYNC_DEV_AND_MODULE_CREATE:
 		entity := task.Entity.(device.CreateDeviceInfo)

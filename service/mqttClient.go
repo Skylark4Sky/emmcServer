@@ -84,9 +84,16 @@ func behaviorHandle( packet *Packet, cacheKey string, playload string) {
 func saveTransferData(serverNode string, device_sn string, packet *Packet) {
 	var comNum int64 = 0
 	switch packet.Json.Behavior {
-	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
+	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.JsonData.(*ComList)
 		comNum = int64(comList.ComNum)
+		break
+	case GISUNLINK_START_CHARGE,GISUNLINK_CHARGE_FINISH,GISUNLINK_CHARGE_NO_LOAD,GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
+		comList := packet.JsonData.(*ComList)
+		comNum = int64(comList.ComNum)
+		for _, comID := range comList.ComID {
+			comNum = int64(comID)
+		}
 		break
 	}
 
@@ -141,11 +148,9 @@ var MessageCb M.MessageHandler = func(client M.Client, msg M.Message) {
 
 func GetMqttClient(brokerHost string) *M.Client {
 	broker := serverMap[brokerHost]
-
 	if broker != nil {
 		return broker.(*M.Client)
 	}
-
 	return nil
 }
 

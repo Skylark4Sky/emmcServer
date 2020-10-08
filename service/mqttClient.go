@@ -34,7 +34,7 @@ type MqMsg struct {
 }
 
 func init() {
-	RedisNotify.Subscribe("__keyevent@0__:expired", TestPubCallback)
+	RedisNotifySubscribe("__keyevent@0__:expired", TestPubCallback)
 }
 
 func TestPubCallback(patter , chann, msg string){

@@ -58,7 +58,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		module.Update(data.ModuleVersion)
 		CreateAsyncSQLTask(ASYNC_UP_MODULE_VERSION, module)
 		var device DeviceInfo
-		device.Update(module.DeviceID,data.DeviceVersion,module.UpdateTime)
+		device.Update(module.DeviceID, data.DeviceVersion, module.UpdateTime)
 		device.DeviceSn = data.DeviceSN
 		CreateAsyncSQLTask(ASYNC_UP_DEVICE_VERSION, device)
 		// 检测并返回固件版本

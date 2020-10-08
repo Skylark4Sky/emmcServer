@@ -6,7 +6,6 @@ import (
 	. "GoServer/utils/string"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
-	"github.com/prometheus/common/log"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -37,7 +36,7 @@ func init() {
 
 	go func() {
 		for {
-			log.Debug("wait...")
+			fmt.Printf("wait...")
 			switch res := RedisNotify.client.Receive().(type) {
 			case redis.Message:
 				pattern := (*string)(unsafe.Pointer(&res.Pattern))
@@ -74,7 +73,7 @@ func init() {
 func (redisNotify *RedisSubscriber) Subscribe(channel interface{}, cb PSubscribeCallback) {
 	err := redisNotify.client.PSubscribe(channel)
 	if err != nil {
-		log.Error("redis Subscribe error.")
+		fmt.Printf("redis Subscribe error.")
 		return
 	}
 	redisNotify.cbMap[channel.(string)] = cb

@@ -1,9 +1,9 @@
 package redis
 
 import (
-	"fmt"
-	"github.com/gomodule/redigo/redis"
 	. "GoServer/utils/config"
+	. "GoServer/utils/log"
+	"github.com/gomodule/redigo/redis"
 	"time"
 	"unsafe"
 )
@@ -17,13 +17,13 @@ type RedisSubscriber struct {
 	cbMap  map[string]RedisSubscriberCallback
 }
 
-func init ()  {
+func init() {
 	options, err := GetRedis()
 	if err != nil {
 		return
 	}
 	const healthCheckPeriod = time.Minute
-	conn, err := redis.Dial("tcp",  options.Host+":"+options.Port,
+	conn, err := redis.Dial("tcp", options.Host+":"+options.Port,
 		redis.DialPassword(options.Auth),
 		redis.DialReadTimeout(healthCheckPeriod+10*time.Second),
 		redis.DialWriteTimeout(10*time.Second))
@@ -33,20 +33,19 @@ func init ()  {
 
 	redisNotify.client = redis.PubSubConn{Conn: conn}
 	redisNotify.cbMap = make(map[string]RedisSubscriberCallback)
-
 	// Start a goroutine to receive notifications from the server.
 	go func() {
 		for {
-			switch res := redisNotify.client.Receive().(type) {
+			switch res := redisNotify.client.ReceiveWithTimeout(time.Minute).(type) {
 			case error:
-				continue;
+				continue
 			case redis.Message:
 				pattern := (*string)(unsafe.Pointer(&res.Pattern))
 				channel := (*string)(unsafe.Pointer(&res.Channel))
 				message := (*string)(unsafe.Pointer(&res.Data))
 				redisNotify.cbMap[*channel](*pattern, *channel, *message)
 			case redis.Subscription:
-				fmt.Printf("------------>%s: %s %d\n", res.Channel, res.Kind, res.Count)
+				SystemLog("------------>%s: %s %d\n", res.Channel, res.Kind, res.Count)
 			}
 		}
 	}()
@@ -56,7 +55,7 @@ func init ()  {
 func RedisNotifySubscribe(channel interface{}, cb RedisSubscriberCallback) {
 	err := redisNotify.client.Subscribe(channel)
 	if err != nil {
-		fmt.Printf("redis Subscribe error.")
+		SystemLog("redis Subscribe error.")
 		return
 	}
 	redisNotify.cbMap[channel.(string)] = cb

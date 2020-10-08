@@ -34,14 +34,14 @@ type MqMsg struct {
 }
 
 func init() {
-	RedisNotifySubscribe("__keyevent@0__:expired", TestPubCallback)
+	RedisNotifySubscribe("__keyevent@0__:expired", notifyCallback)
 }
 
-func TestPubCallback(patter , chann, msg string){
-	fmt.Println( "TestPubCallback patter : " + patter + " channel : ", chann, " message : ", msg)
+func notifyCallback(patter, chann, msg string) {
+	SystemLog("notifyCallback patter : "+patter+" channel : ", chann, " message : ", msg)
 }
 
-func behaviorHandle( packet *Packet, cacheKey string, playload string) {
+func behaviorHandle(packet *Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case GISUNLINK_CHARGEING, GISUNLINK_CHARGE_LEISURE:
 		{
@@ -96,7 +96,7 @@ func saveTransferData(serverNode string, device_sn string, packet *Packet) {
 		comList := packet.JsonData.(*ComList)
 		comNum = int64(comList.ComNum)
 		break
-	case GISUNLINK_START_CHARGE,GISUNLINK_CHARGE_FINISH,GISUNLINK_CHARGE_NO_LOAD,GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
+	case GISUNLINK_START_CHARGE, GISUNLINK_CHARGE_FINISH, GISUNLINK_CHARGE_NO_LOAD, GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
 		comList := packet.JsonData.(*ComList)
 		comNum = int64(comList.ComNum)
 		for _, comID := range comList.ComID {
@@ -109,15 +109,15 @@ func saveTransferData(serverNode string, device_sn string, packet *Packet) {
 	defer rd.Close()
 
 	var deviceID int64 = 0
-	ItemValue := GetRedisItem(rd,"HGET",device_sn,"deviceID")
-	
+	ItemValue := GetRedisItem(rd, "HGET", device_sn, "deviceID")
+
 	if ItemValue != nil {
-		deviceID ,_= redis.Int64(ItemValue,nil)
+		deviceID, _ = redis.Int64(ItemValue, nil)
 	}
 
 	log := &deviceModel.DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
-		DeviceID: deviceID,
+		DeviceID:     deviceID,
 		TransferAct:  packet.Json.Act,
 		DeviceSN:     device_sn,
 		ComNum:       comNum,

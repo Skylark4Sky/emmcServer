@@ -48,7 +48,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		var info CreateDeviceInfo
 		curTimestampMs := GetTimestampMs()
 		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
-		info.Device.Create(data.DeviceSN, data.DeviceVersion)
+		info.Device.Create(data.AccessWay, data.DeviceSN, data.DeviceVersion)
 		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
 		info.Module.CreateTime = curTimestampMs
 		info.Device.CreateTime = curTimestampMs
@@ -58,7 +58,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		module.Update(data.ModuleVersion)
 		CreateAsyncSQLTask(ASYNC_UP_MODULE_VERSION, module)
 		var device DeviceInfo
-		device.Update(module.DeviceID, data.DeviceVersion, module.UpdateTime)
+		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime)
 		device.DeviceSn = data.DeviceSN
 		CreateAsyncSQLTask(ASYNC_UP_DEVICE_VERSION, device)
 		// 检测并返回固件版本

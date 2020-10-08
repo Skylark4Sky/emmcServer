@@ -14,7 +14,6 @@ import (
 	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gomodule/redigo/redis"
-	"github.com/prometheus/common/log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -39,7 +38,7 @@ func init() {
 }
 
 func TestPubCallback(patter , chann, msg string){
-	log.Debug( "TestPubCallback patter : " + patter + " channel : ", chann, " message : ", msg)
+	fmt.Println( "TestPubCallback patter : " + patter + " channel : ", chann, " message : ", msg)
 }
 
 func behaviorHandle( packet *Packet, cacheKey string, playload string) {

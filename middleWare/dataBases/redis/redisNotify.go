@@ -41,7 +41,7 @@ func init() {
 
 	go func() {
 		for {
-			fmt.Printf("wait...")
+			//fmt.Printf("wait...")
 			switch res := RedisNotify.client.Receive().(type) {
 			case redis.Message:
 				pattern := (*string)(unsafe.Pointer(&res.Pattern))
@@ -65,7 +65,7 @@ func init() {
 				//	}
 				//}
 			case redis.Subscription:
-				fmt.Printf("%s: %s %d\n", res.Channel, res.Kind, res.Count)
+				fmt.Printf("------------>%s: %s %d\n", res.Channel, res.Kind, res.Count)
 			case error:
 				//				log.Error("error handle...")
 				continue

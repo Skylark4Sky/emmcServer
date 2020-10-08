@@ -4,12 +4,10 @@ import (
 	. "GoServer/utils/config"
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
-	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"go.uber.org/zap"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 const (
@@ -20,64 +18,6 @@ var (
 	redisPool sync.Map
 	mutex     sync.Mutex
 )
-
-type PSubscribeCallback func(pattern, channel, message string)
-
-var RedisNotify RedisSubscriber
-
-type RedisSubscriber struct {
-	client redis.PubSubConn
-	cbMap  map[string]PSubscribeCallback
-}
-
-func init() {
-	RedisNotify.client = redis.PubSubConn{Redis().Get()}
-	RedisNotify.cbMap = make(map[string]PSubscribeCallback)
-
-	go func() {
-		for {
-			fmt.Printf("wait...")
-			switch res := RedisNotify.client.Receive().(type) {
-			case redis.Message:
-				pattern := (*string)(unsafe.Pointer(&res.Pattern))
-				channel := (*string)(unsafe.Pointer(&res.Channel))
-				message := (*string)(unsafe.Pointer(&res.Data))
-				RedisNotify.cbMap[*channel](*pattern, *channel, *message)
-				//pattern := res.Pattern
-				//channel := string(res.Channel)
-				//message := string(res.Data)
-				//if (pattern == "__keyspace@0__:blog*"){
-				//	switch  message {
-				//	case "set":
-				//		// do something
-				//		fmt.Println("set", channel)
-				//	case "del":
-				//		fmt.Println("del", channel)
-				//	case "expire":
-				//		fmt.Println("expire", channel)
-				//	case "expired":
-				//		fmt.Println("expired", channel)
-				//	}
-				//}
-			case redis.Subscription:
-				fmt.Printf("%s: %s %d\n", res.Channel, res.Kind, res.Count)
-			case error:
-				//				log.Error("error handle...")
-				continue
-			}
-		}
-	}()
-
-}
-
-func (redisNotify *RedisSubscriber) Subscribe(channel interface{}, cb PSubscribeCallback) {
-	err := redisNotify.client.PSubscribe(channel)
-	if err != nil {
-		fmt.Printf("redis Subscribe error.")
-		return
-	}
-	redisNotify.cbMap[channel.(string)] = cb
-}
 
 func newRedisClient(index string, re *RedisOptions) error {
 	pool := &redis.Pool{

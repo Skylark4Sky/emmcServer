@@ -9,18 +9,17 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
-	"encoding/json"
-	"fmt"
+	//	"encoding/json"
+	//	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
-	"github.com/gomodule/redigo/redis"
-	"strconv"
-	"strings"
+	//	"strconv"
+	//	"strings"
 )
 
 const (
-	CHARGEING_TIME = 45
-	LEISURE_TIME   = 120
+	CHARGEING_TIME = 150 //忙时150秒
+	LEISURE_TIME   = 300 //空闲时300秒
 )
 
 var serverMap = make(map[string]interface{})
@@ -47,7 +46,7 @@ func GetMqttClient(brokerHost string) *M.Client {
 	return nil
 }
 
-func SetMqttClient(brokerHost string,handle interface{})  {
+func SetMqttClient(brokerHost string, handle interface{}) {
 	if brokerHost != "" && handle != nil {
 		serverMap[brokerHost] = handle
 	}
@@ -130,19 +129,9 @@ func SaveDeviceTransferData(serverNode string, device_sn string, packet *mqtt.Pa
 		break
 	}
 
-	rd := Redis().Get()
-	defer rd.Close()
-
-	var deviceID int64 = 0
-	ItemValue := GetRedisItem(rd, "HGET", device_sn, "deviceID")
-
-	if ItemValue != nil {
-		deviceID, _ = redis.Int64(ItemValue, nil)
-	}
-
 	log := &DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
-		DeviceID:     deviceID,
+		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn, "deviceID"),
 		TransferAct:  packet.Json.Act,
 		DeviceSN:     device_sn,
 		ComNum:       comNum,
@@ -158,45 +147,26 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
-			rd := Redis().Get()
-			defer rd.Close()
 
-			var timeout int = CHARGEING_TIME
-			if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
-				timeout = LEISURE_TIME
-			}
+			//	var timeout int = CHARGEING_TIME
+			//	if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
+			//		timeout = LEISURE_TIME
+			//	}
 
+			//写入原始数据
+			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
+
+			//循环写入端口数据
 			comList := packet.JsonData.(*mqtt.ComList)
-
-			deviceInfo := fmt.Sprintf("{\"status\"%d,\"signal\":%d,\"version\":%d}", comList.ComBehavior, int8(comList.Signal), comList.ComProtoVer)
-
-			if SetRedisItem(rd, "HSET", cacheKey, "rawData", playload, "deviceInfo", deviceInfo) != nil {
-				return
-			}
-
-			if SetRedisItem(rd, "expire", cacheKey, timeout) != nil {
-				return
-			}
-
 			for _, comID := range comList.ComID {
-
 				var index uint8 = comID
 				if comList.ComNum <= 5 {
 					index = (comID % 5)
 				}
-
 				comData := (comList.ComPort[int(index)]).(mqtt.ComData)
 				comData.Id = comID
-
-				var jsonByte []byte
-				var comIDString strings.Builder
-				comIDString.WriteString("comPort")
-				comIDString.WriteString(strconv.Itoa(int(comID)))
-
-				jsonByte, err := json.Marshal(comData)
-				if err == nil {
-					SetRedisItem(rd, "HSET", cacheKey, comIDString.String(), string(jsonByte))
-				}
+				//更新端口值
+				Redis().UpdateDeviceComDataToRedis(cacheKey, comID, comData)
 			}
 		}
 	}

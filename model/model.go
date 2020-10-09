@@ -98,18 +98,7 @@ func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error 
 
 func updateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID int64) {
 	if deviceSN != "" && deviceID != 0 {
-		rd := Redis().Get()
-		defer rd.Close()
-
-		//更新redis 设备对应ID
-		if SetRedisItem(rd, "HSET", deviceSN, "deviceID", deviceID) != nil {
-			return
-		}
-
-		//设置一个超长的过期值,改值会等到设备第一个报文上报后根据状态修改.
-		if SetRedisItem(rd, "expire", deviceSN, 3600) != nil {
-			return
-		}
+		Redis().InitWithInsertDeviceIDToken(deviceSN, deviceID)
 	}
 }
 

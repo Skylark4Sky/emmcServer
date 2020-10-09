@@ -22,11 +22,10 @@ type MqMsg struct {
 }
 
 func init() {
-	RedisNotifySubscribe("__keyevent@0__:expired", notifyCallback)
-}
-
-func notifyCallback(patter, chann, msg string) {
-	SystemLog("notifyCallback patter : "+patter+" channel : ", chann, " message : ", msg)
+	Redis().Subscribe(func(chann string, msg []byte) error {
+		SystemLog("notifyCallback  channel : ", chann, " message : ", msg)
+		return nil
+	}, "__keyevent@0__:expired")
 }
 
 func (msg *MqMsg) ExecTask() error {
@@ -73,7 +72,7 @@ func StartMqttService() error {
 
 		if err == nil {
 			key := URL.Host
-			SetMqttClient(key,Client)
+			SetMqttClient(key, Client)
 		}
 	}
 	return nil

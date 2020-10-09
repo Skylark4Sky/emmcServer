@@ -61,8 +61,8 @@ func StringJoin(args []interface{}) string {
 			switch v.(type) {
 			case uint8, uint16, uint32, uint64, uint:
 			case int8, int16, int32, int64, int:
-				val := v.(int)
-				buffer.WriteString(strconv.Itoa(val))
+				val := v.(int64)
+				buffer.WriteString(strconv.FormatInt(val, 10))
 				break
 			case string:
 				buffer.WriteString(v.(string))

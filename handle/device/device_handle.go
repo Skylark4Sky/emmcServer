@@ -9,12 +9,9 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
-	//	"encoding/json"
-	//	"fmt"
+	"encoding/json"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
-	//	"strconv"
-	//	"strings"
 )
 
 const (
@@ -147,12 +144,6 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
-
-			//	var timeout int = CHARGEING_TIME
-			//	if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
-			//		timeout = LEISURE_TIME
-			//	}
-
 			//写入原始数据
 			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
 
@@ -168,6 +159,33 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 				//更新端口值
 				Redis().UpdateDeviceComDataToRedis(cacheKey, comID, comData)
 			}
+
+			deviceStatus := &DeviceStatus{
+				Behavior: comList.ComBehavior,
+				Signal:   int8(comList.Signal),
+				Worker: Redis().TatolWorkerByDevice(cacheKey, func(comDataString string) bool {
+					comData := &mqtt.ComData{}
+					err := json.Unmarshal([]byte(comDataString), comData)
+					if err != nil {
+						return false
+					}
+
+					if comData.Enable == 1 {
+						return true
+					}
+
+					return false
+				}),
+				ProtoVersion: comList.ComProtoVer,
+			}
+
+			var timeout int64 = CHARGEING_TIME
+			if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
+				timeout = LEISURE_TIME
+			}
+
+			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)
+
 		}
 	}
 }

@@ -29,14 +29,14 @@ type GeoResult struct {
 
 // GeoAdd 将给定的空间元素（纬度、经度、名字）添加到指定的键里面，这些数据会以有序集合的形式被储存在键里面，所以删除可以使用`ZREM`。
 func (c *Cacher) GeoAdd(key string, longitude, latitude float64, member string) error {
-	_, err := redis.Int(c.Do("GEOADD", c.getKey(key), longitude, latitude, member))
+	_, err := redis.Int(c.Do("GEOADD", key, longitude, latitude, member))
 	return err
 }
 
 // GeoPos 从键里面返回所有给定位置元素的位置（经度和纬度）。
 func (c *Cacher) GeoPos(key string, members ...interface{}) ([]*[2]float64, error) {
 	args := redis.Args{}
-	args = args.Add(c.getKey(key))
+	args = args.Add(key)
 	args = args.Add(members...)
 	return redis.Positions(c.Do("GEOPOS", args...))
 }
@@ -50,14 +50,14 @@ func (c *Cacher) GeoPos(key string, members ...interface{}) ([]*[2]float64, erro
 // ft 表示单位为英尺。
 // 如果用户没有显式地指定单位参数， 那么 GEODIST 默认使用米作为单位。
 func (c *Cacher) GeoDist(key string, member1, member2, unit string) (float64, error) {
-	_, err := redis.Float64(c.Do("GEODIST", c.getKey(key), member1, member2, unit))
+	_, err := redis.Float64(c.Do("GEODIST", key, member1, member2, unit))
 	return 0, err
 }
 
 // GeoRadius 以给定的经纬度为中心， 返回键包含的位置元素当中， 与中心的距离不超过给定最大距离的所有位置元素。
 func (c *Cacher) GeoRadius(key string, longitude, latitude, radius float64, unit string, options GeoOptions) ([]*GeoResult, error) {
 	args := redis.Args{}
-	args = args.Add(c.getKey(key), longitude, latitude, radius, unit)
+	args = args.Add(key, longitude, latitude, radius, unit)
 	if options.WithDist {
 		args = args.Add("WITHDIST")
 	}
@@ -81,7 +81,7 @@ func (c *Cacher) GeoRadius(key string, longitude, latitude, radius float64, unit
 // GeoRadiusByMember 这个命令和 GEORADIUS 命令一样， 都可以找出位于指定范围内的元素， 但是 GEORADIUSBYMEMBER 的中心点是由给定的位置元素决定的， 而不是像 GEORADIUS 那样， 使用输入的经度和纬度来决定中心点。
 func (c *Cacher) GeoRadiusByMember(key string, member string, radius float64, unit string, options GeoOptions) ([]*GeoResult, error) {
 	args := redis.Args{}
-	args = args.Add(c.getKey(key), member, radius, unit)
+	args = args.Add(key, member, radius, unit)
 	if options.WithDist {
 		args = args.Add("WITHDIST")
 	}
@@ -105,7 +105,7 @@ func (c *Cacher) GeoRadiusByMember(key string, member string, radius float64, un
 // GeoHash 返回一个或多个位置元素的 Geohash 表示。
 func (c *Cacher) GeoHash(key string, members ...interface{}) ([]string, error) {
 	args := redis.Args{}
-	args = args.Add(c.getKey(key))
+	args = args.Add(key)
 	args = args.Add(members...)
 	return redis.Strings(c.Do("GEOHASH", args...))
 }

@@ -1,13 +1,5 @@
 package redis
 
-//import (
-//	. "GoServer/utils/string"
-//	"github.com/gomodule/redigo/redis"
-//	"go.uber.org/zap"
-//	"sync"
-//	"time"
-//)
-
 import (
 	. "GoServer/utils/config"
 	. "GoServer/utils/log"
@@ -140,7 +132,7 @@ func (c *Cacher) Do(commandName string, args ...interface{}) (reply interface{},
 
 // Get 获取键值。一般不直接使用该值，而是配合下面的工具类方法获取具体类型的值，或者直接使用github.com/gomodule/redigo/redis包的工具方法。
 func (c *Cacher) Get(key string) (interface{}, error) {
-	return c.Do("GET", c.getKey(key))
+	return c.Do("GET", key)
 }
 
 // GetString 获取string类型的键值
@@ -177,21 +169,21 @@ func (c *Cacher) Set(key string, val interface{}, expire int64) error {
 		return err
 	}
 	if expire > 0 {
-		_, err := c.Do("SETEX", c.getKey(key), expire, value)
+		_, err := c.Do("SETEX", key, expire, value)
 		return err
 	}
-	_, err = c.Do("SET", c.getKey(key), value)
+	_, err = c.Do("SET", key, value)
 	return err
 }
 
 // Exists 检查键是否存在
 func (c *Cacher) Exists(key string) (bool, error) {
-	return RedisBool(c.Do("EXISTS", c.getKey(key)))
+	return RedisBool(c.Do("EXISTS", key))
 }
 
 //Del 删除键
 func (c *Cacher) Del(key string) error {
-	_, err := c.Do("DEL", c.getKey(key))
+	_, err := c.Do("DEL", key)
 	return err
 }
 
@@ -203,33 +195,33 @@ func (c *Cacher) Flush() error {
 
 // TTL 以秒为单位。当 key 不存在时，返回 -2 。 当 key 存在但没有设置剩余生存时间时，返回 -1
 func (c *Cacher) TTL(key string) (ttl int64, err error) {
-	return RedisInt64(c.Do("TTL", c.getKey(key)))
+	return RedisInt64(c.Do("TTL", key))
 }
 
 // Expire 设置键过期时间，expire的单位为秒
 func (c *Cacher) Expire(key string, expire int64) error {
-	_, err := RedisBool(c.Do("EXPIRE", c.getKey(key), expire))
+	_, err := RedisBool(c.Do("EXPIRE", key, expire))
 	return err
 }
 
 // Incr 将 key 中储存的数字值增一
 func (c *Cacher) Incr(key string) (val int64, err error) {
-	return RedisInt64(c.Do("INCR", c.getKey(key)))
+	return RedisInt64(c.Do("INCR", key))
 }
 
 // IncrBy 将 key 所储存的值加上给定的增量值（increment）。
 func (c *Cacher) IncrBy(key string, amount int64) (val int64, err error) {
-	return RedisInt64(c.Do("INCRBY", c.getKey(key), amount))
+	return RedisInt64(c.Do("INCRBY", key, amount))
 }
 
 // Decr 将 key 中储存的数字值减一。
 func (c *Cacher) Decr(key string) (val int64, err error) {
-	return RedisInt64(c.Do("DECR", c.getKey(key)))
+	return RedisInt64(c.Do("DECR", key))
 }
 
 // DecrBy key 所储存的值减去给定的减量值（decrement）。
 func (c *Cacher) DecrBy(key string, amount int64) (val int64, err error) {
-	return RedisInt64(c.Do("DECRBY", c.getKey(key), amount))
+	return RedisInt64(c.Do("DECRBY", key, amount))
 }
 
 // HMSet 将一个map存到Redis hash，同时设置有效期，单位：秒
@@ -244,12 +236,12 @@ func (c *Cacher) DecrBy(key string, amount int64) (val int64, err error) {
 func (c *Cacher) HMSet(key string, val interface{}, expire int) (err error) {
 	conn := c.pool.Get()
 	defer conn.Close()
-	err = conn.Send("HMSET", redis.Args{}.Add(c.getKey(key)).AddFlat(val)...)
+	err = conn.Send("HMSET", redis.Args{}.Add(key).AddFlat(val)...)
 	if err != nil {
 		return
 	}
 	if expire > 0 {
-		err = conn.Send("EXPIRE", c.getKey(key), int64(expire))
+		err = conn.Send("EXPIRE", key, int64(expire))
 	}
 	if err != nil {
 		return
@@ -272,7 +264,7 @@ func (c *Cacher) HSet(key, field string, val interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.Do("HSET", c.getKey(key), field, value)
+	return c.Do("HSET", key, field, value)
 }
 
 // HGet 获取存储在哈希表中指定字段的值
@@ -282,7 +274,7 @@ func (c *Cacher) HSet(key, field string, val interface{}) (interface{}, error) {
 // val, err := c.HGet("user", "age")
 // ```
 func (c *Cacher) HGet(key, field string) (reply interface{}, err error) {
-	reply, err = c.Do("HGET", c.getKey(key), field)
+	reply, err = c.Do("HGET", key, field)
 	return
 }
 
@@ -318,7 +310,7 @@ func (c *Cacher) HGetObject(key, field string, val interface{}) error {
 
 // HGetAll HGetAll("key", &val)
 func (c *Cacher) HGetAll(key string, val interface{}) error {
-	v, err := redis.Values(c.Do("HGETALL", c.getKey(key)))
+	v, err := redis.Values(c.Do("HGETALL", key))
 	if err != nil {
 		return err
 	}
@@ -337,7 +329,7 @@ Redis列表是简单的字符串列表，按照插入顺序排序。你可以添
 // BLPop 它是 LPOP 命令的阻塞版本，当给定列表内没有任何元素可供弹出的时候，连接将被 BLPOP 命令阻塞，直到等待超时或发现可弹出元素为止。
 // 超时参数 timeout 接受一个以秒为单位的数字作为值。超时参数设为 0 表示阻塞时间可以无限期延长(block indefinitely) 。
 func (c *Cacher) BLPop(key string, timeout int) (interface{}, error) {
-	values, err := redis.Values(c.Do("BLPOP", c.getKey(key), timeout))
+	values, err := redis.Values(c.Do("BLPOP", key, timeout))
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +368,7 @@ func (c *Cacher) BLPopObject(key string, timeout int, val interface{}) error {
 // BRPop 它是 RPOP 命令的阻塞版本，当给定列表内没有任何元素可供弹出的时候，连接将被 BRPOP 命令阻塞，直到等待超时或发现可弹出元素为止。
 // 超时参数 timeout 接受一个以秒为单位的数字作为值。超时参数设为 0 表示阻塞时间可以无限期延长(block indefinitely) 。
 func (c *Cacher) BRPop(key string, timeout int) (interface{}, error) {
-	values, err := redis.Values(c.Do("BRPOP", c.getKey(key), timeout))
+	values, err := redis.Values(c.Do("BRPOP", key, timeout))
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +406,7 @@ func (c *Cacher) BRPopObject(key string, timeout int, val interface{}) error {
 
 // LPop 移出并获取列表中的第一个元素（表头，左边）
 func (c *Cacher) LPop(key string) (interface{}, error) {
-	return c.Do("LPOP", c.getKey(key))
+	return c.Do("LPOP", key)
 }
 
 // LPopInt 移出并获取列表中的第一个元素（表头，左边），元素类型为int
@@ -445,7 +437,7 @@ func (c *Cacher) LPopObject(key string, val interface{}) error {
 
 // RPop 移出并获取列表中的最后一个元素（表尾，右边）
 func (c *Cacher) RPop(key string) (interface{}, error) {
-	return c.Do("RPOP", c.getKey(key))
+	return c.Do("RPOP", key)
 }
 
 // RPopInt 移出并获取列表中的最后一个元素（表尾，右边），元素类型为int
@@ -480,7 +472,7 @@ func (c *Cacher) LPush(key string, member interface{}) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("LPUSH", c.getKey(key), value)
+	_, err = c.Do("LPUSH", key, value)
 	return err
 }
 
@@ -490,7 +482,7 @@ func (c *Cacher) RPush(key string, member interface{}) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.Do("RPUSH", c.getKey(key), value)
+	_, err = c.Do("RPUSH", key, value)
 	return err
 }
 
@@ -501,12 +493,12 @@ func (c *Cacher) RPush(key string, member interface{}) error {
 // count = 0 : 移除表中所有与 member 相等的值。
 // 返回值：被移除元素的数量。
 func (c *Cacher) LREM(key string, count int, member interface{}) (int, error) {
-	return RedisInt(c.Do("LREM", c.getKey(key), count, member))
+	return RedisInt(c.Do("LREM", key, count, member))
 }
 
 // LLen 获取列表的长度
 func (c *Cacher) LLen(key string) (int64, error) {
-	return RedisInt64(c.Do("RPOP", c.getKey(key)))
+	return RedisInt64(c.Do("RPOP", key))
 }
 
 // LRange 返回列表 key 中指定区间内的元素，区间以偏移量 start 和 stop 指定。
@@ -514,7 +506,7 @@ func (c *Cacher) LLen(key string) (int64, error) {
 // 你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推。
 // 和编程语言区间函数的区别：end 下标也在 LRANGE 命令的取值范围之内(闭区间)。
 func (c *Cacher) LRange(key string, start, end int) (interface{}, error) {
-	return c.Do("LRANGE", c.getKey(key), start, end)
+	return c.Do("LRANGE", key, start, end)
 }
 
 /**
@@ -526,51 +518,51 @@ Redis 有序集合和集合一样也是string类型元素的集合,且不允许�
 
 // ZAdd 将一个 member 元素及其 score 值加入到有序集 key 当中。
 func (c *Cacher) ZAdd(key string, score int64, member string) (reply interface{}, err error) {
-	return c.Do("ZADD", c.getKey(key), score, member)
+	return c.Do("ZADD", key, score, member)
 }
 
 // ZRem 移除有序集 key 中的一个成员，不存在的成员将被忽略。
 func (c *Cacher) ZRem(key string, member string) (reply interface{}, err error) {
-	return c.Do("ZREM", c.getKey(key), member)
+	return c.Do("ZREM", key, member)
 }
 
 // ZScore 返回有序集 key 中，成员 member 的 score 值。 如果 member 元素不是有序集 key 的成员，或 key 不存在，返回 nil 。
 func (c *Cacher) ZScore(key string, member string) (int64, error) {
-	return RedisInt64(c.Do("ZSCORE", c.getKey(key), member))
+	return RedisInt64(c.Do("ZSCORE", key, member))
 }
 
 // ZRank 返回有序集中指定成员的排名。其中有序集成员按分数值递增(从小到大)顺序排列。score 值最小的成员排名为 0
 func (c *Cacher) ZRank(key, member string) (int64, error) {
-	return RedisInt64(c.Do("ZRANK", c.getKey(key), member))
+	return RedisInt64(c.Do("ZRANK", key, member))
 }
 
 // ZRevrank 返回有序集中成员的排名。其中有序集成员按分数值递减(从大到小)排序。分数值最大的成员排名为 0 。
 func (c *Cacher) ZRevrank(key, member string) (int64, error) {
-	return RedisInt64(c.Do("ZREVRANK", c.getKey(key), member))
+	return RedisInt64(c.Do("ZREVRANK", key, member))
 }
 
 // ZRange 返回有序集中，指定区间内的成员。其中成员的位置按分数值递增(从小到大)来排序。具有相同分数值的成员按字典序(lexicographical order )来排列。
 // 以 0 表示有序集第一个成员，以 1 表示有序集第二个成员，以此类推。或 以 -1 表示最后一个成员， -2 表示倒数第二个成员，以此类推。
 func (c *Cacher) ZRange(key string, from, to int64) (map[string]int64, error) {
-	return redis.Int64Map(c.Do("ZRANGE", c.getKey(key), from, to, "WITHSCORES"))
+	return redis.Int64Map(c.Do("ZRANGE", key, from, to, "WITHSCORES"))
 }
 
 // ZRevrange 返回有序集中，指定区间内的成员。其中成员的位置按分数值递减(从大到小)来排列。具有相同分数值的成员按字典序(lexicographical order )来排列。
 // 以 0 表示有序集第一个成员，以 1 表示有序集第二个成员，以此类推。或 以 -1 表示最后一个成员， -2 表示倒数第二个成员，以此类推。
 func (c *Cacher) ZRevrange(key string, from, to int64) (map[string]int64, error) {
-	return redis.Int64Map(c.Do("ZREVRANGE", c.getKey(key), from, to, "WITHSCORES"))
+	return redis.Int64Map(c.Do("ZREVRANGE", key, from, to, "WITHSCORES"))
 }
 
 // ZRangeByScore 返回有序集合中指定分数区间的成员列表。有序集成员按分数值递增(从小到大)次序排列。
 // 具有相同分数值的成员按字典序来排列
 func (c *Cacher) ZRangeByScore(key string, from, to, offset int64, count int) (map[string]int64, error) {
-	return redis.Int64Map(c.Do("ZRANGEBYSCORE", c.getKey(key), from, to, "WITHSCORES", "LIMIT", offset, count))
+	return redis.Int64Map(c.Do("ZRANGEBYSCORE", key, from, to, "WITHSCORES", "LIMIT", offset, count))
 }
 
 // ZRevrangeByScore 返回有序集中指定分数区间内的所有的成员。有序集成员按分数值递减(从大到小)的次序排列。
 // 具有相同分数值的成员按字典序来排列
 func (c *Cacher) ZRevrangeByScore(key string, from, to, offset int64, count int) (map[string]int64, error) {
-	return redis.Int64Map(c.Do("ZREVRANGEBYSCORE", c.getKey(key), from, to, "WITHSCORES", "LIMIT", offset, count))
+	return redis.Int64Map(c.Do("ZREVRANGEBYSCORE", key, from, to, "WITHSCORES", "LIMIT", offset, count))
 }
 
 /**

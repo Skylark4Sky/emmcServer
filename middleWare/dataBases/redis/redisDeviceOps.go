@@ -1,7 +1,7 @@
 package redis
 
 import (
-//	"fmt"
+	. "GoServer/utils/string"
 )
 
 const (
@@ -18,15 +18,15 @@ type DeviceStatus struct {
 }
 
 func getDeviceIDKey(deviceSN string) string {
-	return DEVICEID + deviceSN
+	return  StringJoin([]interface{}{DEVICEID, deviceSN})
 }
 
 func getRawDataKey(deviceSN string) string {
-	return RAWDATA + deviceSN
+	return StringJoin([]interface{}{RAWDATA, deviceSN})
 }
 
 func getComdDataKey(deviceSN string) string {
-	return COMDATA + deviceSN
+	return StringJoin([]interface{}{COMDATA, deviceSN})
 }
 
 //更新Device令牌时间
@@ -57,5 +57,5 @@ func (c *Cacher) UpdateDeviceRawDataToRedis(deviceSN string, rawData string) {
 
 //更新端口数据
 func (c *Cacher) UpdateDeviceComDataToRedis(deviceSN string, comID uint8, comData interface{}) {
-	c.HSet(getComdDataKey(deviceSN), comID, comData)
+	c.HSet(getComdDataKey(deviceSN), StringJoin([]interface{}{comID}), comData)
 }

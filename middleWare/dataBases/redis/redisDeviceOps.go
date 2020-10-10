@@ -2,6 +2,7 @@ package redis
 
 import (
 	. "GoServer/utils/string"
+	"github.com/shopspring/decimal"
 	"strconv"
 )
 
@@ -14,9 +15,10 @@ const (
 )
 
 type DeviceTatolInfo struct {
-	UseEnergy      uint64 `json:useEnergy`
-	UseTime        uint64 `json:useTime`
-	CurElectricity uint64 `json:curElectricity`
+	UseEnergy      uint64 `json:energy`
+	UseTime        uint64 `json:time`
+	CurElectricity uint64 `json:electricity`
+	CurPower       string `json:power`
 	EnableCount    uint8  `json:enable`
 }
 
@@ -90,6 +92,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		UseEnergy:      0,
 		UseTime:        0,
 		CurElectricity: 0,
+		CurPower:       "0 (w)",
 		EnableCount:    0,
 	}
 
@@ -107,6 +110,22 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 			deviceInfo.EnableCount += 1
 		}
 	}
+
+	if deviceInfo.EnableCount >= 1 {
+		var electricityBase float64 = 0.001
+		electricity := decimal.NewFromFloat(electricityBase).Mul(decimal.NewFromFloat(float64(deviceInfo.CurElectricity)))
+		value := decimal.NewFromFloat(250).Mul(electricity)
+
+		f, exact := value.Float64()
+
+		if !exact {
+			deviceInfo.CurPower = "0 w"
+		} else {
+			powerValue := strconv.FormatFloat(f, 'f', -1, 64)
+			deviceInfo.CurPower = StringJoin([]interface{}{powerValue, " w"})
+		}
+	}
+
 	//更新统计数据
 	c.updateDeviceTatolInfoToRedis(deviceSN, deviceInfo)
 	return deviceInfo.EnableCount

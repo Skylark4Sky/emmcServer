@@ -25,6 +25,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect
 	github.com/prometheus/common v0.6.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
+	github.com/shopspring/decimal v1.2.0
 	github.com/sirupsen/logrus v1.5.0
 	github.com/ugorji/go v1.1.7 // indirect
 	go.uber.org/zap v1.16.0

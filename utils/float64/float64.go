@@ -11,7 +11,7 @@ const (
 	TIMEBYHOUR             float64 = 3600.0
 )
 
-//功率=电压*电流
+//当前功率=电压*电流
 func CalculateComPowerToCustomer(voltage float64, electricity uint32, bit int) (power float64) {
 	power = 0.00
 	if electricity > 0 {
@@ -28,7 +28,7 @@ func CalculateComPowerToCustomer(voltage float64, electricity uint32, bit int) (
 	return
 }
 
-//功率=电能(度数)/小时
+//平均功率=电能(度数)/小时
 func CalculateComPowerToPartner(energy uint32, timeSecond uint32, bit int) (power float64) {
 	power = 0.00
 	if energy == 0 || timeSecond == 0 {

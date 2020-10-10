@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
+	. "GoServer/utils/float64"
 )
 
 const (
@@ -156,6 +157,12 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 				}
 				comData := (comList.ComPort[int(index)]).(mqtt.ComData)
 				comData.Id = comID
+				cacherData := &mqtt.ComData{}
+				if err := Redis().GetDeviceComDataFormRedis(cacheKey, comID,cacherData); err == nil {
+					if CmpPower(comData.CurPower,cacherData.CurPower) == 1 {
+						comData.MaxPower = comData.CurPower
+					}
+				}
 				//更新端口值
 				Redis().UpdateDeviceComDataToRedis(cacheKey, comID, comData)
 			}
@@ -173,7 +180,6 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 					if comData.Enable == 1 {
 						return true, comData.UseEnergy, comData.UseTime, comData.CurElectricity
 					}
-
 					return false, 0, 0, 0
 				}),
 				ProtoVersion: comList.ComProtoVer,

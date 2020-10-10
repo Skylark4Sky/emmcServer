@@ -3,6 +3,7 @@ package redis
 import (
 	. "GoServer/utils/float64"
 	. "GoServer/utils/string"
+	"encoding/json"
 	"strconv"
 )
 
@@ -73,6 +74,15 @@ func (c *Cacher) GetDeviceIDFromRedis(deviceSN string, key_field string) int64 {
 //更新原始上报数据
 func (c *Cacher) UpdateDeviceRawDataToRedis(deviceSN string, rawData string) {
 	c.Set(getRawDataKey(deviceSN), rawData, 0)
+}
+
+// 获取某一端口数据
+func (c *Cacher) GetDeviceComDataFormRedis(deviceSN string, comID uint8, comData interface{}) error {
+	str, err := RedisString(c.HGet(getComdDataKey(deviceSN), strconv.Itoa(int(comID))))
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(str), comData)
 }
 
 //更新端口数据

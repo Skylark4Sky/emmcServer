@@ -1,8 +1,8 @@
 package redis
 
 import (
+	. "GoServer/utils/float64"
 	. "GoServer/utils/string"
-	"github.com/shopspring/decimal"
 	"strconv"
 )
 
@@ -85,14 +85,14 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 }
 
 //统计当前工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32)) uint8 {
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32,curElectricity uint32)) uint8 {
 	var maxCom int = 10
 
 	deviceInfo := &DeviceTatolInfo{
 		UseEnergy:      0,
 		UseTime:        0,
 		CurElectricity: 0,
-		CurPower:       "0 (w)",
+		CurPower:       "0 w",
 		EnableCount:    0,
 	}
 
@@ -112,18 +112,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		var electricityBase float64 = 0.001
-		electricity := decimal.NewFromFloat(electricityBase).Mul(decimal.NewFromFloat(float64(deviceInfo.CurElectricity)))
-		value := decimal.NewFromFloat(250).Mul(electricity)
-
-		f, exact := value.Float64()
-
-		if !exact {
-			deviceInfo.CurPower = "0 w"
-		} else {
-			powerValue := strconv.FormatFloat(f, 'f', -1, 64)
-			deviceInfo.CurPower = StringJoin([]interface{}{powerValue, " w"})
-		}
+		curPower := strconv.FormatFloat(CalculateComPower(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
+		deviceInfo.CurPower = StringJoin([]interface{}{curPower, " w"})
 	}
 
 	//更新统计数据

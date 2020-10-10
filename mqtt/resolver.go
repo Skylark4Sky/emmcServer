@@ -1,6 +1,9 @@
 package Mqtt
 
-import "bytes"
+import (
+	. "GoServer/utils/float64"
+	"bytes"
+)
 
 func BinaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskStartTransfer) {
 	instance = &ComTaskStartTransfer{}
@@ -117,7 +120,7 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			instance.EnableCount += com.Enable
 			break
 		}
-
+		com.CurPower = CalculateComPower(CUR_VOLTAGE,com.CurElectricity,5)
 		instance.ComPort[index] = com
 	}
 	return

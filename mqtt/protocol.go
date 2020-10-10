@@ -121,6 +121,7 @@ type ComData struct {
 	ErrCode        uint8  `json:"errCode"`			//错误码
 	Enable         uint8  `json:"enable"`			//是否启用
 	Behavior       uint8  `json:"behavior"`			//最后状态行为
+	CurPower 	   float64 `json:"power"`			//当前端口使用功率
 }
 
 type ComList struct {

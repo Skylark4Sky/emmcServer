@@ -163,7 +163,7 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 			deviceStatus := &DeviceStatus{
 				Behavior: comList.ComBehavior,
 				Signal:   int8(comList.Signal),
-				Worker: Redis().TatolWorkerByDevice(cacheKey, func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32) {
+				Worker: Redis().TatolWorkerByDevice(cacheKey, func(comDataString string) (enable bool, useEnergy uint32, useTime uint32,curElectricity uint32) {
 					comData := &mqtt.ComData{}
 					err := json.Unmarshal([]byte(comDataString), comData)
 					if err != nil {
@@ -171,7 +171,7 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 					}
 
 					if comData.Enable == 1 {
-						return true, comData.UseEnergy, comData.UseTime, comData.CurElectricity
+						return true, comData.UseEnergy, comData.UseTime,comData.CurElectricity
 					}
 
 					return false, 0, 0, 0

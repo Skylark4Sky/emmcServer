@@ -18,7 +18,8 @@ type DeviceTatolInfo struct {
 	UseEnergy      uint64 `json:energy`
 	UseTime        uint64 `json:time`
 	CurElectricity uint64 `json:electricity`
-	CurPower       string `json:power`
+	CurPowerToCustomer       string `json:c_power`
+	CurPowerToPartner       string `json:p_power`
 	EnableCount    uint8  `json:enable`
 }
 
@@ -92,7 +93,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		UseEnergy:      0,
 		UseTime:        0,
 		CurElectricity: 0,
-		CurPower:       "0 w",
+		CurPowerToCustomer:       "0 w",
 		EnableCount:    0,
 	}
 
@@ -112,8 +113,10 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		curPower := strconv.FormatFloat(CalculateComPower(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
-		deviceInfo.CurPower = StringJoin([]interface{}{curPower, " w"})
+		curCustomerPower := strconv.FormatFloat(CalculateComPowerToCustomer(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
+		curPartnerPower := strconv.FormatFloat(CalculateComPowerToPartner(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2), 'f', 2, 64)
+		deviceInfo.CurPowerToCustomer = StringJoin([]interface{}{curCustomerPower, " w"})
+		deviceInfo.CurPowerToPartner = StringJoin([]interface{}{curPartnerPower, " w"})
 	}
 
 	//更新统计数据

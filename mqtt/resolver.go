@@ -120,7 +120,7 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			instance.EnableCount += com.Enable
 			break
 		}
-		com.CurPower = CalculateComPower(CUR_VOLTAGE,com.CurElectricity,5)
+		com.CurPower = CalculateComPower(CUR_VOLTAGE, com.CurElectricity, 5)
 		instance.ComPort[index] = com
 	}
 	return
@@ -143,7 +143,7 @@ func BinaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 		instance = BinaryConversionToTaskSetConfigTransfer(binaryData)
 		break
 	case GISUNLINK_RESTART: //重启
-	instance = BinaryConversionToReStartDeviceTaskTransfer(binaryData)
+		instance = BinaryConversionToReStartDeviceTaskTransfer(binaryData)
 		break
 	//上报
 	case GISUNLINK_START_CHARGE: //开始

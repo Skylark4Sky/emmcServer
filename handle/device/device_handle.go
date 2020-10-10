@@ -10,7 +10,6 @@ import (
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
 	"encoding/json"
-	"fmt"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
 )
@@ -157,7 +156,6 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 				}
 				comData := (comList.ComPort[int(index)]).(mqtt.ComData)
 				comData.Id = comID
-				fmt.Println("--------CurPower",comData.CurPower,"AveragePower",comData.AveragePower,"MaxPower",comData.MaxPower)
 				//更新端口值
 				Redis().UpdateDeviceComDataToRedis(cacheKey, comID, comData)
 			}

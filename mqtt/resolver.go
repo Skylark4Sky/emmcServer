@@ -3,7 +3,6 @@ package Mqtt
 import (
 	. "GoServer/utils/float64"
 	"bytes"
-	"fmt"
 )
 
 func BinaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskStartTransfer) {
@@ -128,7 +127,6 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 		if CmpPower(com.CurPower,tempCurPower) == 1 {
 			com.MaxPower = com.CurPower
 		}
-		fmt.Println("/////////+++++MaxPower",com.MaxPower,"CurPower",com.CurPower,"AveragePower",com.AveragePower)
 		instance.ComPort[index] = com
 	}
 	return

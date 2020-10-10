@@ -121,8 +121,8 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			break
 		}
 		tempCurPower := com.CurPower
-		com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 4)
-		com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 4)
+		com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 2)
+		com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 2)
 
 		if CmpPower(com.CurPower,tempCurPower) == 1 {
 			com.MaxPower = com.CurPower

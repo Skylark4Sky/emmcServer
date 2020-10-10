@@ -1,7 +1,6 @@
 package float64
 
 import (
-	"fmt"
 	"github.com/shopspring/decimal"
 )
 
@@ -16,34 +15,46 @@ func CmpPower(val1 float64,val2 float64) int {
 }
 
 //当前功率=电压*电流
-func CalculateCurComPower(voltage float64, electricity uint32, bit int32) float64 {
+func CalculateCurComPower(voltage float64, electricity uint32, bit int32) (power float64)  {
+	power = 0.00
 	if electricity > 0 {
 		curElectricity := decimal.NewFromFloat(BASE_ELECTRICITY_RATIO).Mul(decimal.NewFromFloat(float64(electricity)))
 		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity)
-		power, exact := curPower.Round(bit).Float64()
-		fmt.Println("\nCalculateCurComPower ","voltage",voltage,"electricity",electricity,"exact",exact)
-		//if exact {
-			fmt.Println("power",power,"\n")
-			return power
-		//}
+		power, _ = curPower.Round(bit).Float64()
+		return power
 	}
-	return 0.00
+	return
+}
+
+func CalculateCurComPowerToString(voltage float64, electricity uint32, bit int32) (power string) {
+	power = "0w"
+	if electricity > 0 {
+		curElectricity := decimal.NewFromFloat(BASE_ELECTRICITY_RATIO).Mul(decimal.NewFromFloat(float64(electricity)))
+		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity)
+		power = curPower.Round(bit).String()
+	}
+	return
 }
 
 //平均功率=电能(度数)/小时
-func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) float64 {
+func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) (power float64) {
+	power = 0.00
 	if energy == 0 || timeSecond == 0 {
-		return 0.00
+		return
 	}
 	time := decimal.NewFromFloat(float64(timeSecond)).Div(decimal.NewFromFloat(TIMEBYHOUR))
 	curPower := decimal.NewFromFloat(float64(energy)).Div(time)
-	power, exact := curPower.Round(bit).Float64()
+	power, _ = curPower.Round(bit).Float64()
+	return power
+}
 
-	fmt.Println("\nCalculateCurAverageComPower ","energy",energy,"timeSecond",timeSecond,"exact",exact)
-
-	//if exact {
-		fmt.Println("++CalculateCurAverageComPower++",power,"\n")
-		return power
-	//}
-	return 0.00
+func CalculateCurAverageComPowerToString(energy uint32, timeSecond uint32, bit int32) (power string) {
+	power = "0w"
+	if energy == 0 || timeSecond == 0 {
+		return
+	}
+	time := decimal.NewFromFloat(float64(timeSecond)).Div(decimal.NewFromFloat(TIMEBYHOUR))
+	curPower := decimal.NewFromFloat(float64(energy)).Div(time)
+	power = curPower.Round(bit).String()
+	return
 }

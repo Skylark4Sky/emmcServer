@@ -23,7 +23,7 @@ func CalculateCurComPower(voltage float64, electricity uint32, bit int32) float6
 		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity).RoundBank(bit)
 		power, exact := curPower.Float64()
 		if exact {
-			fmt.Println("power",power"\n")
+			fmt.Println("power",power,"\n")
 			return power
 		}
 	}

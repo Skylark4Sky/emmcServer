@@ -27,7 +27,7 @@ func CalculateCurComPower(voltage float64, electricity uint32, bit int32) (power
 }
 
 func CalculateCurComPowerToString(voltage float64, electricity uint32, bit int32) (power string) {
-	power = "0w"
+	power = "0"
 	if electricity > 0 {
 		curElectricity := decimal.NewFromFloat(BASE_ELECTRICITY_RATIO).Mul(decimal.NewFromFloat(float64(electricity)))
 		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity)
@@ -49,7 +49,7 @@ func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) (p
 }
 
 func CalculateCurAverageComPowerToString(energy uint32, timeSecond uint32, bit int32) (power string) {
-	power = "0w"
+	power = "0"
 	if energy == 0 || timeSecond == 0 {
 		return
 	}

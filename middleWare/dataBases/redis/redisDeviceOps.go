@@ -93,8 +93,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		UseEnergy:      0,
 		UseTime:        0,
 		CurElectricity: 0,
-		CurPower:       "0 w",
-		AveragePower: 	"0 w",
+		CurPower:       "0w",
+		AveragePower: 	"0w",
 		EnableCount:    0,
 	}
 
@@ -116,8 +116,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	if deviceInfo.EnableCount >= 1 {
 		curPower := CalculateCurComPowerToString(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2)
 		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2)
-		deviceInfo.CurPower = StringJoin([]interface{}{curPower, " w"})
-		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, " w"})
+		deviceInfo.CurPower = StringJoin([]interface{}{curPower, "w"})
+		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, "w"})
 	}
 
 	//更新统计数据

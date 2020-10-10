@@ -20,8 +20,8 @@ func CalculateCurComPower(voltage float64, electricity uint32, bit int32) float6
 	if electricity > 0 {
 		fmt.Println("\n","voltage",voltage,"electricity",electricity,"\n")
 		curElectricity := decimal.NewFromFloat(BASE_ELECTRICITY_RATIO).Mul(decimal.NewFromFloat(float64(electricity)))
-		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity).RoundBank(bit)
-		power, exact := curPower.Float64()
+		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity)
+		power, exact := curPower.RoundBank(bit).Float64()
 		if exact {
 			fmt.Println("power",power,"\n")
 			return power
@@ -37,8 +37,8 @@ func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) fl
 	}
 	fmt.Println("\n","energy",energy,"timeSecond",timeSecond,"\n")
 	time := decimal.NewFromFloat(float64(timeSecond)).Div(decimal.NewFromFloat(TIMEBYHOUR))
-	curPower := decimal.NewFromFloat(float64(energy)).Div(time).RoundBank(bit)
-	power, exact := curPower.Float64()
+	curPower := decimal.NewFromFloat(float64(energy)).Div(time)
+	power, exact := curPower.RoundBank(bit).Float64()
 	if exact {
 		fmt.Println("++CalculateCurAverageComPower++",power,"\n")
 		return power

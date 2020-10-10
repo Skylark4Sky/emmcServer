@@ -159,7 +159,8 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 				comData.Id = comID
 				cacherData := &mqtt.ComData{}
 				if err := Redis().GetDeviceComDataFormRedis(cacheKey, comID,cacherData); err == nil {
-					if CmpPower(comData.CurPower,cacherData.CurPower) == 1 {
+					comData.MaxPower = cacherData.MaxPower
+					if CmpPower(comData.CurPower,cacherData.MaxPower) == 1 {
 						comData.MaxPower = comData.CurPower
 					}
 				}

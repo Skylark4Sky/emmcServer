@@ -26,6 +26,9 @@ func GetFloat64(val decimal.Decimal)  float64 {
 //当前功率=电压*电流
 func CalculateCurComPower(voltage float64, electricity uint32, bit int32) float64 {
 	if electricity > 0 {
+
+		fmt.Println("=============>voltage",voltage,"\n","electricity",electricity,"\n")
+
 		curElectricity := decimal.NewFromFloat(BASE_ELECTRICITY_RATIO).Mul(decimal.NewFromFloat(float64(electricity)))
 		curPower := decimal.NewFromFloat(voltage).Mul(curElectricity).RoundBank(bit)
 
@@ -46,6 +49,8 @@ func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) fl
 	if energy == 0 || timeSecond == 0 {
 		return 0.00
 	}
+
+	fmt.Println("=============>energy",energy,"\n","timeSecond",timeSecond,"\n")
 
 	time := decimal.NewFromFloat(float64(timeSecond)).DivRound(decimal.NewFromFloat(TIMEBYHOUR),2)
 	curPower := decimal.NewFromFloat(float64(energy)).DivRound(time,2).RoundBank(bit)

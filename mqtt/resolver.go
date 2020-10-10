@@ -120,8 +120,13 @@ func BinaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			instance.EnableCount += com.Enable
 			break
 		}
-		com.CurPowerToCustomer = CalculateComPowerToCustomer(CUR_VOLTAGE, com.CurElectricity, 2)
-		com.CurPowerToPartner = CalculateComPowerToPartner(com.UseEnergy, com.UseTime, 2)
+		tempCurPower := com.CurPower
+		com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 2)
+		com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 2)
+
+		if CmpPower(com.CurPower,tempCurPower) == 1 {
+			com.MaxPower = com.CurPower
+		}
 		instance.ComPort[index] = com
 	}
 	return

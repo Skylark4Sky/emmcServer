@@ -15,19 +15,19 @@ const (
 )
 
 type DeviceTatolInfo struct {
-	UseEnergy      uint64 `json:energy`
-	UseTime        uint64 `json:time`
-	CurElectricity uint64 `json:electricity`
-	CurPowerToCustomer       string `json:c_power`
-	CurPowerToPartner       string `json:p_power`
-	EnableCount    uint8  `json:enable`
+	UseEnergy      uint64 `json:"energy"`
+	UseTime        uint64 `json:"time"`
+	CurElectricity uint64 `json:"electricity"`
+	CurPower       string `json:"c_power"`
+	AveragePower   string `json:"a_power"`
+	EnableCount    uint8  `json:"enable"`
 }
 
 type DeviceStatus struct {
-	Behavior     uint8  `json:behavior`
-	Signal       int8   `json:signal`
-	Worker       uint8  `json:worker`
-	ProtoVersion uint16 `json:protoVersion`
+	Behavior     uint8  `json:"behavior"`
+	Signal       int8   `json:"signal"`
+	Worker       uint8  `json:"worker"`
+	ProtoVersion uint16 `json:"protoVersion"`
 }
 
 func getDeviceTokenKey(deviceSN string) string {
@@ -93,7 +93,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		UseEnergy:      0,
 		UseTime:        0,
 		CurElectricity: 0,
-		CurPowerToCustomer:       "0 w",
+		CurPower:       "0 w",
+		AveragePower: 	"0 w",
 		EnableCount:    0,
 	}
 
@@ -113,10 +114,10 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		curCustomerPower := strconv.FormatFloat(CalculateComPowerToCustomer(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
-		curPartnerPower := strconv.FormatFloat(CalculateComPowerToPartner(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2), 'f', 2, 64)
-		deviceInfo.CurPowerToCustomer = StringJoin([]interface{}{curCustomerPower, " w"})
-		deviceInfo.CurPowerToPartner = StringJoin([]interface{}{curPartnerPower, " w"})
+		curPower := strconv.FormatFloat(CalculateCurComPower(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
+		AveragePower := strconv.FormatFloat(CalculateCurAverageComPower(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2), 'f', 2, 64)
+		deviceInfo.CurPower = StringJoin([]interface{}{curPower, " w"})
+		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, " w"})
 	}
 
 	//更新统计数据

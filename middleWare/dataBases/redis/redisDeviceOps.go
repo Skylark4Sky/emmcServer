@@ -6,11 +6,19 @@ import (
 )
 
 const (
-	STATUSKEY   = "status:"
-	DEVICEIDKEY = "ID:"
-	RAWDATAKEY  = "rawData:"
-	COMDATAKEY  = "comData:"
+	DEVICETOEKNKEY = "token:"
+	DEVICEIDKEY    = "ID:"
+	RAWDATAKEY     = "rawData:"
+	COMDATAKEY     = "comData:"
+	DEVICEINFOKEY  = "info:"
 )
+
+type DeviceTatolInfo struct {
+	UseEnergy      uint64 `json:useEnergy`
+	UseTime        uint64 `json:useTime`
+	CurElectricity uint64 `json:curElectricity`
+	EnableCount    uint8  `json:enable`
+}
 
 type DeviceStatus struct {
 	Behavior     uint8  `json:behavior`
@@ -19,8 +27,8 @@ type DeviceStatus struct {
 	ProtoVersion uint16 `json:protoVersion`
 }
 
-func getStatusKey(deviceSN string) string {
-	return StringJoin([]interface{}{STATUSKEY, deviceSN})
+func getDeviceTokenKey(deviceSN string) string {
+	return StringJoin([]interface{}{DEVICETOEKNKEY, deviceSN})
 }
 
 func getDeviceIDKey(deviceSN string) string {
@@ -35,15 +43,19 @@ func getComdDataKey(deviceSN string) string {
 	return StringJoin([]interface{}{COMDATAKEY, deviceSN})
 }
 
-//更新Device令牌时间
-func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceStatus, timeout int64) {
-	c.Set(getStatusKey(deviceSN), status, timeout) //15分钟过期,正常1-2分钟后续数据就上来了
+func getDeviceInfoKey(deviceSN string) string {
+	return StringJoin([]interface{}{DEVICEINFOKEY, deviceSN})
 }
 
-//插入Device对应令牌
+//更新令牌时间
+func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceStatus, timeout int64) {
+	c.Set(getDeviceTokenKey(deviceSN), status, timeout) //15分钟过期,正常1-2分钟后续数据就上来了
+}
+
+//插入对应令牌
 func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID int64) {
-	c.Set(getStatusKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
-	c.Set(getDeviceIDKey(deviceSN), deviceID, 0) //全局设备列表
+	c.Set(getDeviceTokenKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
+	c.Set(getDeviceIDKey(deviceSN), deviceID, 0)      //全局设备列表
 }
 
 //取设备ID
@@ -65,20 +77,37 @@ func (c *Cacher) UpdateDeviceComDataToRedis(deviceSN string, comID uint8, comDat
 	c.HSet(getComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
 }
 
-//统计当前设备工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, isEnable func(comDataString string) bool) uint8 {
+//更新工作状态数据统计
+func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interface{}) {
+	c.Set(getDeviceInfoKey(deviceSN), infoData, 0)
+}
+
+//统计当前工作端口数量
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32)) uint8 {
 	var maxCom int = 10
-	var worker uint8 = 0
+
+	deviceInfo := &DeviceTatolInfo{
+		UseEnergy:      0,
+		UseTime:        0,
+		CurElectricity: 0,
+		EnableCount:    0,
+	}
 
 	for i := 0; i < maxCom; i++ {
 		str, err := RedisString(c.HGet(getComdDataKey(deviceSN), strconv.Itoa(i)))
 		if err != nil {
 			continue
 		}
-		if isEnable(str) {
-			worker += 1
+
+		enable, useEnergy, useTime, curElectricity := analysisComStatus(str)
+		if enable {
+			deviceInfo.UseEnergy += uint64(useEnergy)
+			deviceInfo.UseTime += uint64(useTime)
+			deviceInfo.CurElectricity += uint64(curElectricity)
+			deviceInfo.EnableCount += 1
 		}
 	}
-
-	return worker
+	//更新统计数据
+	c.updateDeviceTatolInfoToRedis(deviceSN, deviceInfo)
+	return deviceInfo.EnableCount
 }

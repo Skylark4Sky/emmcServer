@@ -598,10 +598,10 @@ func (c *Cacher) Subscribe(onMessage func(channel string, data []byte) error, ch
 			switch v := psc.Receive().(type) {
 			case redis.Message:
 				// fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
-				SystemLog("redis.Message:->%s: %s", v.Channel, v.Data)
+				//		SystemLog("redis.Message:->%s: %s", v.Channel, v.Data)
 				go onMessage(v.Channel, v.Data)
 			case redis.Subscription:
-				SystemLog("redis.Subscription:->%s: %s %d", v.Channel, v.Kind, v.Count)
+				//		SystemLog("redis.Subscription:->%s: %s %d", v.Channel, v.Kind, v.Count)
 			case error:
 				quit <- 1
 				fmt.Println(err)

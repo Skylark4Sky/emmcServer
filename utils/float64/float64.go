@@ -1,6 +1,7 @@
 package float64
 
 import (
+	"fmt"
 	"github.com/shopspring/decimal"
 )
 
@@ -36,6 +37,7 @@ func CalculateCurAverageComPower(energy uint32, timeSecond uint32, bit int32) fl
 	curPower := decimal.NewFromFloat(float64(energy)).Div(time).RoundBank(bit)
 	power, exact := curPower.Float64()
 	if exact {
+		fmt.Println("++CalculateCurAverageComPower++",power)
 		return power
 	}
 	return 0.00

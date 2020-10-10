@@ -114,8 +114,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		curPower := strconv.FormatFloat(CalculateCurComPower(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2), 'f', 2, 64)
-		AveragePower := strconv.FormatFloat(CalculateCurAverageComPower(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2), 'f', 2, 64)
+		curPower := strconv.FormatFloat(CalculateCurComPower(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),4), 'f', 2, 64)
+		AveragePower := strconv.FormatFloat(CalculateCurAverageComPower(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),4), 'f', 2, 64)
 		deviceInfo.CurPower = StringJoin([]interface{}{curPower, " w"})
 		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, " w"})
 	}

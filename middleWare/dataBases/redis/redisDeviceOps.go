@@ -22,6 +22,7 @@ type DeviceTatolInfo struct {
 	CurElectricity uint64 `json:"electricity"`
 	CurPower       string `json:"c_power"`
 	AveragePower   string `json:"a_power"`
+	MaxPower   	   string `json:"m_power"`
 	EnableCount    uint8  `json:"enable"`
 }
 
@@ -108,11 +109,13 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 		EnableCount:    0,
 	}
 
+	var maxPower float64 = 0
 	for _, comData := range comDataMap {
 		if comData.Enable == 1 {
 			deviceInfo.UseEnergy += uint64(comData.UseEnergy)
 			deviceInfo.UseTime += uint64(comData.UseTime)
 			deviceInfo.CurElectricity += uint64(comData.CurElectricity)
+			maxPower += comData.MaxPower
 			deviceInfo.EnableCount += 1
 		}
 	}
@@ -120,8 +123,10 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 	if deviceInfo.EnableCount >= 1 {
 		curPower := CalculateCurComPowerToString(CUR_VOLTAGE, uint32(deviceInfo.CurElectricity), 2)
 		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 2)
+		MaxPower := GetPowerValue(maxPower,2)
 		deviceInfo.CurPower = StringJoin([]interface{}{curPower, "w"})
 		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, "w"})
+		deviceInfo.MaxPower = StringJoin([]interface{}{MaxPower, "w"})
 	}
 
 	//更新统计数据

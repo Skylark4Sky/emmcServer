@@ -14,6 +14,11 @@ func CmpPower(val1 float64,val2 float64) int {
 	return decimal.NewFromFloat(val1).Cmp(decimal.NewFromFloat(val2))
 }
 
+func GetPowerValue(power float64, places int32) string {
+	curPower := decimal.NewFromFloat(power)
+	return curPower.Round(places).String()
+}
+
 //当前功率=电压*电流
 func CalculateCurComPower(voltage float64, electricity uint32, bit int32) (power float64)  {
 	power = 0.00

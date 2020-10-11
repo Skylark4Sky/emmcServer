@@ -96,7 +96,7 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 }
 
 //统计当前工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32,curElectricity uint32)) uint8 {
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32)) uint8 {
 	var maxCom int = 10
 
 	deviceInfo := &DeviceTatolInfo{
@@ -104,7 +104,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		UseTime:        0,
 		CurElectricity: 0,
 		CurPower:       "0w",
-		AveragePower: 	"0w",
+		AveragePower:   "0w",
 		EnableCount:    0,
 	}
 
@@ -124,8 +124,8 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		curPower := CalculateCurComPowerToString(CUR_VOLTAGE,uint32(deviceInfo.CurElectricity),2)
-		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy),uint32(deviceInfo.UseTime),2)
+		curPower := CalculateCurComPowerToString(CUR_VOLTAGE, uint32(deviceInfo.CurElectricity), 2)
+		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 5)
 		deviceInfo.CurPower = StringJoin([]interface{}{curPower, "w"})
 		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, "w"})
 	}

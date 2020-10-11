@@ -106,6 +106,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 		CurElectricity: 0,
 		CurPower:       "0w",
 		AveragePower:   "0w",
+		MaxPower: 		"0w",
 		EnableCount:    0,
 	}
 

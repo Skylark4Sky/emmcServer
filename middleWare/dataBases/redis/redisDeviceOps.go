@@ -133,14 +133,14 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 func BatchReadDeviceComData(deviceSN string) map[uint8]mqtt.ComData {
 	var maxCom int = 10
 
-	conn := Redis().BatchRead()
-	defer Redis().BatchClose(conn)
+	conn := Redis().BatchStart()
+	defer Redis().BatchEnd(conn)
 	comList := make(map[uint8]mqtt.ComData)
 	for i := 0; i < maxCom; i++  {
-		conn.Send("HGet",getComdDataKey(deviceSN), strconv.Itoa(i))
+		Redis().BatchHGet(conn,getComdDataKey(deviceSN), strconv.Itoa(i))
 	}
 
-	pipe_list, _ := RedisValues(conn.Do(""))
+	pipe_list, _ := RedisValues(Redis().BatchExec(conn))
 	for _, v := range pipe_list {
 		comDataString, _ := RedisString(v, nil)
 		comData := mqtt.ComData{}
@@ -159,8 +159,8 @@ func BatchWriteDeviceComData(deviceSN string,comList *mqtt.ComList, comOps func(
 		return
 	}
 
-	conn := Redis().BatchRead()
-	defer Redis().BatchClose(conn)
+	conn := Redis().BatchStart()
+	defer Redis().BatchEnd(conn)
 
 	for _, comID := range comList.ComID {
 		var index uint8 = comID
@@ -171,8 +171,8 @@ func BatchWriteDeviceComData(deviceSN string,comList *mqtt.ComList, comOps func(
 		comData.Id = comID
 
 		comOps(&comData)
-		conn.Send("HSet",getComdDataKey(deviceSN), strconv.Itoa(int(comID)),comData)
+		Redis().BatchHSet(conn,getComdDataKey(deviceSN), strconv.Itoa(int(comID)),comData)
 	}
 
-	conn.Do("")
+	Redis().BatchExec(conn)
 }

@@ -124,18 +124,29 @@ func (c *Cacher) CreateRedisClient(options interface{}) error {
 }
 
 // 从连接池取一条连接 主要用于批量操作
-func (c *Cacher) BatchRead () (conn redis.Conn) {
+func (c *Cacher) BatchStart () (conn redis.Conn) {
 	conn = c.pool.Get()
 	return
 }
 
-func (c *Cacher) BatchWrite () (conn redis.Conn) {
-	conn = c.pool.Get()
-	return
-}
-
-func (c *Cacher) BatchClose (conn redis.Conn) {
+func (c *Cacher) BatchEnd (conn redis.Conn) {
 	conn.Close()
+}
+
+func (c *Cacher) BatchHGet (conn redis.Conn,key, field string) error {
+	return conn.Send("HGET",key,field)
+}
+
+func (c *Cacher) BatchHSet (conn redis.Conn,key, field string, val interface{}) error {
+	value, err := c.encode(val)
+	if err != nil {
+		return  err
+	}
+	return conn.Send("HSET",key,field,value)
+}
+
+func (c *Cacher) BatchExec(conn redis.Conn)  (reply interface{}, err error) {
+	return conn.Do("")
 }
 
 // Do 执行redis命令并返回结果。执行时从连接池获取连接并在执行完命令后关闭连接。

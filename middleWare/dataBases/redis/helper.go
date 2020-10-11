@@ -23,3 +23,7 @@ func RedisString(reply interface{}, err error) (string, error) {
 func RedisBool(reply interface{}, err error) (bool, error) {
 	return redis.Bool(reply, err)
 }
+
+func RedisValues(reply interface{}, err error) ([]interface{}, error) {
+	return redis.Values(reply, err)
+}

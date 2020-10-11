@@ -1,6 +1,7 @@
 package redis
 
 import (
+	mqtt "GoServer/mqtt"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/string"
 	"encoding/json"
@@ -96,8 +97,7 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 }
 
 //统计当前工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32)) uint8 {
-	var maxCom int = 10
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.ComData) uint8 {
 
 	deviceInfo := &DeviceTatolInfo{
 		UseEnergy:      0,
@@ -108,17 +108,11 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 		EnableCount:    0,
 	}
 
-	for i := 0; i < maxCom; i++ {
-		str, err := RedisString(c.HGet(getComdDataKey(deviceSN), strconv.Itoa(i)))
-		if err != nil {
-			continue
-		}
-
-		enable, useEnergy, useTime, curElectricity := analysisComStatus(str)
-		if enable {
-			deviceInfo.UseEnergy += uint64(useEnergy)
-			deviceInfo.UseTime += uint64(useTime)
-			deviceInfo.CurElectricity += uint64(curElectricity)
+	for _, comData := range comDataMap {
+		if comData.Enable == 1 {
+			deviceInfo.UseEnergy += uint64(comData.UseEnergy)
+			deviceInfo.UseTime += uint64(comData.UseTime)
+			deviceInfo.CurElectricity += uint64(comData.CurElectricity)
 			deviceInfo.EnableCount += 1
 		}
 	}
@@ -133,4 +127,52 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, analysisComStatus func(com
 	//更新统计数据
 	c.updateDeviceTatolInfoToRedis(deviceSN, deviceInfo)
 	return deviceInfo.EnableCount
+}
+
+//批量读端口数据
+func BatchReadDeviceComData(deviceSN string) map[uint8]mqtt.ComData {
+	var maxCom int = 10
+
+	conn := Redis().BatchRead()
+	defer Redis().BatchClose(conn)
+	comList := make(map[uint8]mqtt.ComData)
+	for i := 0; i < maxCom; i++  {
+		conn.Send("HGet",getComdDataKey(deviceSN), strconv.Itoa(i))
+	}
+
+	pipe_list, _ := RedisValues(conn.Do(""))
+	for _, v := range pipe_list {
+		comDataString, _ := RedisString(v, nil)
+		comData := mqtt.ComData{}
+		err := json.Unmarshal([]byte(comDataString), &comData)
+		if err == nil {
+			comList[comData.Id] = comData
+		}
+	}
+
+	return comList
+}
+
+//批量写端口数据
+func BatchWriteDeviceComData(deviceSN string,comList *mqtt.ComList, comOps func(comData *mqtt.ComData)) {
+	if comList == nil {
+		return
+	}
+
+	conn := Redis().BatchRead()
+	defer Redis().BatchClose(conn)
+
+	for _, comID := range comList.ComID {
+		var index uint8 = comID
+		if comList.ComNum <= 5 {
+			index = (comID % 5)
+		}
+		comData := (comList.ComPort[int(index)]).(mqtt.ComData)
+		comData.Id = comID
+
+		comOps(&comData)
+		conn.Send("HSet",getComdDataKey(deviceSN), strconv.Itoa(int(comID)),comData)
+	}
+
+	conn.Do("")
 }

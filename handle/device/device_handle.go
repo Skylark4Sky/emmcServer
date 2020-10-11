@@ -6,13 +6,12 @@ import (
 	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqtt"
+	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
-	"encoding/json"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
-	. "GoServer/utils/float64"
 )
 
 const (
@@ -145,44 +144,29 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
-			//写入原始数据
-			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
-
 			//循环写入端口数据
 			comList := packet.JsonData.(*mqtt.ComList)
-			for _, comID := range comList.ComID {
-				var index uint8 = comID
-				if comList.ComNum <= 5 {
-					index = (comID % 5)
-				}
-				comData := (comList.ComPort[int(index)]).(mqtt.ComData)
-				comData.Id = comID
-				cacherData := &mqtt.ComData{}
-				if err := Redis().GetDeviceComDataFormRedis(cacheKey, comID,cacherData); err == nil {
+
+			//批量读当前所有接口
+			cacherComData := BatchReadDeviceComData(cacheKey)
+
+			//批量写
+			if len(cacherComData) > 1{
+				BatchWriteDeviceComData(cacheKey,comList, func(comData *mqtt.ComData) {
+					cacherData := cacherComData[comData.Id]
 					comData.MaxPower = cacherData.MaxPower
 					if CmpPower(comData.CurPower,cacherData.MaxPower) == 1 {
 						comData.MaxPower = comData.CurPower
 					}
-				}
-				//更新端口值
-				Redis().UpdateDeviceComDataToRedis(cacheKey, comID, comData)
+				})
+			} else {
+				BatchWriteDeviceComData(cacheKey,comList, func(comData *mqtt.ComData) {})
 			}
 
 			deviceStatus := &DeviceStatus{
 				Behavior: comList.ComBehavior,
 				Signal:   int8(comList.Signal),
-				Worker: Redis().TatolWorkerByDevice(cacheKey, func(comDataString string) (enable bool, useEnergy uint32, useTime uint32, curElectricity uint32) {
-					comData := &mqtt.ComData{}
-					err := json.Unmarshal([]byte(comDataString), comData)
-					if err != nil {
-						return false, 0, 0, 0
-					}
-
-					if comData.Enable == 1 {
-						return true, comData.UseEnergy, comData.UseTime, comData.CurElectricity
-					}
-					return false, 0, 0, 0
-				}),
+				Worker: Redis().TatolWorkerByDevice(cacheKey,BatchReadDeviceComData(cacheKey)),
 				ProtoVersion: comList.ComProtoVer,
 			}
 
@@ -191,8 +175,10 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 				timeout = LEISURE_TIME
 			}
 
+			//更新令牌时间
 			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)
-
+			//写入原始数据
+			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
 		}
 	}
 }

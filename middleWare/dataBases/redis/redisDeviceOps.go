@@ -119,7 +119,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 
 	if deviceInfo.EnableCount >= 1 {
 		curPower := CalculateCurComPowerToString(CUR_VOLTAGE, uint32(deviceInfo.CurElectricity), 2)
-		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 5)
+		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 2)
 		deviceInfo.CurPower = StringJoin([]interface{}{curPower, "w"})
 		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, "w"})
 	}

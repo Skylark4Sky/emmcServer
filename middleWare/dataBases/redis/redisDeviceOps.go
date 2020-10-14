@@ -136,7 +136,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 }
 
 //批量读端口数据
-func BatchReadDeviceComData(deviceSN string) map[uint8]mqtt.ComData {
+func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
 	var maxCom int = 10
 
 	conn := Redis().BatchStart()
@@ -160,7 +160,7 @@ func BatchReadDeviceComData(deviceSN string) map[uint8]mqtt.ComData {
 }
 
 //批量写端口数据
-func BatchWriteDeviceComData(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData)) {
+func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData)) {
 	if comList == nil {
 		return
 	}

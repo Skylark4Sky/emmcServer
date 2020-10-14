@@ -111,8 +111,8 @@ type ComData struct {
 	UseEnergy      uint32  `json:"useEnergy"`      //冲电量
 	MaxTime        uint32  `json:"maxTime"`        //最大时间
 	UseTime        uint32  `json:"useTime"`        //已用时间
-	CurElectricity uint32  `json:"curElectricity"` //最大电流
-	MaxElectricity uint16  `json:"maxElectricity"` //当前电流
+	CurElectricity uint32  `json:"curElectricity"` //当前电流
+	MaxElectricity uint16  `json:"maxElectricity"` //最大电流
 	ChipReset      uint16  `json:"chipReset"`      //芯片复位统计
 	ErrCode        uint8   `json:"errCode"`        //错误码
 	Enable         uint8   `json:"enable"`         //是否启用

@@ -144,19 +144,41 @@ func DeviceExpiredMsgOps(pattern, channel, message string) {
 
 }
 
+//比较数据
+func analyseComData(newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
+	//不存在缓存数据直接返回
+	if len(cacheData) <= 0{
+		return
+	}
+
+	for _, com := range newData.ComPort {
+		comData := com.(mqtt.ComData)
+		cacherData := cacheData[comData.Id]
+		//未开启时，检测值是否有变化
+		if comData.Enable == 0 {
+			if cacherData.CurElectricity != comData.CurElectricity {
+
+			}
+		} else {
+			//comData.MaxPower
+		}
+	}
+}
+
 func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
-			//循环写入端口数据
+
 			comList := packet.Data.(*mqtt.ComList)
-
 			//批量读当前所有接口
-			cacherComData := BatchReadDeviceComData(cacheKey)
+			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
+			//对比新旧数据
+			analyseComData(comList,cacherComData)
 
-			//批量写
+			//批量写入数据
 			if len(cacherComData) > 1 {
-				BatchWriteDeviceComData(cacheKey, comList, func(comData *mqtt.ComData) {
+				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {
 					cacherData := cacherComData[comData.Id]
 					comData.MaxPower = cacherData.MaxPower
 					if CmpPower(comData.CurPower, cacherData.MaxPower) == 1 {
@@ -164,13 +186,13 @@ func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 					}
 				})
 			} else {
-				BatchWriteDeviceComData(cacheKey, comList, func(comData *mqtt.ComData) {})
+				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {})
 			}
 
 			deviceStatus := &DeviceStatus{
 				Behavior:     comList.ComBehavior,
 				Signal:       int8(comList.Signal),
-				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComData(cacheKey)),
+				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
 				ProtoVersion: comList.ComProtoVer,
 			}
 

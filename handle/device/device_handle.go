@@ -145,7 +145,7 @@ func DeviceExpiredMsgOps(pattern, channel, message string) {
 }
 
 //比较数据
-func analyseComData(newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
+func analyseComData(tokenKey string,newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
 	//不存在缓存数据直接返回
 	if len(cacheData) <= 0{
 		return
@@ -157,7 +157,7 @@ func analyseComData(newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
 		//未开启时，检测值是否有变化
 		if comData.Enable == 0 {
 			if cacherData.CurElectricity != comData.CurElectricity {
-
+				SystemLog(tokenKey,":端口异常---单前值:",comData.CurElectricity,"上一次值为:",cacherData.CurElectricity)
 			}
 		} else {
 			//comData.MaxPower
@@ -174,7 +174,7 @@ func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 			//批量读当前所有接口
 			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
 			//对比新旧数据
-			analyseComData(comList,cacherComData)
+			analyseComData(cacheKey,comList,cacherComData)
 
 			//批量写入数据
 			if len(cacherComData) > 1 {

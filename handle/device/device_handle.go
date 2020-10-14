@@ -140,6 +140,10 @@ func SaveDeviceTransferData(serverNode string, device_sn string, packet *mqtt.Pa
 	createDeviceTransferLog(log)
 }
 
+func DeviceOffLineOps(noteString string) {
+
+}
+
 func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
@@ -151,22 +155,22 @@ func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playloa
 			cacherComData := BatchReadDeviceComData(cacheKey)
 
 			//批量写
-			if len(cacherComData) > 1{
-				BatchWriteDeviceComData(cacheKey,comList, func(comData *mqtt.ComData) {
+			if len(cacherComData) > 1 {
+				BatchWriteDeviceComData(cacheKey, comList, func(comData *mqtt.ComData) {
 					cacherData := cacherComData[comData.Id]
 					comData.MaxPower = cacherData.MaxPower
-					if CmpPower(comData.CurPower,cacherData.MaxPower) == 1 {
+					if CmpPower(comData.CurPower, cacherData.MaxPower) == 1 {
 						comData.MaxPower = comData.CurPower
 					}
 				})
 			} else {
-				BatchWriteDeviceComData(cacheKey,comList, func(comData *mqtt.ComData) {})
+				BatchWriteDeviceComData(cacheKey, comList, func(comData *mqtt.ComData) {})
 			}
 
 			deviceStatus := &DeviceStatus{
-				Behavior: comList.ComBehavior,
-				Signal:   int8(comList.Signal),
-				Worker: Redis().TatolWorkerByDevice(cacheKey,BatchReadDeviceComData(cacheKey)),
+				Behavior:     comList.ComBehavior,
+				Signal:       int8(comList.Signal),
+				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComData(cacheKey)),
 				ProtoVersion: comList.ComProtoVer,
 			}
 

@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+type MQOffLine struct {
+	key string
+}
+
 type MqMsg struct {
 	Broker  string
 	Topic   string
@@ -23,9 +27,17 @@ type MqMsg struct {
 
 func init() {
 	Redis().Subscribe(func(chann string, msg []byte) error {
+
+		var work Job = &MQOffLine{key: string(msg)}
+		InsertAsyncTask(work)
+
 		SystemLog("notifyCallback  channel : ", chann, " message : ", msg)
 		return nil
 	}, "__keyevent@0__:expired")
+}
+
+func (offline *MQOffLine) ExecTask() {
+
 }
 
 func (msg *MqMsg) ExecTask() error {

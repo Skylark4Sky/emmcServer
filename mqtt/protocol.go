@@ -83,48 +83,50 @@ type DeviceInfo struct {
 }
 
 type ComTaskStartTransfer struct {
-	comID          uint8  //端口号
-	token          uint32 //令牌
-	maxEnergy      uint32 //最大充电电量
-	maxElectricity uint32 //最大充电电流
-	maxTime        uint32 //最大充电时间
+	ComID          uint8  `json:"id"`          //端口号
+	Token          uint32 `json:"token"`       //令牌
+	MaxEnergy      uint32 `json:"energy"`      //最大电量
+	MaxElectricity uint32 `json:"electricity"` //最大电流
+	MaxTime        uint32 `json:"time"`        //最大时间
 }
 
 type ComTaskStopTransfer struct {
-	comID     uint8  //端口号
-	token     uint32 //令牌
-	forceStop uint8  //是否强制停止 是 停止并清空当前端口数据
+	ComID     uint8  `json:"id"`        //端口号
+	Token     uint32 `json:"token"`     //令牌
+	ForceStop uint8  `json:"forceStop"` //是否强制停止 是 停止并清空当前端口数据
 }
 
 type ComTaskStatusQueryTransfer struct {
-	comID uint8 //端口号 0 - 9  大于9 查全部
+	ComID uint8 `json:"id"` //端口号 0 - 9  大于9 查全部
 }
 
-type DeviceONLoadTimeSetConfigTransfer struct {
-	time uint8 //空载时间 秒
+type DeviceSetConfigTransfer struct {
+	Time uint8 `json:"time"` //空载时间 秒
 }
 
 type DeviceReStartTaskTransfer struct {
 }
 
+//某一端口数据
 type ComData struct {
-	Id                 uint8   `json:"id"`             //端口ID
-	Token              uint32  `json:"token"`          //令牌
-	MaxEnergy          uint32  `json:"maxEnergy"`      //最大充电电量
-	UseEnergy          uint32  `json:"useEnergy"`      //当前已冲电量
-	MaxTime            uint32  `json:"maxTime"`        //最大充电时间
-	UseTime            uint32  `json:"useTime"`        //当前已冲时间
-	CurElectricity     uint32  `json:"curElectricity"` //最大充电电流
-	MaxElectricity     uint16  `json:"maxElectricity"` //当前充电电流
-	ChipReset          uint16  `json:"chipReset"`      //芯片复位统计
-	ErrCode            uint8   `json:"errCode"`        //错误码
-	Enable             uint8   `json:"enable"`         //是否启用
-	Behavior           uint8   `json:"behavior"`       //最后状态行为
-	CurPower 		   float64 `json:"c_power"`        //当前端口使用功率
-	AveragePower       float64 `json:"a_power"`        //当前端口平均功率
-	MaxPower           float64 `json:"m_power"`        //当前端口最高使用功率
+	Id             uint8   `json:"id"`             //端口ID
+	Token          uint32  `json:"token"`          //令牌
+	MaxEnergy      uint32  `json:"maxEnergy"`      //最大电量
+	UseEnergy      uint32  `json:"useEnergy"`      //冲电量
+	MaxTime        uint32  `json:"maxTime"`        //最大时间
+	UseTime        uint32  `json:"useTime"`        //已用时间
+	CurElectricity uint32  `json:"curElectricity"` //最大电流
+	MaxElectricity uint16  `json:"maxElectricity"` //当前电流
+	ChipReset      uint16  `json:"chipReset"`      //芯片复位统计
+	ErrCode        uint8   `json:"errCode"`        //错误码
+	Enable         uint8   `json:"enable"`         //是否启用
+	Behavior       uint8   `json:"behavior"`       //最后状态行为
+	CurPower       float64 `json:"c_power"`        //当前端口使用功率
+	AveragePower   float64 `json:"a_power"`        //当前端口平均功率
+	MaxPower       float64 `json:"m_power"`        //当前端口最高使用功率
 }
 
+// 上报数据
 type ComList struct {
 	Signal         uint8         //设备网络信号
 	ComNum         uint8         //端口数量
@@ -212,7 +214,7 @@ func (comList *ComList) Print() (retString string) {
 func (taskStart *ComTaskStartTransfer) Print() (retString string) {
 	var buffer bytes.Buffer
 	if taskStart != nil {
-		comString := fmt.Sprintf("ComTaskStartTransfer----------> comID:%02d token:%012d M_energy:%06d M_electricity:%06d M_time:%08d \n", taskStart.comID, taskStart.token, taskStart.maxEnergy, taskStart.maxElectricity, taskStart.maxTime)
+		comString := fmt.Sprintf("ComTaskStartTransfer----------> comID:%02d token:%012d M_energy:%06d M_electricity:%06d M_time:%08d \n", taskStart.ComID, taskStart.Token, taskStart.MaxEnergy, taskStart.MaxElectricity, taskStart.MaxTime)
 		buffer.WriteString(comString)
 	}
 	retString = buffer.String()
@@ -222,7 +224,7 @@ func (taskStart *ComTaskStartTransfer) Print() (retString string) {
 func (taskStop *ComTaskStopTransfer) Print() (retString string) {
 	var buffer bytes.Buffer
 	if taskStop != nil {
-		comString := fmt.Sprintf("ComTaskStopTransfer----------> comID:%02d token:%012d forceStop:%02d\n", taskStop.comID, taskStop.token, taskStop.forceStop)
+		comString := fmt.Sprintf("ComTaskStopTransfer----------> comID:%02d token:%012d forceStop:%02d\n", taskStop.ComID, taskStop.Token, taskStop.ForceStop)
 		buffer.WriteString(comString)
 	}
 	retString = buffer.String()
@@ -234,10 +236,10 @@ func (taskStatusQuery *ComTaskStatusQueryTransfer) Print() (retString string) {
 	var comString string
 
 	if taskStatusQuery != nil {
-		if taskStatusQuery.comID < 10 {
-			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> comID:%02d\n", taskStatusQuery.comID)
+		if taskStatusQuery.ComID < 10 {
+			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> comID:%02d\n", taskStatusQuery.ComID)
 		} else {
-			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> Query All Com:%02d\n", taskStatusQuery.comID)
+			comString = fmt.Sprintf("ComTaskStatusQueryTransfer----------> Query All Com:%02d\n", taskStatusQuery.ComID)
 		}
 		buffer.WriteString(comString)
 	}
@@ -245,10 +247,10 @@ func (taskStatusQuery *ComTaskStatusQueryTransfer) Print() (retString string) {
 	return
 }
 
-func (taskSetConfig *DeviceONLoadTimeSetConfigTransfer) Print() (retString string) {
+func (taskSetConfig *DeviceSetConfigTransfer) Print() (retString string) {
 	var buffer bytes.Buffer
 	if taskSetConfig != nil {
-		comString := fmt.Sprintf("DeviceONLoadTimeSetConfigTransfer----------> on_load time:%02d\n", taskSetConfig.time)
+		comString := fmt.Sprintf("DeviceSetConfigTransfer----------> on_load time:%02d\n", taskSetConfig.Time)
 		buffer.WriteString(comString)
 	}
 	retString = buffer.String()

@@ -8,34 +8,34 @@ import (
 func BinaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskStartTransfer) {
 	instance = &ComTaskStartTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.comID = (GetUint8(bytesBuf))
-	instance.token = (GetUint32(bytesBuf))
-	instance.maxEnergy = (GetUint32(bytesBuf))
-	instance.maxElectricity = (GetUint32(bytesBuf))
-	instance.maxTime = (GetUint32(bytesBuf))
+	instance.ComID = (GetUint8(bytesBuf))
+	instance.Token = (GetUint32(bytesBuf))
+	instance.MaxEnergy = (GetUint32(bytesBuf))
+	instance.MaxElectricity = (GetUint32(bytesBuf))
+	instance.MaxTime = (GetUint32(bytesBuf))
 	return
 }
 
 func BinaryConversionToTaskStopTransfer(binaryData []byte) (instance *ComTaskStopTransfer) {
 	instance = &ComTaskStopTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.comID = (GetUint8(bytesBuf))
-	instance.token = (GetUint32(bytesBuf))
-	instance.forceStop = (GetUint8(bytesBuf))
+	instance.ComID = (GetUint8(bytesBuf))
+	instance.Token = (GetUint32(bytesBuf))
+	instance.ForceStop = (GetUint8(bytesBuf))
 	return
 }
 
 func BinaryConversionToTaskStatusQueryTransfer(binaryData []byte) (instance *ComTaskStatusQueryTransfer) {
 	instance = &ComTaskStatusQueryTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.comID = (GetUint8(bytesBuf))
+	instance.ComID = (GetUint8(bytesBuf))
 	return
 }
 
-func BinaryConversionToTaskSetConfigTransfer(binaryData []byte) (instance *DeviceONLoadTimeSetConfigTransfer) {
-	instance = &DeviceONLoadTimeSetConfigTransfer{}
+func BinaryConversionToTaskSetConfigTransfer(binaryData []byte) (instance *DeviceSetConfigTransfer) {
+	instance = &DeviceSetConfigTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
-	instance.time = (GetUint8(bytesBuf))
+	instance.Time = (GetUint8(bytesBuf))
 	return
 }
 

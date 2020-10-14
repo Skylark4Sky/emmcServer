@@ -42,3 +42,23 @@ func GetBtyes(byteBuf io.Reader, length uint32) (data []byte) {
 	}
 	return
 }
+
+func SetBtyes() {
+
+}
+
+func SetUint16() {
+
+}
+
+func SetUint32() {
+
+}
+
+func SetUint8() {
+
+}
+
+func WriteBytes() {
+
+}

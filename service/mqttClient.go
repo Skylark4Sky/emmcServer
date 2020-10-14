@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type MQOffLine struct {
+type ExpiredMsg struct {
 	Pattern string
 	Chann string
 	Message string
@@ -29,26 +29,28 @@ type MqMsg struct {
 
 func init() {
 	Redis().Subscribe(func(pattern, channel, message string) error {
-		var work Job = &MQOffLine{Pattern:pattern, Chann:channel, Message:message}
+		var work Job = &ExpiredMsg{Pattern:pattern, Chann:channel, Message:message}
 		InsertAsyncTask(work)
 		SystemLog("notifyCallback  pattern:",pattern," channel : ", channel, " message : ", message)
 		return nil
 	}, "__keyevent@0__:expired")
 }
 
-func (offline *MQOffLine) ExecTask() error{
-
+func (expired *ExpiredMsg) ExecTask() error{
+	DeviceExpiredMsgOps(expired.Pattern,expired.Chann,expired.Message)
 	return nil
 }
 
 func (msg *MqMsg) ExecTask() error {
-	ok, packet := MessageHandler(msg.Payload)
-	if ok && packet.JsonData != nil {
+	ok, packet := MessageUnpack(msg.Payload)
+	if ok && packet.Data != nil {
 		deviceSN := GetDeviceSN(msg.Topic)
-		SaveDeviceTransferData(msg.Broker, deviceSN, packet)
-		DeviceActBehaviorDataAnalysis(packet, deviceSN, string(msg.Payload))
+		//保存包数据入库
+		SaveDeviceTransferDataOps(msg.Broker, deviceSN, packet)
+		//处理包数据
+		DeviceActBehaviorDataOps(packet, deviceSN, string(msg.Payload))
 		MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
-		MqttLog(packet.JsonData.(Protocol).Print())
+		MqttLog(packet.Data.(Protocol).Print())
 	} else {
 		fmt.Printf("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 	}

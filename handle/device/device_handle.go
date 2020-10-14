@@ -110,15 +110,15 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 }
 
 //保存上报数据入库
-func SaveDeviceTransferData(serverNode string, device_sn string, packet *mqtt.Packet) {
+func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
 	var comNum int64 = 0
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
-		comList := packet.JsonData.(*mqtt.ComList)
+		comList := packet.Data.(*mqtt.ComList)
 		comNum = int64(comList.ComNum)
 		break
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
-		comList := packet.JsonData.(*mqtt.ComList)
+		comList := packet.Data.(*mqtt.ComList)
 		comNum = int64(comList.ComNum)
 		for _, comID := range comList.ComID {
 			comNum = int64(comID)
@@ -140,16 +140,16 @@ func SaveDeviceTransferData(serverNode string, device_sn string, packet *mqtt.Pa
 	createDeviceTransferLog(log)
 }
 
-func DeviceOffLineOps(noteString string) {
+func DeviceExpiredMsgOps(pattern, channel, message string) {
 
 }
 
-func DeviceActBehaviorDataAnalysis(packet *mqtt.Packet, cacheKey string, playload string) {
+func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
 			//循环写入端口数据
-			comList := packet.JsonData.(*mqtt.ComList)
+			comList := packet.Data.(*mqtt.ComList)
 
 			//批量读当前所有接口
 			cacherComData := BatchReadDeviceComData(cacheKey)

@@ -47,10 +47,6 @@ const (
 	GISUNLINK_COM_NO_UPDATE    = 0x1D //参数没有刷新
 )
 
-type Protocol interface {
-	Print() (retString string)
-}
-
 //更新状态
 type UpdateState struct {
 	Msg string `json:"msg"`
@@ -142,9 +138,13 @@ type ComList struct {
 type JosnPacket struct {
 	Act      string `json:"act"`
 	ID       int    `json:"id"`
-	Ctime    int    `json:"ctime"`
+	Ctime    int    `json:"ctime,omitempty"`
 	Data     string `json:"data"`
 	Behavior int    `json:"behavior"`
+}
+
+type Protocol interface {
+	Print() (retString string)
 }
 
 func (update *UpdateState) Print() (retString string) {
@@ -264,14 +264,14 @@ func (restart *DeviceReStartTaskTransfer) Print() (retString string) {
 
 func (json *JosnPacket) Print() (retString string) {
 	var buffer bytes.Buffer
-	buffer.WriteString(json.FormatData())
+	buffer.WriteString(json.formatData())
 	buffer.WriteString(" behavior:")
 	buffer.WriteString(strconv.Itoa(json.Behavior))
 	retString = buffer.String()
 	return
 }
 
-func (json *JosnPacket) FormatData() (data string) {
+func (json *JosnPacket) formatData() (data string) {
 	data = ""
 	if json != nil {
 		if len(json.Data) > 0 {

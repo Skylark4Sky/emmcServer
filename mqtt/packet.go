@@ -11,7 +11,8 @@ type Packet struct {
 	JsonData interface{}
 }
 
-func TranslateBinaryData(base64String string) (binary []byte) {
+//转译base64数据
+func translateBinaryData(base64String string) (binary []byte) {
 	decodeBytes, err := base64.StdEncoding.DecodeString(base64String)
 	if err == nil {
 		binary = decodeBytes
@@ -19,15 +20,17 @@ func TranslateBinaryData(base64String string) (binary []byte) {
 	return
 }
 
-func (packet *Packet) AnalysisTransferBehavior() {
-	binaryData := TranslateBinaryData(packet.Json.FormatData())
-	packet.JsonData = BinaryConversionToInstance(binaryData, uint8(packet.Json.Behavior))
+// 包解析
+func (packet *Packet) analysisTransferBehavior() {
+	binaryData := translateBinaryData(packet.Json.formatData())
+	packet.JsonData = binaryConversionToInstance(binaryData, uint8(packet.Json.Behavior))
 }
 
-func (packet *Packet) AnalysisAction() {
+//按上传行为解析包结构
+func (packet *Packet) analysisAction() {
 	switch packet.Json.Act {
 	case TRANSFER:
-		packet.AnalysisTransferBehavior()
+		packet.analysisTransferBehavior()
 		break
 	case TRANSFER_RESULT:
 		packet.JsonData = &TransferResult{}
@@ -56,7 +59,7 @@ func MessageHandler(Payload []byte) (ok bool, packet *Packet) {
 		ok = true
 		packet = &Packet{}
 		packet.Json = Json
-		packet.AnalysisAction()
+		packet.analysisAction()
 		return
 	}
 	return

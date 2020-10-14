@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"unsafe"
 )
 
 var redisCacher *Cacher
@@ -606,7 +607,7 @@ func (c *Cacher) Publish(channel, message string) (int, error) {
 // 支持redis服务停止或网络异常等情况时，自动重新订阅。
 // 一般的程序都是启动后开启一些固定channel的订阅，也不会动态的取消订阅，这种场景下可以使用本方法。
 // 复杂场景的使用可以直接参考 https://godoc.org/github.com/gomodule/redigo/redis#hdr-Publish_and_Subscribe
-func (c *Cacher) Subscribe(onMessage func(channel string, data []byte) error, channels ...string) error {
+func (c *Cacher) Subscribe(onMessage func(pattern, channel, message string) error, channels ...string) error {
 	conn := c.pool.Get()
 	psc := redis.PubSubConn{Conn: conn}
 	err := psc.Subscribe(redis.Args{}.AddFlat(channels)...)
@@ -623,11 +624,11 @@ func (c *Cacher) Subscribe(onMessage func(channel string, data []byte) error, ch
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
-				// fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
-				//		SystemLog("redis.Message:->%s: %s", v.Channel, v.Data)
-				go onMessage(v.Channel, v.Data)
+				pattern := (*string)(unsafe.Pointer(&v.Pattern))
+				channel := (*string)(unsafe.Pointer(&v.Channel))
+				message := (*string)(unsafe.Pointer(&v.Data))
+				go onMessage(*pattern,*channel, *message)
 			case redis.Subscription:
-				//		SystemLog("redis.Subscription:->%s: %s %d", v.Channel, v.Kind, v.Count)
 			case error:
 				quit <- 1
 				fmt.Println(err)

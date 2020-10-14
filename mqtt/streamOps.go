@@ -5,60 +5,65 @@ import (
 	"io"
 )
 
+var endianFormat = binary.LittleEndian
+
 func readBytes(byteBuf io.Reader, data interface{}) bool {
-	err := binary.Read(byteBuf, binary.LittleEndian, data)
+	err := binary.Read(byteBuf, endianFormat, data)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-func GetUint8(byteBuf io.Reader) (data uint8) {
+func getUint8(byteBuf io.Reader) (data uint8) {
 	if readBytes(byteBuf, &data) != true {
 		data = 0
 	}
 	return
 }
 
-func GetUint16(byteBuf io.Reader) (data uint16) {
+func getUint16(byteBuf io.Reader) (data uint16) {
 	if readBytes(byteBuf, &data) != true {
 		data = 0
 	}
 	return
 }
 
-func GetUint32(byteBuf io.Reader) (data uint32) {
+func getUint32(byteBuf io.Reader) (data uint32) {
 	if readBytes(byteBuf, &data) != true {
 		data = 0
 	}
 	return
 }
 
-func GetBtyes(byteBuf io.Reader, length uint32) (data []byte) {
+func getBtyes(byteBuf io.Reader, length uint32) (data []byte) {
 	data = make([]byte, length)
-	err := binary.Read(byteBuf, binary.LittleEndian, &data)
-	if err != nil {
+	if readBytes(byteBuf, &data) != true {
 		data = nil
 	}
 	return
 }
 
-func SetBtyes() {
-
+func writeBytes(byteBuf io.Writer, data interface{}) bool {
+	err := binary.Write(byteBuf, endianFormat, data)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
-func SetUint16() {
-
+func setUint8(byteBuf io.Writer,value uint8) bool {
+	return writeBytes(byteBuf,value)
 }
 
-func SetUint32() {
-
+func setUint16(byteBuf io.Writer,value uint16) bool {
+	return writeBytes(byteBuf,value)
 }
 
-func SetUint8() {
-
+func setUint32(byteBuf io.Writer,value uint32) bool {
+	return writeBytes(byteBuf,value)
 }
 
-func WriteBytes() {
-
+func setBtyes(byteBuf io.Writer,value []byte) bool {
+	return writeBytes(byteBuf,value)
 }

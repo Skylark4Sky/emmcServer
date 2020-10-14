@@ -16,7 +16,9 @@ import (
 )
 
 type MQOffLine struct {
-	key string
+	Pattern string
+	Chann string
+	Message string
 }
 
 type MqMsg struct {
@@ -26,18 +28,17 @@ type MqMsg struct {
 }
 
 func init() {
-	Redis().Subscribe(func(chann string, msg []byte) error {
-
-		var work Job = &MQOffLine{key: string(msg)}
+	Redis().Subscribe(func(pattern, channel, message string) error {
+		var work Job = &MQOffLine{Pattern:pattern, Chann:channel, Message:message}
 		InsertAsyncTask(work)
-
-		SystemLog("notifyCallback  channel : ", chann, " message : ", msg)
+		SystemLog("notifyCallback  pattern:",pattern," channel : ", channel, " message : ", message)
 		return nil
 	}, "__keyevent@0__:expired")
 }
 
-func (offline *MQOffLine) ExecTask() {
+func (offline *MQOffLine) ExecTask() error{
 
+	return nil
 }
 
 func (msg *MqMsg) ExecTask() error {

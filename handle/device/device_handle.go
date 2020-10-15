@@ -12,6 +12,7 @@ import (
 	. "GoServer/utils/time"
 	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 const (
@@ -145,19 +146,24 @@ func DeviceExpiredMsgOps(pattern, channel, message string) {
 }
 
 //比较数据
-func analyseComData(tokenKey string,newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
+func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
 	//不存在缓存数据直接返回
-	if len(cacheData) <= 0{
+	if len(cacheData) <= 0 {
 		return
 	}
 
-	for _, com := range newData.ComPort {
-		comData := com.(mqtt.ComData)
+	for _, comID := range newData.ComID {
+		var index uint8 = comID
+		if newData.ComNum <= 5 {
+			index = (comID % 5)
+		}
+		comData := (newData.ComPort[int(index)]).(mqtt.ComData)
+		comData.Id = comID
 		cacherData := cacheData[comData.Id]
 		//未开启时，检测值是否有变化
 		if comData.Enable == 0 {
-			if cacherData.CurElectricity != comData.CurElectricity {
-				SystemLog(tokenKey,":端口异常---单前值:",comData.CurElectricity,"上一次值为:",cacherData.CurElectricity)
+			if (comData.CurElectricity >= 1) && (comData.CurElectricity != cacherData.CurElectricity) {
+				SystemLog(tokenKey, " Time:", TimeFormat(time.Now()), " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity, "--", cacherData.Id)
 			}
 		} else {
 			//comData.MaxPower
@@ -174,7 +180,7 @@ func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 			//批量读当前所有接口
 			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
 			//对比新旧数据
-			analyseComData(cacheKey,comList,cacherComData)
+			analyseComData(cacheKey, comList, cacherComData)
 
 			//批量写入数据
 			if len(cacherComData) > 1 {

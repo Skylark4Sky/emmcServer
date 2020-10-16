@@ -33,14 +33,55 @@ const (
 
 type AsyncSQLTask struct {
 	Type     AsyncSQLTaskType
+	WhereSQL string
 	RecordID int64
+	UpdateMap map[string]interface{}
 	Entity   interface{}
+}
+
+func CreateSQLAndRetLastID(value interface{}) (int64, error) {
+	var id []int64
+
+	tx := ExecSQL().Begin()
+	if err := tx.Debug().Create(value).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	tx.Commit()
+
+	return id[0], nil
 }
 
 func CreateAsyncSQLTask(asyncType AsyncSQLTaskType, entity interface{}) {
 	var task AsyncSQLTask
 	task.Entity = entity
 	task.Type = asyncType
+	var work Job = &task
+	InsertAsyncTask(work)
+}
+
+//根据map更新
+func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interface{},updateMap map[string]interface{}) {
+	var task AsyncSQLTask
+	task.Entity = entity
+	task.Type = asyncType
+	task.UpdateMap = updateMap
+	var work Job = &task
+	InsertAsyncTask(work)
+}
+
+//根据uid 更新
+func CreateAsyncSQLTaskWithRecordID(asyncType AsyncSQLTaskType, recordID int64, entity interface{}) {
+	var task AsyncSQLTask
+	task.Entity = entity
+	task.Type = asyncType
+	task.WhereSQL = "uid = ?"
+	task.RecordID = recordID
 	var work Job = &task
 	InsertAsyncTask(work)
 }
@@ -191,15 +232,6 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 	return nil
 }
 
-func CreateAsyncSQLTaskWithRecordID(asyncType AsyncSQLTaskType, recordID int64, entity interface{}) {
-	var task AsyncSQLTask
-	task.Entity = entity
-	task.Type = asyncType
-	task.RecordID = recordID
-	var work Job = &task
-	InsertAsyncTask(work)
-}
-
 func (task *AsyncSQLTask) ExecTask() error {
 	switch task.Type {
 
@@ -211,103 +243,31 @@ func (task *AsyncSQLTask) ExecTask() error {
 		entity := task.Entity.(user.CreateUserInfo)
 		transactionCreateUserInfo(&entity, false)
 		break
-	case ASYNC_USER_LOGIN_LOG:
-		entity := task.Entity.(user.UserLoginLog)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add login log Error", zap.Error(err))
+	case ASYNC_UP_USER_AUTH_TIME,ASYNC_UP_DEVICE_VERSION,ASYNC_UP_MODULE_VERSION:
+		if err := ExecSQL().Model(&task.Entity).Updates(task.UpdateMap).Error; err != nil {
+			SystemLog("update Data Error:",zap.Any("SQL",task.Entity), zap.Error(err))
 		}
-		break
-	case ASYNC_UP_USER_AUTH_TIME:
-		entity := task.Entity.(user.UserAuth)
-		if err := ExecSQL().Model(&entity).Update("update_time", entity.UpdateTime).Error; err != nil {
-			SystemLog("update auth time Error:", zap.Error(err))
+		if ASYNC_UP_DEVICE_VERSION == task.Type {
+			entity := task.Entity.(device.DeviceInfo)
+			updateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
 		}
-		break
-	case ASYNC_MODULE_CONNECT_LOG:
-		entity := task.Entity.(device.ModuleConnectLog)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add module connect log Error", zap.Error(err))
-		}
-		break
-	case ASYNC_UP_MODULE_VERSION:
-		entity := task.Entity.(device.ModuleInfo)
-		updateMap := map[string]interface{}{"module_version": entity.ModuleVersion, "update_time": entity.UpdateTime}
-		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
-			SystemLog("update module version Error", zap.Error(err))
-		}
-		break
-	case ASYNC_UP_DEVICE_VERSION:
-		entity := task.Entity.(device.DeviceInfo)
-		updateMap := map[string]interface{}{"access_way": entity.AccessWay, "device_version": entity.DeviceVersion, "update_time": entity.UpdateTime}
-		if err := ExecSQL().Model(&entity).Updates(updateMap).Error; err != nil {
-			SystemLog("update device version Error", zap.Error(err))
-		}
-		updateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
 		break
 	case ASYNC_DEV_AND_MODULE_CREATE:
 		entity := task.Entity.(device.CreateDeviceInfo)
 		transactionCreateDevInfo(&entity)
 		break
-	case ASYNC_UPDATA_WEUSER_LOCAL:
-		entity := task.Entity.(user.UserLocation)
-		if err := ExecSQL().Model(&entity).Where("uid = ?", task.RecordID).Updates(entity).Error; err != nil {
-			SystemLog("update UserLocation Error:", zap.Error(err))
+	case ASYNC_UPDATA_WEUSER_LOCAL,ASYNC_UPDATA_WEUSER_INFO,ASYNC_UPDATA_USER_EXTRA:
+		if err := ExecSQL().Model(&task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
+			SystemLog("update Data Error:",zap.Any("SQL",task.Entity), zap.Error(err))
 		}
 		break
-	case ASYNC_UPDATA_WEUSER_INFO:
-		entity := task.Entity.(user.UserBase)
-		if err := ExecSQL().Model(&entity).Where("uid = ?", task.RecordID).Updates(entity).Error; err != nil {
-			SystemLog("update userBase Error:", zap.Error(err))
-		}
-		break
-	case ASYNC_UPDATA_USER_EXTRA:
-		entity := task.Entity.(user.UserExtra)
-		if err := ExecSQL().Model(&entity).Where("uid = ?", task.RecordID).Updates(entity).Error; err != nil {
-			SystemLog("update userExtra Error:", zap.Error(err))
-		}
-		break
-	case ASYNC_CREATE_USER_AUTH:
-		entity := task.Entity.(user.UserAuth)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add UserAuth Error", zap.Error(err))
-		}
-		break
-	case ASYNC_CREATE_USER_REGISTER_LOG:
-		entity := task.Entity.(user.UserRegisterLog)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add UserRegisterLog Error", zap.Error(err))
-		}
-		break
-	case ASYNC_CREATE_USER_EXTRA:
-		entity := task.Entity.(user.UserExtra)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add UserExtra Error", zap.Error(err))
-		}
-		break
-	case ASYNC_CREATE_USER_LOCATION:
-		entity := task.Entity.(user.UserLocation)
-		if err := ExecSQL().Create(&entity).Error; err != nil {
-			SystemLog("add UserLocation Error", zap.Error(err))
+	case ASYNC_USER_LOGIN_LOG,ASYNC_CREATE_USER_AUTH,
+		ASYNC_CREATE_USER_EXTRA,ASYNC_CREATE_USER_LOCATION,
+		ASYNC_CREATE_USER_REGISTER_LOG,ASYNC_MODULE_CONNECT_LOG:
+		if err := ExecSQL().Create(&task.Entity).Error; err != nil {
+			SystemLog("Create USER Error",zap.Any("SQL",task.Entity), zap.Error(err))
 		}
 		break
 	}
 	return nil
-}
-
-func CreateSQLAndRetLastID(value interface{}) (int64, error) {
-	var id []int64
-
-	tx := ExecSQL().Begin()
-	if err := tx.Debug().Create(value).Error; err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-	tx.Commit()
-
-	return id[0], nil
 }

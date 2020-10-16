@@ -105,7 +105,7 @@ func createLoginLog(ctx *gin.Context, Command int8, loginType UserType, userID i
 }
 
 func updateAuthTime(entity UserAuth) {
-	CreateAsyncSQLTask(ASYNC_UP_USER_AUTH_TIME, entity)
+	CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_USER_AUTH_TIME, entity,map[string]interface{}{"update_time": entity.UpdateTime})
 }
 
 func createUserExtraInfo(ip string, user *UserBase) {

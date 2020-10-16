@@ -14,21 +14,21 @@ type AsyncSQLTaskType uint64
 
 const (
 	UNKNOWN_ASYNC_SQL_TASK         AsyncSQLTaskType = iota
-	ASYNC_CREATE_THIRD_USER                         //建立第三方用户数据
-	ASYNC_CREATE_NORMAL_USER                        //建立用户数据
-	ASYNC_USER_LOGIN_LOG                            //用户登录日志
-	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间
-	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志
-	ASYNC_UP_MODULE_VERSION                         //更新模组版本
-	ASYNC_UP_DEVICE_VERSION                         //更新设备版本
-	ASYNC_DEV_AND_MODULE_CREATE                     //建立设备与模组关系
-	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址
-	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料
-	ASYNC_UPDATA_USER_EXTRA                         //更新用户扩展资料
-	ASYNC_CREATE_USER_AUTH                          //建立授权记录
-	ASYNC_CREATE_USER_REGISTER_LOG                  //建立用户注册日志
-	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录
-	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录
+	ASYNC_CREATE_THIRD_USER                         //建立第三方用户数据 1
+	ASYNC_CREATE_NORMAL_USER                        //建立用户数据 2
+	ASYNC_USER_LOGIN_LOG                            //用户登录日志 3
+	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间 4
+	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志 5
+	ASYNC_UP_MODULE_VERSION                         //更新模组版本 6
+	ASYNC_UP_DEVICE_VERSION                         //更新设备版本 7
+	ASYNC_DEV_AND_MODULE_CREATE                     //建立设备与模组关系 8
+	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址 9
+	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料 10
+	ASYNC_UPDATA_USER_EXTRA                         //更新用户扩展资料 11
+	ASYNC_CREATE_USER_AUTH                          //建立授权记录 12
+	ASYNC_CREATE_USER_REGISTER_LOG                  //建立用户注册日志 13
+	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录 14
+	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录 15
 )
 
 type AsyncSQLTask struct {
@@ -261,9 +261,12 @@ func (task *AsyncSQLTask) ExecTask() error {
 			SystemLog("update Data Error:",zap.Any("SQL",task.Entity), zap.Error(err))
 		}
 		break
-	case ASYNC_USER_LOGIN_LOG,ASYNC_CREATE_USER_AUTH,
-		ASYNC_CREATE_USER_EXTRA,ASYNC_CREATE_USER_LOCATION,
-		ASYNC_CREATE_USER_REGISTER_LOG,ASYNC_MODULE_CONNECT_LOG:
+	case ASYNC_USER_LOGIN_LOG,ASYNC_MODULE_CONNECT_LOG,ASYNC_CREATE_USER_REGISTER_LOG:
+		if err := ExecSQL().Create(&task.Entity).Error; err != nil {
+			SystemLog("Create USER Error",zap.Any("SQL",task.Entity), zap.Error(err))
+		}
+		break
+	case ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA,ASYNC_CREATE_USER_LOCATION:
 		if err := ExecSQL().Create(&task.Entity).Error; err != nil {
 			SystemLog("Create USER Error",zap.Any("SQL",task.Entity), zap.Error(err))
 		}

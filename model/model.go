@@ -8,6 +8,7 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/threadWorker"
 	"go.uber.org/zap"
+	"reflect"
 )
 
 type AsyncSQLTaskType uint64
@@ -39,11 +40,11 @@ type AsyncSQLTask struct {
 	Entity    interface{}
 }
 
-func CreateSQLAndRetLastID(value interface{}) (uint64, error) {
+func CreateSQLAndRetLastID(entity interface{}) (uint64, error) {
 	var id []uint64
 
 	tx := ExecSQL().Begin()
-	if err := tx.Debug().Create(value).Error; err != nil {
+	if err := tx.Debug().Create(entity).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -244,7 +245,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 		transactionCreateUserInfo(&entity, false)
 		break
 	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_VERSION, ASYNC_UP_MODULE_VERSION:
-		if err := ExecSQL().Model(&task.Entity).Updates(task.UpdateMap).Error; err != nil {
+		if err := ExecSQL().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_VERSION == task.Type {
@@ -257,23 +258,16 @@ func (task *AsyncSQLTask) ExecTask() error {
 		transactionCreateDevInfo(&entity)
 		break
 	case ASYNC_UPDATA_WEUSER_LOCAL, ASYNC_UPDATA_WEUSER_INFO, ASYNC_UPDATA_USER_EXTRA:
-		if err := ExecSQL().Debug().Model(&task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
-			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
+		if err := ExecSQL().Model(task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
+			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
+			SystemLog("Update ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		break
-	case ASYNC_USER_LOGIN_LOG:
-		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
-			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
-		}
-		break
-	case ASYNC_MODULE_CONNECT_LOG, ASYNC_CREATE_USER_REGISTER_LOG:
-		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
-			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
-		}
-		break
-	case ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA, ASYNC_CREATE_USER_LOCATION:
-		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
-			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
+	case ASYNC_USER_LOGIN_LOG, ASYNC_CREATE_USER_REGISTER_LOG, ASYNC_MODULE_CONNECT_LOG,
+		ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA, ASYNC_CREATE_USER_LOCATION:
+		if err := ExecSQL().Create(task.Entity).Error; err != nil {
+			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
+			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		break
 	}

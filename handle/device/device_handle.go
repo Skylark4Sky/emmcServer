@@ -23,12 +23,12 @@ const (
 var serverMap = make(map[string]interface{})
 
 type RequestData struct {
-	AccessWay     uint8 		`form:"type" json:"type" binding:"required"`
-	ModuleSN      string        `form:"module_sn" json:"module_sn" binding:"required"`
-	ModuleVersion string        `form:"module_version" json:"module_version" binding:"required"`
-	DeviceSN      string        `form:"device_sn" json:"device_sn" binding:"required"`
-	DeviceVersion string        `form:"device_version" json:"device_version" binding:"required"`
-	Token         string        `form:"token" json:"token" binding:"required"`
+	AccessWay     uint8  `form:"type" json:"type" binding:"required"`
+	ModuleSN      string `form:"module_sn" json:"module_sn" binding:"required"`
+	ModuleVersion string `form:"module_version" json:"module_version" binding:"required"`
+	DeviceSN      string `form:"device_sn" json:"device_sn" binding:"required"`
+	DeviceVersion string `form:"device_version" json:"device_version" binding:"required"`
+	Token         string `form:"token" json:"token" binding:"required"`
 }
 
 type FirmwareInfo struct {
@@ -51,13 +51,13 @@ func SetMqttClient(brokerHost string, handle interface{}) {
 }
 
 func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, moduleSN string) {
-	var log ModuleConnectLog
+	log := &ModuleConnectLog{}
 	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
 	CreateAsyncSQLTask(ASYNC_MODULE_CONNECT_LOG, log)
 }
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {
-	var module ModuleInfo
+	module := &ModuleInfo{}
 	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(&module).Error
 	var hasRecord = true
 
@@ -82,14 +82,13 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		return CreateMessage(SUCCESS, nil)
 	} else {
 		module.Update(data.ModuleVersion)
-
 		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_VERSION, module,moduleUpdateMap)
-		var device DeviceInfo
+		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_VERSION, module, moduleUpdateMap)
+		device := &DeviceInfo{}
 		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime)
 		device.DeviceSn = data.DeviceSN
 		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_VERSION, device,deviceUpdateMap)
+		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_VERSION, device, deviceUpdateMap)
 		// 检测并返回固件版本
 		// 返回版本升级格式
 		//	data := &FirmwareInfo{
@@ -165,7 +164,7 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 		//未开启时，检测值是否有变化
 		if comData.Enable == 0 {
 			if (comData.CurElectricity >= 1) && (comData.CurElectricity != cacherData.CurElectricity) {
-				SystemLog(" Time:", TimeFormat(time.Now())," ",tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
+				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
 			}
 		} else {
 

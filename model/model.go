@@ -32,11 +32,11 @@ const (
 )
 
 type AsyncSQLTask struct {
-	Type     AsyncSQLTaskType
-	WhereSQL string
-	RecordID int64
+	Type      AsyncSQLTaskType
+	WhereSQL  string
+	RecordID  int64
 	UpdateMap map[string]interface{}
-	Entity   interface{}
+	Entity    interface{}
 }
 
 func CreateSQLAndRetLastID(value interface{}) (uint64, error) {
@@ -66,7 +66,7 @@ func CreateAsyncSQLTask(asyncType AsyncSQLTaskType, entity interface{}) {
 }
 
 //根据map更新
-func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interface{},updateMap map[string]interface{}) {
+func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interface{}, updateMap map[string]interface{}) {
 	var task AsyncSQLTask
 	task.Entity = entity
 	task.Type = asyncType
@@ -243,9 +243,9 @@ func (task *AsyncSQLTask) ExecTask() error {
 		entity := task.Entity.(user.CreateUserInfo)
 		transactionCreateUserInfo(&entity, false)
 		break
-	case ASYNC_UP_USER_AUTH_TIME,ASYNC_UP_DEVICE_VERSION,ASYNC_UP_MODULE_VERSION:
+	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_VERSION, ASYNC_UP_MODULE_VERSION:
 		if err := ExecSQL().Model(&task.Entity).Updates(task.UpdateMap).Error; err != nil {
-			SystemLog("update Data Error:",zap.Any("SQL",task.Entity), zap.Error(err))
+			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_VERSION == task.Type {
 			entity := task.Entity.(device.DeviceInfo)
@@ -256,19 +256,24 @@ func (task *AsyncSQLTask) ExecTask() error {
 		entity := task.Entity.(device.CreateDeviceInfo)
 		transactionCreateDevInfo(&entity)
 		break
-	case ASYNC_UPDATA_WEUSER_LOCAL,ASYNC_UPDATA_WEUSER_INFO,ASYNC_UPDATA_USER_EXTRA:
-		if err := ExecSQL().Model(&task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
-			SystemLog("update Data Error:",zap.Any("SQL",task.Entity), zap.Error(err))
+	case ASYNC_UPDATA_WEUSER_LOCAL, ASYNC_UPDATA_WEUSER_INFO, ASYNC_UPDATA_USER_EXTRA:
+		if err := ExecSQL().Debug().Model(&task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
+			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		break
-	case ASYNC_USER_LOGIN_LOG,ASYNC_MODULE_CONNECT_LOG,ASYNC_CREATE_USER_REGISTER_LOG:
-		if err := ExecSQL().Create(&task.Entity).Error; err != nil {
-			SystemLog("Create USER Error",zap.Any("SQL",task.Entity), zap.Error(err))
+	case ASYNC_USER_LOGIN_LOG:
+		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
+			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		break
-	case ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA,ASYNC_CREATE_USER_LOCATION:
-		if err := ExecSQL().Create(&task.Entity).Error; err != nil {
-			SystemLog("Create USER Error",zap.Any("SQL",task.Entity), zap.Error(err))
+	case ASYNC_MODULE_CONNECT_LOG, ASYNC_CREATE_USER_REGISTER_LOG:
+		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
+			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
+		}
+		break
+	case ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA, ASYNC_CREATE_USER_LOCATION:
+		if err := ExecSQL().Debug().Create(&task.Entity).Error; err != nil {
+			SystemLog("Create USER Error", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		break
 	}

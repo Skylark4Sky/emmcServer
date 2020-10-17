@@ -177,6 +177,11 @@ func (c *Cacher) GetInt64(key string) (int64, error) {
 	return RedisInt64(c.Get(key))
 }
 
+// GetUint64 获取int64类型的键值
+func (c *Cacher) GetUint64(key string) (uint64, error) {
+	return RedisUint64(c.Get(key))
+}
+
 // GetBool 获取bool类型的键值
 func (c *Cacher) GetBool(key string) (bool, error) {
 	return RedisBool(c.Get(key))

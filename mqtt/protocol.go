@@ -140,7 +140,7 @@ type JosnPacket struct {
 	ID       int    `json:"id"`
 	Ctime    int    `json:"ctime,omitempty"`
 	Data     string `json:"data"`
-	Behavior int    `json:"behavior"`
+	Behavior uint8    `json:"behavior"`
 }
 
 type Protocol interface {
@@ -266,7 +266,7 @@ func (json *JosnPacket) Print() (retString string) {
 	var buffer bytes.Buffer
 	buffer.WriteString(json.formatData())
 	buffer.WriteString(" behavior:")
-	buffer.WriteString(strconv.Itoa(json.Behavior))
+	buffer.WriteString(strconv.Itoa(int(json.Behavior)))
 	retString = buffer.String()
 	return
 }

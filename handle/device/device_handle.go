@@ -23,7 +23,7 @@ const (
 var serverMap = make(map[string]interface{})
 
 type RequestData struct {
-	AccessWay     AccesswayType `form:"type" json:"type" binding:"required"`
+	AccessWay     uint8 		`form:"type" json:"type" binding:"required"`
 	ModuleSN      string        `form:"module_sn" json:"module_sn" binding:"required"`
 	ModuleVersion string        `form:"module_version" json:"module_version" binding:"required"`
 	DeviceSN      string        `form:"device_sn" json:"device_sn" binding:"required"`
@@ -50,7 +50,7 @@ func SetMqttClient(brokerHost string, handle interface{}) {
 	}
 }
 
-func createConnectLog(ctx *gin.Context, device_id int64, accessway AccesswayType, moduleSN string) {
+func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, moduleSN string) {
 	var log ModuleConnectLog
 	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
 	CreateAsyncSQLTask(ASYNC_MODULE_CONNECT_LOG, log)
@@ -115,17 +115,17 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 
 //保存上报数据入库
 func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
-	var comNum int64 = 0
+	var comNum uint8 = 0
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.Data.(*mqtt.ComList)
-		comNum = int64(comList.ComNum)
+		comNum = comList.ComNum
 		break
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
 		comList := packet.Data.(*mqtt.ComList)
-		comNum = int64(comList.ComNum)
+		comNum = comList.ComNum
 		for _, comID := range comList.ComID {
-			comNum = int64(comID)
+			comNum = comID
 		}
 		break
 	}
@@ -134,10 +134,10 @@ func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 		TransferID:   int64(packet.Json.ID),
 		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn, "deviceID"),
 		TransferAct:  packet.Json.Act,
-		DeviceSN:     device_sn,
+		DeviceSn:     device_sn,
 		ComNum:       comNum,
 		TransferData: packet.Json.Data,
-		Behavior:     int64(packet.Json.Behavior),
+		Behavior:     packet.Json.Behavior,
 		ServerNode:   serverNode,
 		TransferTime: int64(packet.Json.Ctime),
 	}

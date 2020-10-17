@@ -39,8 +39,8 @@ type AsyncSQLTask struct {
 	Entity   interface{}
 }
 
-func CreateSQLAndRetLastID(value interface{}) (int64, error) {
-	var id []int64
+func CreateSQLAndRetLastID(value interface{}) (uint64, error) {
+	var id []uint64
 
 	tx := ExecSQL().Begin()
 	if err := tx.Debug().Create(value).Error; err != nil {
@@ -87,7 +87,7 @@ func CreateAsyncSQLTaskWithRecordID(asyncType AsyncSQLTaskType, recordID int64, 
 }
 
 func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error {
-	var id []int64
+	var id []uint64
 	tx := ExecSQL().Begin()
 	if err := tx.Create(&entity.Base).Error; err != nil {
 		SystemLog("add UserBase Error", zap.Error(err))
@@ -101,7 +101,7 @@ func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error 
 		return err
 	}
 
-	var userID int64 = id[0]
+	var userID uint64 = id[0]
 
 	if hasAuth == true {
 		entity.Auth.UID = userID
@@ -137,7 +137,7 @@ func transactionCreateUserInfo(entity *user.CreateUserInfo, hasAuth bool) error 
 	return nil
 }
 
-func updateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID int64) {
+func updateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID uint64) {
 	if deviceSN != "" && deviceID != 0 {
 		Redis().InitWithInsertDeviceIDToken(deviceSN, deviceID)
 	}
@@ -171,14 +171,14 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 			tx.Rollback()
 			return err
 		}
-		var id []int64
+		var id []uint64
 		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
 			SystemLog("get LastID Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
 
-		var ModuleID int64 = id[0]
+		var ModuleID uint64 = id[0]
 		log.ModuleID = ModuleID
 		if err := tx.Create(&log).Error; err != nil {
 			SystemLog("add module connect log Error", zap.Error(err))
@@ -188,7 +188,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 		tx.Commit()
 	} else {
 		//事务建立 模组 和 设备信息
-		var id []int64
+		var id []uint64
 		tx := ExecSQL().Begin()
 		if err := tx.Create(&device).Error; err != nil {
 			SystemLog("add DeviceInfo Error", zap.Error(err))
@@ -202,7 +202,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 			return err
 		}
 
-		var DeviceID int64 = id[0]
+		var DeviceID uint64 = id[0]
 		device.ID = DeviceID
 		module.DeviceID = DeviceID
 		if err := tx.Create(&module).Error; err != nil {
@@ -217,7 +217,7 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 			return err
 		}
 
-		var ModuleID int64 = id[0]
+		var ModuleID uint64 = id[0]
 		log.ModuleID = ModuleID
 		if err := tx.Create(&log).Error; err != nil {
 			SystemLog("add module connect log Error", zap.Error(err))

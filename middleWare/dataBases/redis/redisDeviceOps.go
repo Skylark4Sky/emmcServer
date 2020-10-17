@@ -59,14 +59,14 @@ func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceSta
 }
 
 //插入对应令牌
-func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID int64) {
+func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
 	c.Set(getDeviceTokenKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
 	c.Set(getDeviceIDKey(deviceSN), deviceID, 0)      //全局设备列表
 }
 
 //取设备ID
-func (c *Cacher) GetDeviceIDFromRedis(deviceSN string, key_field string) int64 {
-	deviceID, err := c.GetInt64(getDeviceIDKey(deviceSN))
+func (c *Cacher) GetDeviceIDFromRedis(deviceSN string, key_field string) uint64 {
+	deviceID, err := c.GetUint64(getDeviceIDKey(deviceSN))
 	if err != nil {
 		return 0
 	}

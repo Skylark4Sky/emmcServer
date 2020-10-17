@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-func GetTimestamp() int {
-	return int(time.Now().Unix())
+func GetTimestamp() int64 {
+	return time.Now().Unix()
 }
 
 func GetTimestampMs() int64 {

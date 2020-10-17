@@ -57,7 +57,7 @@ func jwtTokenVerify(tokenString string) (int64, error) {
 	return int64(uid), err
 }
 
-func JwtGenerateToken(obj interface{}, userID int64) (*JwtObj, error) {
+func JwtGenerateToken(obj interface{}, userID uint64) (*JwtObj, error) {
 	expireTime := time.Now().Add(ExpireTime)
 	stdClaims := jwt.StandardClaims{
 		ExpiresAt: expireTime.Unix(),

@@ -14,10 +14,10 @@ import (
 
 // 登录成功返回
 type UserLoginRespond struct {
-	UserID    int64  `json:"userID"`
+	UserID    uint64  `json:"userID"`
 	UserName  string `json:"username"`
 	NickName  string `json:"nickname"`
-	Gender    int8   `json:"gender"`
+	Gender    uint8   `json:"gender"`
 	Birthday  int64  `json:"birthday"`
 	Signature string `json:"signature"`
 	Mobile    string `json:"mobile"`
@@ -37,12 +37,12 @@ type WeAppLogin struct {
 
 // 用户注册
 type UserRegister struct {
-	Source    int8   `form:"source" json:"source" binding:"required"`
+	Source    uint8   `form:"source" json:"source" binding:"required"`
 	Name      string `form:"userName" json:"userName"`
 	Pwsd      string `form:"userPwsd" json:"userPwsd" binding:"required"`
 	NickName  string `form:"nickName" json:"nickName"`
-	Gender    int8   `form:"gender" json:"gender"`
-	Birthday  int64  `form:"birthDay" json:"birthDay"`
+	Gender    uint8   `form:"gender" json:"gender"`
+	Birthday   int64  `form:"birthDay" json:"birthDay"`
 	Signature string `form:"signature" json:"signature"`
 	Mobile    string `form:"mobile" json:"mobile"`
 	Email     string `form:"email" json:"email"`
@@ -58,7 +58,7 @@ type UserLogin struct {
 //小程序更新用户信息
 type WeAppUptdae struct {
 	NickName string `json:"nickName"`
-	Gender   int8   `json:"gender"`
+	Gender   uint8   `json:"gender"`
 	Language string `json:"language"`
 	Face200  string `json:"avatarUrl"`
 	City     string `json:"city"`
@@ -83,7 +83,7 @@ func createLoginRespond(entity *UserBase) *UserLoginRespond {
 	}
 }
 
-func getLoginType(account string, entity *UserBase) UserType {
+func getLoginType(account string, entity *UserBase) uint8 {
 	loginType := UNKNOWN
 
 	switch account {
@@ -98,7 +98,7 @@ func getLoginType(account string, entity *UserBase) UserType {
 	return loginType
 }
 
-func createLoginLog(ctx *gin.Context, Command int8, loginType UserType, userID int64) {
+func createLoginLog(ctx *gin.Context, Command uint8, loginType uint8, userID uint64) {
 	var log UserLoginLog
 	log.Create(ctx.ClientIP(), Command, loginType, userID)
 	CreateAsyncSQLTask(ASYNC_USER_LOGIN_LOG, log)
@@ -112,7 +112,7 @@ func createUserExtraInfo(ip string, user *UserBase) {
 	// 登记日志
 	log := UserRegisterLog{
 		UID:            user.UID,
-		RegisterMethod: int8(WECHAT),
+		RegisterMethod: WECHAT,
 		RegisterTime:   user.CreateTime,
 		RegisterIP:     ip,
 	}
@@ -139,7 +139,7 @@ func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
 	// 用户授权
 	auth := UserAuth{
 		UID:          user.UID,
-		IdentityType: int8(WECHAT),
+		IdentityType: WECHAT,
 		Identifier:   M.OpenID,
 		Certificate:  M.SessionKey,
 		CreateTime:   user.CreateTime,
@@ -239,7 +239,7 @@ func (M *UserLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	var loginType UserType = getLoginType(M.Account, entity)
+	var loginType uint8 = getLoginType(M.Account, entity)
 
 	if chkOk := PasswordVerify(M.Pwsd, entity.UserPwsd); chkOk != true {
 		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
@@ -307,7 +307,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 }
 
 func (weApp *WeAppUptdae) Save() {
-	var curTimestam int = GetTimestamp()
+	var curTimestam int64 = GetTimestamp()
 
 	userBase := UserBase{
 		NickName:   weApp.NickName,

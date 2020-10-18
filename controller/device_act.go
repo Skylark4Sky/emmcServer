@@ -62,7 +62,7 @@ func DeviceStartCharge(ctx *gin.Context) {
 
 	mqttMsg := &MqMsg{}
 
-	mqttMsg.Send("47.106.235.93:1883","57ff69067878495148300967",payload)
+	mqttMsg.Send("47.106.235.93:1883", "57ff69067878495148300967", payload)
 
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 }
@@ -75,6 +75,8 @@ func DeviceStopCharge(ctx *gin.Context) {
 
 	payload, _ := mqtt.MessagePack(postData)
 
+	mqttMsg := &MqMsg{}
+	mqttMsg.Send("47.106.235.93:1883", "57ff69067878495148300967", payload)
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 
 }

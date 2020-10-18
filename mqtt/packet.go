@@ -24,7 +24,7 @@ func base64ToBinaryData(base64String string) (binary []byte) {
 
 func binaryDataiToBase64(binary []byte) (base64String string) {
 	buf := bytes.Buffer{}
-	b64 := base64.NewEncoder(base64.RawStdEncoding, &buf)
+	b64 := base64.NewEncoder(base64.StdEncoding, &buf)
 	if _, err := b64.Write(binary); err != nil {
 		return ""
 	}
@@ -107,6 +107,7 @@ func MessagePack(data interface{}) (payload string, err error) {
 
 	packet := &JosnPacket{
 		Act:      transfer,
+		ID:       int(GetTimestamp()),
 		Ctime:    int(GetTimestamp()),
 		Behavior: behavior,
 		Data:     base64String,

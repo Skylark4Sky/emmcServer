@@ -2,14 +2,13 @@ package action
 
 import (
 	. "GoServer/handle/device"
+	mqtt "GoServer/mqtt"
+	//	. "GoServer/utils/float64"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
-	mqtt "GoServer/mqtt"
-	. "GoServer/utils/float64"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"strings"
-	//	"time"
 )
 
 //设备登记
@@ -52,31 +51,39 @@ func DeviceConnect(ctx *gin.Context) {
 	}
 }
 
-func DeviceStartCharge (ctx *gin.Context)  {
+func DeviceStartCharge(ctx *gin.Context) {
 	var postData mqtt.ComTaskStartTransfer
-	postData.ComID = 9
-	postData.Token = 100001
-	postData.MaxTime = 3600
-	postData.MaxEnergy = 3000
-	postData.MaxElectricity = uint32(CalculateMaxComElectricity(500))
+	postData.ComID = 1
+	postData.Token = 123456789
+	postData.MaxEnergy = 9000
+	postData.MaxElectricity = 2272 //uint32(CalculateMaxComElectricity(500))
+	postData.MaxTime = 6000
 
-	payload,_ := mqtt.MessagePack(postData)
+	payload, _ := mqtt.MessagePack(postData)
 
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 }
 
-func DeviceStopCharge (ctx *gin.Context)  {
+func DeviceStopCharge(ctx *gin.Context) {
+	var postData mqtt.ComTaskStopTransfer
+	postData.ComID = 1
+	postData.Token = 123456789
+	postData.ForceStop = 1
+
+	payload, _ := mqtt.MessagePack(postData)
+
+	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 
 }
 
-func DeviceStatusQuery (ctx *gin.Context)  {
+func DeviceStatusQuery(ctx *gin.Context) {
 
 }
 
-func DeviceNoLoadSetting (ctx *gin.Context)  {
+func DeviceNoLoadSetting(ctx *gin.Context) {
 
 }
 
-func DeviceRestart (ctx *gin.Context) {
+func DeviceRestart(ctx *gin.Context) {
 
 }

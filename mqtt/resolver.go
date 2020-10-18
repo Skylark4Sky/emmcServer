@@ -20,6 +20,7 @@ func startTransferTaskConversionToBinary(instance *ComTaskStartTransfer) []byte 
 	binaryData := new(bytes.Buffer)
 	setUint8(binaryData, instance.ComID)
 	setUint32(binaryData, instance.Token)
+	setUint32(binaryData, instance.MaxEnergy)
 	setUint32(binaryData, instance.MaxElectricity)
 	setUint32(binaryData, instance.MaxTime)
 	return binaryData.Bytes()

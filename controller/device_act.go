@@ -2,8 +2,7 @@ package action
 
 import (
 	. "GoServer/handle/device"
-	mqtt "GoServer/mqtt"
-	//	. "GoServer/utils/float64"
+	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	"encoding/hex"
@@ -60,6 +59,10 @@ func DeviceStartCharge(ctx *gin.Context) {
 	postData.MaxTime = 6000
 
 	payload, _ := mqtt.MessagePack(postData)
+
+	mqttMsg := &MqMsg{}
+
+	mqttMsg.Send("47.106.235.93:1883","57ff69067878495148300967",payload)
 
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 }

@@ -1,7 +1,7 @@
 package redis
 
 import (
-	mqtt "GoServer/mqtt"
+	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/string"
 	"encoding/json"

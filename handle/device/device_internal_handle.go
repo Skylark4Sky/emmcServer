@@ -4,27 +4,12 @@ import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/model/device"
-	mqtt "GoServer/mqtt"
+	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
-	M "github.com/eclipse/paho.mqtt.golang"
 	"time"
 )
-
-func setMqttClient(brokerHost string) *M.Client {
-	broker := serverMap[brokerHost]
-	if broker != nil {
-		return broker.(*M.Client)
-	}
-	return nil
-}
-
-func SetMqttClient(brokerHost string, handle interface{}) {
-	if brokerHost != "" && handle != nil {
-		serverMap[brokerHost] = handle
-	}
-}
 
 //保存设备上报状态
 func createDeviceTransferLog(transfer *DeviceTransferLog) {

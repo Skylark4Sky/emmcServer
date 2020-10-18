@@ -14,8 +14,6 @@ const (
 	LEISURE_TIME   = 300 //空闲时300秒
 )
 
-var serverMap = make(map[string]interface{})
-
 type RequestData struct {
 	AccessWay     uint8  `form:"type" json:"type" binding:"required"`
 	ModuleSN      string `form:"module_sn" json:"module_sn" binding:"required"`

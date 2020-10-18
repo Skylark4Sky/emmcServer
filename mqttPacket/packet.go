@@ -1,4 +1,4 @@
-package Mqtt
+package mqttPacket
 
 import (
 	. "GoServer/utils/time"

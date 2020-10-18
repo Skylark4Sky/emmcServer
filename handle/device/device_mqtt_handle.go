@@ -64,6 +64,7 @@ func (msg *MqMsg) ExecTask() error {
 		} else {
 			MqttLog("analysis failed ->Topic:%s Payload:%s\n", msg.Topic, msg.Payload)
 		}
+		break
 	}
 	case SEND_MQTT_MSG:
 		Client := GetMqttClient(msg.Broker)
@@ -71,6 +72,7 @@ func (msg *MqMsg) ExecTask() error {
 			MqttLog("Send MQ Message Error",msg)
 			return token.Error()
 		}
+		break
 	}
 	return nil
 }

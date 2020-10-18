@@ -36,7 +36,6 @@ func waitSignalExit() {
 }
 
 func main() {
-
 	var err error
 	var waitExit bool
 

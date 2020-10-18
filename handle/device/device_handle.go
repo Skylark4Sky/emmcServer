@@ -58,7 +58,7 @@ func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, modul
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 	module := &ModuleInfo{}
-	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(&module).Error
+	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(module).Error
 	var hasRecord = true
 
 	if err != nil {

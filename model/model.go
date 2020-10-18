@@ -249,7 +249,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_VERSION == task.Type {
-			entity := task.Entity.(device.DeviceInfo)
+			entity := task.Entity.(*device.DeviceInfo)
 			updateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
 		}
 		break

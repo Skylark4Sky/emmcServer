@@ -13,8 +13,8 @@ import (
 var serverMap = make(map[string]interface{})
 
 const (
-	RECV_MQTT_MSG = 0
-	SEND_MQTT_MSG = 1
+	RECV_MQTT_MSG uint8 = 0
+	SEND_MQTT_MSG uint8 = 1
 )
 
 type ExpiredMsg struct {

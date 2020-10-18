@@ -50,3 +50,23 @@ func DeviceConnect(ctx *gin.Context) {
 		RespondMessage(ctx, CreateErrorMessage(AUTH_ERROR, "认证失败"))
 	}
 }
+
+func DeviceStartCharge (ctx *gin.Context)  {
+
+}
+
+func DeviceStopCharge (ctx *gin.Context)  {
+
+}
+
+func DeviceStatusQuery (ctx *gin.Context)  {
+
+}
+
+func DeviceNoLoadSetting (ctx *gin.Context)  {
+
+}
+
+func DeviceRestart (ctx *gin.Context) {
+
+}

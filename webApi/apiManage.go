@@ -21,6 +21,7 @@ func ApiRegisterManage(router *gin.Engine, prometheusHttp func(context *gin.Cont
 		registerGeneralRouter(api)
 		// 注册用户接口路由
 		registerUserRouter(api)
+		// 注册设备操作接口路由
+		registerDeviceRouter(api)
 	}
-
 }

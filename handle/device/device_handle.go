@@ -2,17 +2,11 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
-	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/model"
 	. "GoServer/model/device"
-	mqtt "GoServer/mqtt"
-	. "GoServer/utils/float64"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
-	M "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 const (
@@ -34,20 +28,6 @@ type RequestData struct {
 type FirmwareInfo struct {
 	Size int64  `json:"size"`
 	URL  string `json:"url"`
-}
-
-func GetMqttClient(brokerHost string) *M.Client {
-	broker := serverMap[brokerHost]
-	if broker != nil {
-		return broker.(*M.Client)
-	}
-	return nil
-}
-
-func SetMqttClient(brokerHost string, handle interface{}) {
-	if brokerHost != "" && handle != nil {
-		serverMap[brokerHost] = handle
-	}
 }
 
 func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, moduleSN string) {
@@ -99,120 +79,4 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		return CreateMessage(SUCCESS, nil)
 	}
 	return CreateMessage(SUCCESS, nil)
-}
-
-func createDeviceTransferLog(transfer *DeviceTransferLog) {
-	if transfer == nil {
-		return
-	}
-
-	transfer.CreateTime = GetTimestampMs()
-	if err := ExecSQL().Create(&transfer).Error; err != nil {
-		SystemLog("CreateDeviceTransferLog", err)
-	}
-}
-
-//保存上报数据入库
-func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
-	var comNum uint8 = 0
-	switch packet.Json.Behavior {
-	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
-		comList := packet.Data.(*mqtt.ComList)
-		comNum = comList.ComNum
-		break
-	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
-		comList := packet.Data.(*mqtt.ComList)
-		comNum = comList.ComNum
-		for _, comID := range comList.ComID {
-			comNum = comID
-		}
-		break
-	}
-
-	log := &DeviceTransferLog{
-		TransferID:   int64(packet.Json.ID),
-		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn, "deviceID"),
-		TransferAct:  packet.Json.Act,
-		DeviceSn:     device_sn,
-		ComNum:       comNum,
-		TransferData: packet.Json.Data,
-		Behavior:     packet.Json.Behavior,
-		ServerNode:   serverNode,
-		TransferTime: int64(packet.Json.Ctime),
-	}
-	createDeviceTransferLog(log)
-}
-
-func DeviceExpiredMsgOps(pattern, channel, message string) {
-}
-
-//比较数据
-func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
-	//不存在缓存数据直接返回
-	if len(cacheData) <= 0 {
-		return
-	}
-
-	for _, comID := range newData.ComID {
-		var index uint8 = comID
-		if newData.ComNum <= 5 {
-			index = (comID % 5)
-		}
-		comData := (newData.ComPort[int(index)]).(mqtt.ComData)
-		comData.Id = comID
-		cacherData := cacheData[comData.Id]
-		//未开启时，检测值是否有变化
-		if comData.Enable == 0 {
-			if (comData.CurElectricity >= 1) && (comData.CurElectricity != cacherData.CurElectricity) {
-				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
-			}
-		} else {
-
-			//comData.MaxPower
-		}
-	}
-}
-
-func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
-	switch packet.Json.Behavior {
-	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
-		{
-
-			comList := packet.Data.(*mqtt.ComList)
-			//批量读当前所有接口
-			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
-			//对比新旧数据
-			analyseComData(cacheKey, comList, cacherComData)
-
-			//批量写入数据
-			if len(cacherComData) > 1 {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {
-					cacherData := cacherComData[comData.Id]
-					comData.MaxPower = cacherData.MaxPower
-					if CmpPower(comData.CurPower, cacherData.MaxPower) == 1 {
-						comData.MaxPower = comData.CurPower
-					}
-				})
-			} else {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {})
-			}
-
-			deviceStatus := &DeviceStatus{
-				Behavior:     comList.ComBehavior,
-				Signal:       int8(comList.Signal),
-				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
-				ProtoVersion: comList.ComProtoVer,
-			}
-
-			var timeout int64 = CHARGEING_TIME
-			if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
-				timeout = LEISURE_TIME
-			}
-
-			//更新令牌时间
-			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)
-			//写入原始数据
-			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
-		}
-	}
 }

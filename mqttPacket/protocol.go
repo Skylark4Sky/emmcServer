@@ -8,10 +8,21 @@ import (
 	"strings"
 )
 
-const DEVICE_INFO = "device_info"
-const TRANSFER = "transfer"
-const TRANSFER_RESULT = "resp"
-const FIRMWARE_UPDATE = "update_ver"
+const (
+	FIRMWARE_UPDATE_TOPIC       =  "/point_common"
+	TASK_TRANSFER_TOPIC          = "/point_switch"
+	GET_DEVICE_INFO_TOPIC           = "/device"
+	TRANSFER_RESPOND_TOPIC      = "/point_switch_resp"
+	STATUS_POST_TOPIC             = "/power_run/"
+	FIRMWARE_UPDATE_STATE_TOPIC    = "/firmware_update"
+)
+
+const (
+	DEVICE_INFO = "device_info"
+	TRANSFER = "transfer"
+	TRANSFER_RESULT = "resp"
+	FIRMWARE_UPDATE = "update_ver"
+)
 
 const (
 	COM_NO_WORKING     = 0
@@ -55,7 +66,7 @@ type UpdateState struct {
 //传输回复
 type TransferResult struct {
 	ReqID   int64  `json:"req_id"`
-	Success string `json:"success"`
+	Success bool `json:"success"`
 	Msg     string `json:"msg"`
 }
 

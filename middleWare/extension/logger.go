@@ -2,11 +2,11 @@ package middleWare
 
 import (
 	. "GoServer/utils/log"
+	. "GoServer/utils/time"
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -62,19 +62,11 @@ func RequestLogger() gin.HandlerFunc {
 			cookies["agent_name"] = c.GetString("agent_name")
 		}
 
-		SystemLog(
-			zap.String("id", traceID),
-			zap.Int("status", c.Writer.Status()),
-			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
-			zap.String("query", c.Request.URL.RawQuery),
-			zap.String("ip", c.ClientIP()),
-			zap.String("user-agent", c.Request.UserAgent()),
-			zap.Duration("latency", latency),
-			zap.String("body", bodyStr),
-			zap.Any("cookies", cookies),
-			zap.Any("response", response),
-		)
+		SystemLog("time:",TimeFormat(time.Now()) ," id:" ,traceID," status:",c.Writer.Status(), " method:",c.Request.Method, " latency:",latency)
+		SystemLog("path:",c.Request.URL.Path ," query:" ,c.Request.URL.RawQuery," ip:",c.ClientIP(), " agent:",c.Request.UserAgent()," cookies:", cookies)
+		SystemLog("body:", bodyStr)
+		SystemLog("response:", response)
+		SystemLog("")
 
 		if len(c.Errors) > 0 {
 			SystemLog(c.Errors.ByType(gin.ErrorTypeAny).String())

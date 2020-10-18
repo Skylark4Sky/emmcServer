@@ -2,8 +2,6 @@ package string
 
 import (
 	"bytes"
-	"fmt"
-	"go.uber.org/zap"
 	"math/rand"
 	"regexp"
 	"strconv"
@@ -43,16 +41,16 @@ func RandEmail() string {
 	return RandomWord(6) + "@" + RandomWord(4) + "." + RandomWord(3)
 }
 
-func ArgsToJsonData(args []interface{}) zap.Field {
-	det := make([]string, 0)
-	if len(args) > 0 {
-		for _, v := range args {
-			det = append(det, fmt.Sprintf("%+v", v))
-		}
-	}
-	zap := zap.Any("detail", det)
-	return zap
-}
+//func ArgsToJsonData(args []interface{}) zap.Field {
+//	det := make([]string, 0)
+//	if len(args) > 0 {
+//		for _, v := range args {
+//			det = append(det, fmt.Sprintf("%+v", v))
+//		}
+//	}
+//	zap := zap.Any("detail", det)
+//	return zap
+//}
 
 func StringJoin(args []interface{}) string {
 	var buffer bytes.Buffer

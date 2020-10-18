@@ -18,10 +18,10 @@ func binaryConversionToStartTransferTask(binaryData []byte) (instance *ComTaskSt
 
 func startTransferTaskConversionToBinary(instance *ComTaskStartTransfer) []byte {
 	binaryData := new(bytes.Buffer)
-	setUint8(binaryData,instance.ComID)
-	setUint32(binaryData,instance.Token)
-	setUint32(binaryData,instance.MaxElectricity)
-	setUint32(binaryData,instance.MaxTime)
+	setUint8(binaryData, instance.ComID)
+	setUint32(binaryData, instance.Token)
+	setUint32(binaryData, instance.MaxElectricity)
+	setUint32(binaryData, instance.MaxTime)
 	return binaryData.Bytes()
 }
 
@@ -36,9 +36,9 @@ func binaryConversionToStopTransferTask(binaryData []byte) (instance *ComTaskSto
 
 func stopTransferTaskConversionToBinary(instance *ComTaskStopTransfer) []byte {
 	binaryData := new(bytes.Buffer)
-	setUint8(binaryData,instance.ComID)
-	setUint32(binaryData,instance.Token)
-	setUint8(binaryData,instance.ForceStop)
+	setUint8(binaryData, instance.ComID)
+	setUint32(binaryData, instance.Token)
+	setUint8(binaryData, instance.ForceStop)
 	return binaryData.Bytes()
 }
 
@@ -51,7 +51,7 @@ func binaryConversionToStatusQueryTransferTask(binaryData []byte) (instance *Com
 
 func statusQueryTransferTaskConversionToBinary(instance *ComTaskStatusQueryTransfer) []byte {
 	binaryData := new(bytes.Buffer)
-	setUint8(binaryData,instance.ComID)
+	setUint8(binaryData, instance.ComID)
 	return binaryData.Bytes()
 }
 
@@ -64,7 +64,7 @@ func binaryConversionToSetConfigTransferTask(binaryData []byte) (instance *Devic
 
 func setConfigTransferTaskConversionToBinary(instance *DeviceSetConfigTransfer) []byte {
 	binaryData := new(bytes.Buffer)
-	setUint8(binaryData,instance.Time)
+	setUint8(binaryData, instance.Time)
 	return binaryData.Bytes()
 }
 
@@ -213,4 +213,3 @@ func binaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 	}
 	return
 }
-

@@ -9,7 +9,7 @@ import (
 )
 
 type Packet struct {
-	Json     *JosnPacket
+	Json *JosnPacket
 	Data interface{}
 }
 
@@ -106,10 +106,10 @@ func MessagePack(data interface{}) (payload string, err error) {
 	}
 
 	packet := &JosnPacket{
-		Act:  transfer,
-		Ctime:  int(GetTimestamp()),
-		Behavior:  behavior,
-		Data: base64String,
+		Act:      transfer,
+		Ctime:    int(GetTimestamp()),
+		Behavior: behavior,
+		Data:     base64String,
 	}
 
 	b, err := json.Marshal(packet)

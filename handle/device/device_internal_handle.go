@@ -89,7 +89,8 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 		cacherData := cacheData[comData.Id]
 		//未开启时，检测值是否有变化
 		if comData.Enable == 0 {
-			if (comData.CurElectricity >= 1) && (comData.CurElectricity != cacherData.CurElectricity) {
+			//大于50ma保存异常数值
+			if (comData.CurElectricity >= 50) && (comData.CurElectricity != cacherData.CurElectricity) {
 				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
 			}
 		} else {
@@ -142,4 +143,3 @@ func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 		}
 	}
 }
-

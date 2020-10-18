@@ -62,8 +62,9 @@ func RequestLogger() gin.HandlerFunc {
 			cookies["agent_name"] = c.GetString("agent_name")
 		}
 
-		SystemLog("time:",TimeFormat(time.Now()) ," id:" ,traceID," status:",c.Writer.Status(), " method:",c.Request.Method, " latency:",latency)
-		SystemLog("path:",c.Request.URL.Path ," query:" ,c.Request.URL.RawQuery," ip:",c.ClientIP(), " agent:",c.Request.UserAgent()," cookies:", cookies)
+		SystemLog("time:",TimeFormat(time.Now()) ," id:" ,traceID," status:",c.Writer.Status(), " method:",c.Request.Method," ip:",c.ClientIP()," cookies:", cookies," latency:",latency)
+		SystemLog("agent:",c.Request.UserAgent())
+		SystemLog("path:",c.Request.URL.Path ," query:" ,c.Request.URL.RawQuery)
 		SystemLog("body:", bodyStr)
 		SystemLog("response:", response)
 		SystemLog("")

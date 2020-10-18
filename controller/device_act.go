@@ -4,7 +4,8 @@ import (
 	. "GoServer/handle/device"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
-	//	. "GoServer/utils/time"
+	mqtt "GoServer/mqtt"
+	. "GoServer/utils/float64"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"strings"
@@ -52,7 +53,16 @@ func DeviceConnect(ctx *gin.Context) {
 }
 
 func DeviceStartCharge (ctx *gin.Context)  {
+	var postData mqtt.ComTaskStartTransfer
+	postData.ComID = 9
+	postData.Token = 100001
+	postData.MaxTime = 3600
+	postData.MaxEnergy = 3000
+	postData.MaxElectricity = uint32(CalculateMaxComElectricity(500))
 
+	payload,_ := mqtt.MessagePack(postData)
+
+	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 }
 
 func DeviceStopCharge (ctx *gin.Context)  {

@@ -63,3 +63,10 @@ func CalculateCurAverageComPowerToString(energy uint32, timeSecond uint32, bit i
 	power = curPower.Round(bit).String()
 	return
 }
+
+//电流=瓦数/电能
+func CalculateMaxComElectricity(wattage float64) int64 {
+	value := decimal.NewFromFloat(wattage).Div(decimal.NewFromFloat(CUR_VOLTAGE))
+	electricity, _  := value.Round(0).Float64()
+	return int64(electricity)
+}

@@ -5,7 +5,7 @@ import (
 	"bytes"
 )
 
-func binaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskStartTransfer) {
+func binaryConversionToStartTransferTask(binaryData []byte) (instance *ComTaskStartTransfer) {
 	instance = &ComTaskStartTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
 	instance.ComID = (getUint8(bytesBuf))
@@ -16,7 +16,16 @@ func binaryConversionToTaskStartTransfer(binaryData []byte) (instance *ComTaskSt
 	return
 }
 
-func binaryConversionToTaskStopTransfer(binaryData []byte) (instance *ComTaskStopTransfer) {
+func startTransferTaskConversionToBinary(instance *ComTaskStartTransfer) []byte {
+	binaryData := new(bytes.Buffer)
+	setUint8(binaryData,instance.ComID)
+	setUint32(binaryData,instance.Token)
+	setUint32(binaryData,instance.MaxElectricity)
+	setUint32(binaryData,instance.MaxTime)
+	return binaryData.Bytes()
+}
+
+func binaryConversionToStopTransferTask(binaryData []byte) (instance *ComTaskStopTransfer) {
 	instance = &ComTaskStopTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
 	instance.ComID = (getUint8(bytesBuf))
@@ -25,23 +34,47 @@ func binaryConversionToTaskStopTransfer(binaryData []byte) (instance *ComTaskSto
 	return
 }
 
-func binaryConversionToTaskStatusQueryTransfer(binaryData []byte) (instance *ComTaskStatusQueryTransfer) {
+func stopTransferTaskConversionToBinary(instance *ComTaskStopTransfer) []byte {
+	binaryData := new(bytes.Buffer)
+	setUint8(binaryData,instance.ComID)
+	setUint32(binaryData,instance.Token)
+	setUint8(binaryData,instance.ForceStop)
+	return binaryData.Bytes()
+}
+
+func binaryConversionToStatusQueryTransferTask(binaryData []byte) (instance *ComTaskStatusQueryTransfer) {
 	instance = &ComTaskStatusQueryTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
 	instance.ComID = (getUint8(bytesBuf))
 	return
 }
 
-func binaryConversionToTaskSetConfigTransfer(binaryData []byte) (instance *DeviceSetConfigTransfer) {
+func statusQueryTransferTaskConversionToBinary(instance *ComTaskStatusQueryTransfer) []byte {
+	binaryData := new(bytes.Buffer)
+	setUint8(binaryData,instance.ComID)
+	return binaryData.Bytes()
+}
+
+func binaryConversionToSetConfigTransferTask(binaryData []byte) (instance *DeviceSetConfigTransfer) {
 	instance = &DeviceSetConfigTransfer{}
 	bytesBuf := bytes.NewBuffer(binaryData)
 	instance.Time = (getUint8(bytesBuf))
 	return
 }
 
-func binaryConversionToReStartDeviceTaskTransfer(binaryData []byte) (instance *DeviceReStartTaskTransfer) {
+func setConfigTransferTaskConversionToBinary(instance *DeviceSetConfigTransfer) []byte {
+	binaryData := new(bytes.Buffer)
+	setUint8(binaryData,instance.Time)
+	return binaryData.Bytes()
+}
+
+func binaryConversionToReStartDeviceTransferTask(binaryData []byte) (instance *DeviceReStartTaskTransfer) {
 	instance = &DeviceReStartTaskTransfer{}
 	return
+}
+
+func reStartDeviceTransferTaskConversionToBinary(instance *DeviceReStartTaskTransfer) []byte {
+	return nil
 }
 
 func getTransferVersion(length int) (version uint16) {
@@ -132,19 +165,19 @@ func binaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 	switch behavior {
 	//下发
 	case GISUNLINK_CHARGE_TASK: //任务
-		instance = binaryConversionToTaskStartTransfer(binaryData)
+		instance = binaryConversionToStartTransferTask(binaryData)
 		break
 	case GISUNLINK_DEVIDE_STATUS: //查询
-		instance = binaryConversionToTaskStatusQueryTransfer(binaryData)
+		instance = binaryConversionToStatusQueryTransferTask(binaryData)
 		break
 	case GISUNLINK_EXIT_CHARGE_TASK: //终止
-		instance = binaryConversionToTaskStopTransfer(binaryData)
+		instance = binaryConversionToStopTransferTask(binaryData)
 		break
 	case GISUNLINK_SET_CONFIG: //配置
-		instance = binaryConversionToTaskSetConfigTransfer(binaryData)
+		instance = binaryConversionToSetConfigTransferTask(binaryData)
 		break
 	case GISUNLINK_RESTART: //重启
-		instance = binaryConversionToReStartDeviceTaskTransfer(binaryData)
+		instance = binaryConversionToReStartDeviceTransferTask(binaryData)
 		break
 	//上报
 	case GISUNLINK_START_CHARGE: //开始
@@ -180,3 +213,4 @@ func binaryConversionToInstance(binaryData []byte, behavior uint8) (instance int
 	}
 	return
 }
+

@@ -140,7 +140,7 @@ type JosnPacket struct {
 	ID       int    `json:"id"`
 	Ctime    int    `json:"ctime,omitempty"`
 	Data     string `json:"data"`
-	Behavior uint8    `json:"behavior"`
+	Behavior uint8  `json:"behavior"`
 }
 
 type Protocol interface {

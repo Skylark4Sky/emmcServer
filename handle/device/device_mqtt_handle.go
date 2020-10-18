@@ -53,7 +53,7 @@ func (msg *MqMsg) ExecTask() error {
 	switch msg.Direction {
 	case RECV_MQTT_MSG:
 		{
-			ok, packet := MessageUnpack([]byte(msg.Payload))
+			ok, packet := MessageUnpack(msg.Topic, []byte(msg.Payload))
 			if ok && packet.Data != nil {
 				deviceSN := GetDeviceSN(msg.Topic)
 				//保存包数据入库
@@ -63,9 +63,8 @@ func (msg *MqMsg) ExecTask() error {
 				MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 				MqttLog(packet.Data.(Protocol).Print())
 			} else {
-				MqttLog("analysis failed ->Topic:%s Payload:%s msg:%v\n", msg.Topic, msg.Payload, msg)
+				MqttLog("analysis failed ->Topic:%s Payload:%s -->\n", msg.Topic, msg.Payload, msg)
 			}
-			break
 		}
 	case SEND_MQTT_MSG:
 		Client := GetMqttClient(msg.Broker)

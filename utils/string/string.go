@@ -92,3 +92,30 @@ func VerifyMobileFormat(mobileNum string) bool {
 	reg := regexp.MustCompile(regular)
 	return reg.MatchString(mobileNum)
 }
+
+func ReturnTopicPrefix(topic string) string {
+	if strings.HasPrefix(topic,"/point_switch") {
+		return "/point_switch"
+	}
+
+	if strings.HasPrefix(topic,"/power_run") {
+		return "/power_run"
+	}
+
+	if strings.HasPrefix(topic,"/point_common") {
+		return "/point_common"
+	}
+
+	if strings.HasPrefix(topic,"/point_switch_resp") {
+		return "/point_switch_resp"
+	}
+
+	if strings.HasPrefix(topic,"/device") {
+		return "/device"
+	}
+
+	if strings.HasPrefix(topic,"/firmware_update") {
+		return "/firmware_update"
+	}
+	return ""
+}

@@ -9,17 +9,18 @@ import (
 )
 
 const (
-	FIRMWARE_UPDATE_TOPIC       =  "/point_common"
-	TASK_TRANSFER_TOPIC          = "/point_switch"
-	GET_DEVICE_INFO_TOPIC           = "/device"
+	TASK_TRANSFER_TOPIC = "/point_switch"
+	STATUS_POST_TOPIC   = "/power_run"
+
+	FIRMWARE_UPDATE_TOPIC       = "/point_common"
+	GET_DEVICE_INFO_TOPIC       = "/device"
 	TRANSFER_RESPOND_TOPIC      = "/point_switch_resp"
-	STATUS_POST_TOPIC             = "/power_run/"
-	FIRMWARE_UPDATE_STATE_TOPIC    = "/firmware_update"
+	FIRMWARE_UPDATE_STATE_TOPIC = "/firmware_update"
 )
 
 const (
-	DEVICE_INFO = "device_info"
-	TRANSFER = "transfer"
+	DEVICE_INFO     = "device_info"
+	TRANSFER        = "transfer"
 	TRANSFER_RESULT = "resp"
 	FIRMWARE_UPDATE = "update_ver"
 )
@@ -66,7 +67,7 @@ type UpdateState struct {
 //传输回复
 type TransferResult struct {
 	ReqID   int64  `json:"req_id"`
-	Success bool `json:"success"`
+	Success bool   `json:"success"`
 	Msg     string `json:"msg"`
 }
 

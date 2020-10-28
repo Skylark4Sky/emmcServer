@@ -63,7 +63,7 @@ func (msg *MqMsg) ExecTask() error {
 				MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 				MqttLog(packet.Data.(Protocol).Print())
 			} else {
-				MqttLog("analysis failed ->Topic:%s Payload:%s -->\n", msg.Topic, msg.Payload, msg)
+				MqttLog("analysis failed ->Topic:", msg.Topic, " Payload:", msg.Payload)
 			}
 		}
 	case SEND_MQTT_MSG:

@@ -1,8 +1,8 @@
 package mqttPacket
 
 import (
-	. "GoServer/utils/time"
 	. "GoServer/utils/string"
+	. "GoServer/utils/time"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 
 type Packet struct {
 	Topic string
-	Json *JosnPacket
-	Data interface{}
+	Json  JosnPacket
+	Data  interface{}
 }
 
 //转译base64数据
@@ -39,14 +39,16 @@ func binaryDataiToBase64(binary []byte) (base64String string) {
 // 主题包解析
 func (packet *Packet) analysisTransferBehavior() {
 	switch ReturnTopicPrefix(packet.Topic) {
-	case TASK_TRANSFER_TOPIC, STATUS_POST_TOPIC:{
-		binaryData := base64ToBinaryData(packet.Json.formatData())
-		packet.Data = binaryConversionToInstance(binaryData, uint8(packet.Json.Behavior))
-		break
-	}
-	case TRANSFER_RESPOND_TOPIC,GET_DEVICE_INFO_TOPIC,FIRMWARE_UPDATE_STATE_TOPIC,FIRMWARE_UPDATE_TOPIC: {
-		break
-	}
+	case TASK_TRANSFER_TOPIC, STATUS_POST_TOPIC:
+		{
+			binaryData := base64ToBinaryData(packet.Json.formatData())
+			packet.Data = binaryConversionToInstance(binaryData, uint8(packet.Json.Behavior))
+			break
+		}
+	case TRANSFER_RESPOND_TOPIC, GET_DEVICE_INFO_TOPIC, FIRMWARE_UPDATE_STATE_TOPIC, FIRMWARE_UPDATE_TOPIC:
+		{
+			break
+		}
 	}
 }
 
@@ -74,15 +76,16 @@ func (packet *Packet) analysisAction() {
 	}
 }
 
-func MessageUnpack(topic string,Payload []byte) (ok bool, packet *Packet) {
+func MessageUnpack(topic string, Payload []byte) (ok bool, packet *Packet) {
 	ok = false
-	Json := &JosnPacket{}
+	Json := JosnPacket{}
 	err := json.Unmarshal(Payload, &Json)
 	if err == nil {
 		ok = true
-		packet.Topic = topic
-		packet = &Packet{}
-		packet.Json = Json
+		packet = &Packet{
+			Topic: topic,
+			Json:  Json,
+		}
 		packet.analysisAction()
 		return
 	}

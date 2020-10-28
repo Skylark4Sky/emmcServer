@@ -10,10 +10,10 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 	user := userRouter.Group("user")
 	{
 		{
-			user.POST("register", action.Register)
-			user.POST("login", action.Login)
-			user.POST("weAppLogin", action.WechatLogin)
-			user.GET("weAppLogin", action.WechatLogin)
+			user.POST("register", action.Register)      //admin register
+			user.POST("login", action.Login)            //admin
+			user.POST("weAppLogin", action.WechatLogin) //customer
+			user.GET("weAppLogin", action.WechatLogin)  //customer
 		}
 
 		authUser := user.Use(JwtIntercept)

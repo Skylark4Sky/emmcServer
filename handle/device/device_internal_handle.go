@@ -55,6 +55,7 @@ func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 }
 
 func DeviceExpiredMsgOps(pattern, channel, message string) {
+
 }
 
 //比较数据

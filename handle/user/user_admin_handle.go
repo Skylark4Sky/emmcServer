@@ -11,6 +11,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 后台用户查询
+type AdminUser struct {
+	UID            uint64
+	UserRole       uint8
+	UserName       string
+	UserPwsd	   string
+	NickName       string
+	Gender         uint8
+	Birthday       int64
+	Signature      string
+	Face200        string
+	Mobile         string
+	Email          string
+	Rules		   string
+}
+
 // 后台用户登录
 type AdminLogin struct {
 	UserBase UserBase
@@ -48,7 +64,25 @@ func (M *AdminLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
 		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
+	//
+	//{
+	//roleId:
+	//	'admin',
+	//		permissionId: 'deviceManage',
+	//	permissionName: '设备管理',
+	//	actions: null,
+	//	actionEntitySet: null,
+	//	actionList: null,
+	//	dataAccess: null
+	//}
+		//ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,u.mobile,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id ").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&results)
 
+
+	//uid	user_name	nick_name	gender	birthday	signature	face200	mobile	rules
+//	ExecSQL().Debug().Joins("inner join user_role as r ON u.user_role = r.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Find(&user)
+
+	//开始查用户权限
+	//SELECT  FROM user_base as u  inner join user_role as r ON u.user_role = r.id WHERE (email = '13725467898' or user_name = '13725467898' or mobile = '13725467898');
 	JwtData, err := JwtGenerateToken(createLoginRespond(entity), entity.UID)
 	if err != nil {
 		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
@@ -64,7 +98,7 @@ func (M *AdminRegister) Register(ctx *gin.Context) interface{} {
 	var user CreateUserInfo
 	user.Base = UserBase{
 		RegisterSource: M.Source,
-		UserRole:       2,
+		UserRole:       ADMIN_USER,
 		UserName:       M.Name,
 		UserPwsd:       M.Pwsd,
 		NickName:       M.NickName,

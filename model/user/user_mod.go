@@ -22,6 +22,11 @@ const (
 )
 
 const (
+	NORMAL_USER = 0
+	ADMIN_USER = 1
+)
+
+const (
 	LOGIN_SUCCEED  = 1
 	LOGIN_FAILURED = 3
 )
@@ -159,10 +164,10 @@ func (login *UserLoginLog) Create(ip string, Command uint8, loginType uint8, use
 	login.Lastip = ip
 }
 
-func (m *UserBase) CreateByDefaultInfo(userType uint8) {
+func (m *UserBase) CreateByDefaultInfo(userType uint8, role uint8) {
 	m.NickName = RandomDigitAndLetters(12)
 	m.Gender = UNKnown_Gender
-	m.UserRole = 2
+	m.UserRole = role
 	m.RegisterSource = userType
 	m.CreateTime = GetTimestamp()
 }

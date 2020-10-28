@@ -90,7 +90,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 
 	if !hasRecord {
 		// 建立新用户
-		user.CreateByDefaultInfo(WECHAT)
+		user.CreateByDefaultInfo(WECHAT,NORMAL_USER)
 
 		lastID, err := CreateSQLAndRetLastID(user)
 

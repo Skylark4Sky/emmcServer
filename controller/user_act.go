@@ -13,9 +13,9 @@ import (
 	"strings"
 )
 
-//用户注册
-func Register(ctx *gin.Context) {
-	var user UserRegister
+//后台用户注册
+func AdminUserRegister(ctx *gin.Context) {
+	var user AdminRegister
 	if err := ctx.ShouldBind(&user); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
@@ -78,25 +78,25 @@ func Register(ctx *gin.Context) {
 }
 
 //普通用户登录
-func Login(ctx *gin.Context) {
-	var userLogin UserLogin
+func AdminUserLogin(ctx *gin.Context) {
+	var adminLogin AdminLogin
 
-	if err := ctx.ShouldBind(&userLogin); err != nil {
+	if err := ctx.ShouldBind(&adminLogin); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
-	if userLogin.Account == "" {
+	if adminLogin.Account == "" {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "账号不能为空"))
 		return
 	}
 
-	if userLogin.Pwsd == "" {
+	if adminLogin.Pwsd == "" {
 		RespondMessage(ctx, CreateErrorMessage(USER_PWSD_EMPTY, "密码不能为空"))
 		return
 	}
 
-	data, err := userLogin.Login(ctx)
+	data, err := adminLogin.Login(ctx)
 
 	if err != nil {
 		RespondMessage(ctx, err)

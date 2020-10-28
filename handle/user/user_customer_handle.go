@@ -121,6 +121,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 	return JwtData, nil
 }
 
+//更新用户信息
 func (weApp *WeAppUptdae) Save() {
 	var curTimestam int64 = GetTimestamp()
 

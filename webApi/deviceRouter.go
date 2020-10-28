@@ -13,7 +13,6 @@ func registerDeviceRouter(deviceRouter *gin.RouterGroup) {
 			device.POST("connect", action.DeviceConnect)
 			device.GET("connect", action.DeviceConnect)
 			device.GET("start_charge", action.DeviceStartCharge)
-
 			device.GET("stop_charge", action.DeviceStopCharge)
 		}
 

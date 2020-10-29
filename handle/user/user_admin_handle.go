@@ -5,36 +5,56 @@ import (
 	. "GoServer/middleWare/extension"
 	. "GoServer/model"
 	. "GoServer/model/user"
+	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/time"
+	//	"bytes"
 	"github.com/gin-gonic/gin"
+	"strconv"
+	"strings"
 )
 
-// 后台用户查询
-type AdminUser struct {
-	UID            uint64
-	UserRole       uint8
-	UserName       string
-	UserPwsd	   string
-	NickName       string
-	Gender         uint8
-	Birthday       int64
-	Signature      string
-	Face200        string
-	Mobile         string
-	Email          string
-	Rules		   string
+type PermissionAction struct {
+	action       string `json:"action"`
+	defaultCheck uint8  `json:"defaultCheck"`
+	describe     string `json:"describe"`
 }
 
-// 后台用户登录
+//权限
+type Permission struct {
+	permissionId    string             `json:"permissionId"`
+	permissionName  string             `json:"permissionName"`
+	actions         []PermissionAction `josn:"actions"`
+	actionEntitySet []PermissionAction `json:"actionEntitySet"`
+	actionList      []PermissionAction `json:"actionList"`
+	dataAccess      []PermissionAction `json:"dataAccess"`
+}
+
+// 查询
+type AdminUser struct {
+	UID       uint64        `json:"uid"`
+	UserName  string        `json:"username"`
+	UserPwsd  string        `json:"-"`
+	NickName  string        `json:"nickname"`
+	Gender    uint8         `json:"gender"`
+	Birthday  int64         `json:"birthday"`
+	Signature string        `json:"signature"`
+	Face200   string        `json:"face200"`
+	Mobile    string        `json:"mobile"`
+	Email     string        `json:"email"`
+	Rules     string        `json:"-"`
+	RulesList []interface{} `json:"menus"`
+}
+
+// 登录
 type AdminLogin struct {
 	UserBase UserBase
 	Account  string `form:"account" json:"account" binding:"required"`
 	Pwsd     string `form:"pwsd" json:"pwsd" binding:"required"`
 }
 
-// 后台用户注册
+// 注册
 type AdminRegister struct {
 	Source    uint8  `form:"source" json:"source" binding:"required"`
 	Name      string `form:"userName" json:"userName"`
@@ -47,10 +67,85 @@ type AdminRegister struct {
 	Email     string `form:"email" json:"email"`
 }
 
-// 普通登录
+func getLoginType(account string, entity *AdminUser) uint8 {
+	loginType := UNKNOWN
+
+	switch account {
+	case entity.Email:
+		loginType = EMAIL
+	case entity.UserName:
+		loginType = USERNAME
+	case entity.Mobile:
+		loginType = MOBILE
+	}
+	return loginType
+}
+
+func (entity *Permission) setAction(action PermissionAction) {
+	entity.actionEntitySet = append(entity.actionEntitySet, action)
+}
+
+func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
+
+	var rootDict = make(map[int16]interface{})
+	var menuList = make([]Permission, 0)
+
+	for _, node := range *roleMenus {
+		if node.Type == "page" {
+			var actionList = make([]PermissionAction, 0)
+			var p Permission = Permission{
+				permissionId:    node.Key,
+				permissionName:  node.Name,
+				actionEntitySet: actionList,
+			}
+			rootDict[node.ID] = p
+		} else {
+			var p PermissionAction = PermissionAction{
+				action:       node.Key,
+				defaultCheck: node.DefaultCheck,
+				describe:     node.Name,
+			}
+			rootDict[node.ID] = p
+		}
+	}
+
+	for _, node := range *roleMenus {
+		if node.Type == "page" {
+			menu := rootDict[node.ID].(Permission)
+			menuList = append(menuList, menu)
+		} else {
+			parent := rootDict[node.PID].(Permission)
+			action := rootDict[node.ID].(PermissionAction)
+			parent.setAction(action)
+		}
+	}
+
+	SystemLog("menuList:-->", menuList)
+
+}
+
+func fetchUserRules(entity *AdminUser) {
+	if entity.Rules != "" && len(entity.Rules) >= 1 {
+		countSplit := strings.Split(entity.Rules, ",")
+		ruleids := make([]int16, len(countSplit))
+		for idx, ids := range countSplit {
+			if v, err := strconv.Atoi(ids); err == nil {
+				ruleids[idx] = int16(v)
+			}
+		}
+
+		if len(ruleids) > 0 {
+			var roleMenus []UserRoleMenus
+			ExecSQL().Where("id IN (?)", ruleids).Find(&roleMenus)
+			analysisRoleList(entity, &roleMenus)
+		}
+	}
+}
+
 func (M *AdminLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
-	entity := &M.UserBase
-	err := ExecSQL().Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).First(&entity).Error
+	adminResults := &AdminUser{}
+	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&adminResults).Error
+
 	if err != nil {
 		if IsRecordNotFound(err) {
 			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
@@ -58,38 +153,23 @@ func (M *AdminLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	var loginType uint8 = getLoginType(M.Account, entity)
+	var loginType uint8 = getLoginType(M.Account, adminResults)
 
-	if chkOk := PasswordVerify(M.Pwsd, entity.UserPwsd); chkOk != true {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
+	if chkOk := PasswordVerify(M.Pwsd, adminResults.UserPwsd); chkOk != true {
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, adminResults.UID)
 		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
-	//
-	//{
-	//roleId:
-	//	'admin',
-	//		permissionId: 'deviceManage',
-	//	permissionName: '设备管理',
-	//	actions: null,
-	//	actionEntitySet: null,
-	//	actionList: null,
-	//	dataAccess: null
-	//}
-		//ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,u.mobile,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id ").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&results)
 
+	//检出菜单
+	fetchUserRules(adminResults)
 
-	//uid	user_name	nick_name	gender	birthday	signature	face200	mobile	rules
-//	ExecSQL().Debug().Joins("inner join user_role as r ON u.user_role = r.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Find(&user)
-
-	//开始查用户权限
-	//SELECT  FROM user_base as u  inner join user_role as r ON u.user_role = r.id WHERE (email = '13725467898' or user_name = '13725467898' or mobile = '13725467898');
-	JwtData, err := JwtGenerateToken(createLoginRespond(entity), entity.UID)
+	JwtData, err := JwtGenerateToken(adminResults, adminResults.UID)
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, entity.UID)
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, adminResults.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, loginType, entity.UID)
+	createLoginLog(ctx, LOGIN_SUCCEED, loginType, adminResults.UID)
 	return JwtData, nil
 }
 

@@ -27,10 +27,10 @@ const (
 )
 
 type JwtObj struct {
-	User     interface{}
-	Token    string    `json:"token"`
-	Expire   time.Time `json:"expire"`
-	ExpireTs int64     `json:"expire_ts"`
+	User     interface{} `json:"userInfo"`
+	Token    string      `json:"token"`
+	Expire   time.Time   `json:"expire"`
+	ExpireTs int64       `json:"expire_ts"`
 }
 
 func jwtTokenVerify(tokenString string) (int64, error) {

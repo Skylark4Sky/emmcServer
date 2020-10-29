@@ -23,7 +23,7 @@ const (
 
 const (
 	NORMAL_USER = 0
-	ADMIN_USER = 1
+	ADMIN_USER  = 1
 )
 
 const (
@@ -63,11 +63,6 @@ type UserBase struct {
 	CreateTime     int64  `gorm:"column:create_time;type:bigint(13) unsigned;not null" json:"create_time"`  // 创建时间
 	UpdateTime     int64  `gorm:"column:update_time;type:bigint(13) unsigned;not null" json:"update_time"`  // 修改时间
 	PushToken      string `gorm:"column:push_token;type:varchar(64);not null" json:"push_token"`            // 用户设备push_token
-}
-
-type UserRole struct {
-	ID       uint64 `gorm:"primary_key;column:id;type:bigint(20);not null" json:"-"` //权限ID
-	RoleName string `gorm:"column:role_name;type:varchar(32)" josn:"role_name"`      //权限名称
 }
 
 // UserExtra 用户额外信息表
@@ -138,6 +133,28 @@ type UserRegisterLog struct {
 	RegisterTime   int64  `gorm:"column:register_time;type:bigint(13);not null" json:"register_time"`     // 注册时间
 	RegisterIP     string `gorm:"column:register_ip;type:varchar(16);not null" json:"register_ip"`        // 注册IP
 	RegisterClient string `gorm:"column:register_client;type:varchar(16)" json:"register_client"`         // 注册客户端
+}
+
+// UserRole 身份管理表
+type UserRole struct {
+	ID       uint32 `gorm:"primary_key;column:id;type:int(10) unsigned;not null" json:"-"` // 身份管理id
+	RoleName string `gorm:"column:role_name;type:varchar(32)" json:"role_name"`            // 身份管理名称
+	Rules    string `gorm:"column:rules;type:text" json:"rules"`                           // 身份管理权限
+	Level    int8   `gorm:"column:level;type:tinyint(3) unsigned" json:"level"`
+	Status   bool   `gorm:"index:status;column:status;type:tinyint(1) unsigned" json:"status"` // 状态
+}
+
+// UserRoleMenus 菜单表
+type UserRoleMenus struct {
+	ID           int16  `gorm:"primary_key;column:id;type:smallint(5) unsigned;not null" json:"-"` // 菜单ID
+	PID          int16  `gorm:"index:pid;column:pid;type:smallint(5) unsigned" json:"pid"`         // 父级id
+	Type         string `gorm:"column:type;type:enum('page','action');not null" json:"type"`       // page为菜单,action为权限节点
+	Icon         string `gorm:"column:icon;type:varchar(32)" json:"icon"`                          // 菜单图标
+	Name         string `gorm:"column:name;type:varchar(32)" json:"name"`                          // 菜单名
+	Key          string `gorm:"column:key;type:varchar(32)" json:"key"`                            // 菜单鉴权键值
+	DefaultCheck uint8  `gorm:"column:defaultCheck;type:tinyint(1);not null" json:"default_check"` // 是否检查
+	Status       uint8  `gorm:"column:status;type:tinyint(1);not null" json:"status"`              // 1 启用 0关闭
+	Sort         int16  `gorm:"column:sort;type:smallint(5) unsigned" json:"sort"`                 // 排序
 }
 
 type CreateUserInfo struct {

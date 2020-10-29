@@ -39,21 +39,6 @@ func createLoginRespond(entity *UserBase) *UserLoginRespond {
 	}
 }
 
-func getLoginType(account string, entity *UserBase) uint8 {
-	loginType := UNKNOWN
-
-	switch account {
-	case entity.Email:
-		loginType = EMAIL
-	case entity.UserName:
-		loginType = USERNAME
-	case entity.Mobile:
-		loginType = MOBILE
-	}
-
-	return loginType
-}
-
 func createLoginLog(ctx *gin.Context, Command uint8, loginType uint8, userID uint64) {
 	log := &UserLoginLog{}
 	log.Create(ctx.ClientIP(), Command, loginType, userID)

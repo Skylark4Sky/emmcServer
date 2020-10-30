@@ -72,7 +72,7 @@ func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
 }
 
 //小程序登录
-func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
+func (M *WeAppLogin) Login(ctx *gin.Context) (*LoginRespond, interface{}) {
 	entity := &M.Auth
 	err := ExecSQL().Select("uid").Where("identifier = ?", M.OpenID).First(&entity).Error
 
@@ -90,7 +90,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 
 	if !hasRecord {
 		// 建立新用户
-		user.CreateByDefaultInfo(WECHAT,NORMAL_USER)
+		user.CreateByDefaultInfo(WECHAT, NORMAL_USER)
 
 		lastID, err := CreateSQLAndRetLastID(user)
 
@@ -110,7 +110,7 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 		}
 	}
 
-	JwtData, err := JwtGenerateToken(createLoginRespond(user), user.UID)
+	tokenData, err := JwtGenerateToken(user.UID)
 
 	if err != nil {
 		createLoginLog(ctx, LOGIN_FAILURED, WECHAT, user.UID)
@@ -118,7 +118,13 @@ func (M *WeAppLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 	}
 
 	createLoginLog(ctx, LOGIN_SUCCEED, WECHAT, user.UID)
-	return JwtData, nil
+
+	respond := LoginRespond{
+		UserInfo: createLoginRespond(user),
+		Token:    tokenData,
+	}
+
+	return &respond, nil
 }
 
 //更新用户信息

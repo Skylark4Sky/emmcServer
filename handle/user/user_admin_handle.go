@@ -5,46 +5,34 @@ import (
 	. "GoServer/middleWare/extension"
 	. "GoServer/model"
 	. "GoServer/model/user"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/time"
-	//	"bytes"
 	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
 )
 
 type PermissionAction struct {
-	action       string `json:"action"`
-	defaultCheck uint8  `json:"defaultCheck"`
-	describe     string `json:"describe"`
+	Action       string `json:"action"`
+	DefaultCheck uint8  `json:"defaultCheck"`
+	Describe     string `json:"describe"`
 }
 
 //权限
 type Permission struct {
-	permissionId    string             `json:"permissionId"`
-	permissionName  string             `json:"permissionName"`
-	actions         []PermissionAction `josn:"actions"`
-	actionEntitySet []PermissionAction `json:"actionEntitySet"`
-	actionList      []PermissionAction `json:"actionList"`
-	dataAccess      []PermissionAction `json:"dataAccess"`
+	PermissionId    string             `json:"permissionId"`
+	PermissionName  string             `json:"permissionName"`
+	Actions         []PermissionAction `json:"actions"`
+	ActionEntitySet []PermissionAction `json:"actionEntitySet"`
+	ActionList      []PermissionAction `json:"actionList"`
+	DataAccess      []PermissionAction `json:"dataAccess"`
 }
 
 // 查询
 type AdminUser struct {
-	UID       uint64        `json:"uid"`
-	UserName  string        `json:"username"`
-	UserPwsd  string        `json:"-"`
-	NickName  string        `json:"nickname"`
-	Gender    uint8         `json:"gender"`
-	Birthday  int64         `json:"birthday"`
-	Signature string        `json:"signature"`
-	Face200   string        `json:"face200"`
-	Mobile    string        `json:"mobile"`
-	Email     string        `json:"email"`
-	Rules     string        `json:"-"`
-	RulesList []interface{} `json:"menus"`
+	User      UserInfo     `json:"user"`
+	RulesList []Permission `json:"menus,omitempty"`
 }
 
 // 登录
@@ -67,7 +55,7 @@ type AdminRegister struct {
 	Email     string `form:"email" json:"email"`
 }
 
-func getLoginType(account string, entity *AdminUser) uint8 {
+func getLoginType(account string, entity *UserInfo) uint8 {
 	loginType := UNKNOWN
 
 	switch account {
@@ -81,29 +69,25 @@ func getLoginType(account string, entity *AdminUser) uint8 {
 	return loginType
 }
 
-func (entity *Permission) setAction(action PermissionAction) {
-	entity.actionEntitySet = append(entity.actionEntitySet, action)
-}
-
 func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
 
 	var rootDict = make(map[int16]interface{})
-	var menuList = make([]Permission, 0)
+	var menuDict = make(map[int16]interface{})
+	entity.RulesList = make([]Permission, 0)
 
 	for _, node := range *roleMenus {
 		if node.Type == "page" {
-			var actionList = make([]PermissionAction, 0)
-			var p Permission = Permission{
-				permissionId:    node.Key,
-				permissionName:  node.Name,
-				actionEntitySet: actionList,
+			p := &Permission{
+				PermissionId:    node.Key,
+				PermissionName:  node.Name,
+				ActionEntitySet: make([]PermissionAction, 0),
 			}
 			rootDict[node.ID] = p
 		} else {
-			var p PermissionAction = PermissionAction{
-				action:       node.Key,
-				defaultCheck: node.DefaultCheck,
-				describe:     node.Name,
+			p := &PermissionAction{
+				Action:       node.Key,
+				DefaultCheck: node.DefaultCheck,
+				Describe:     node.Name,
 			}
 			rootDict[node.ID] = p
 		}
@@ -111,22 +95,27 @@ func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
 
 	for _, node := range *roleMenus {
 		if node.Type == "page" {
-			menu := rootDict[node.ID].(Permission)
-			menuList = append(menuList, menu)
+			menu := rootDict[node.ID].(*Permission)
+			menuDict[node.ID] = menu
+			entity.RulesList = append(entity.RulesList, *menu)
 		} else {
-			parent := rootDict[node.PID].(Permission)
-			action := rootDict[node.ID].(PermissionAction)
-			parent.setAction(action)
+			parent := menuDict[node.PID].(*Permission)
+			action := rootDict[node.ID].(*PermissionAction)
+			parent.ActionEntitySet = append(parent.ActionEntitySet, *action)
 		}
 	}
 
-	SystemLog("menuList:-->", menuList)
-
+	for _, node := range menuDict {
+		menu := *(node.(*Permission))
+		if len(menu.ActionEntitySet) <= 0 {
+			menu.ActionEntitySet = nil
+		}
+	}
 }
 
 func fetchUserRules(entity *AdminUser) {
-	if entity.Rules != "" && len(entity.Rules) >= 1 {
-		countSplit := strings.Split(entity.Rules, ",")
+	if entity.User.Rules != "" && len(entity.User.Rules) >= 1 {
+		countSplit := strings.Split(entity.User.Rules, ",")
 		ruleids := make([]int16, len(countSplit))
 		for idx, ids := range countSplit {
 			if v, err := strconv.Atoi(ids); err == nil {
@@ -142,9 +131,9 @@ func fetchUserRules(entity *AdminUser) {
 	}
 }
 
-func (M *AdminLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
-	adminResults := &AdminUser{}
-	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&adminResults).Error
+func (M *AdminLogin) Login(ctx *gin.Context) (*LoginRespond, interface{}) {
+	admin := &AdminUser{}
+	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&admin.User).Error
 
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -153,24 +142,30 @@ func (M *AdminLogin) Login(ctx *gin.Context) (*JwtObj, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	var loginType uint8 = getLoginType(M.Account, adminResults)
+	var loginType uint8 = getLoginType(M.Account, &admin.User)
 
-	if chkOk := PasswordVerify(M.Pwsd, adminResults.UserPwsd); chkOk != true {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, adminResults.UID)
+	if chkOk := PasswordVerify(M.Pwsd, admin.User.UserPwsd); chkOk != true {
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, admin.User.UID)
 		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
 
 	//检出菜单
-	fetchUserRules(adminResults)
+	fetchUserRules(admin)
 
-	JwtData, err := JwtGenerateToken(adminResults, adminResults.UID)
+	tokenData, err := JwtGenerateToken(admin.User.UID)
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, adminResults.UID)
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, admin.User.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, loginType, adminResults.UID)
-	return JwtData, nil
+	createLoginLog(ctx, LOGIN_SUCCEED, loginType, admin.User.UID)
+
+	respond := LoginRespond{
+		UserInfo: admin,
+		Token:    tokenData,
+	}
+
+	return &respond, nil
 }
 
 func (M *AdminRegister) Register(ctx *gin.Context) interface{} {

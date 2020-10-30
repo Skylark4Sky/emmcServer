@@ -8,24 +8,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 登录成功返回
-type UserLoginRespond struct {
-	UserID    uint64 `json:"userID"`
+type LoginRespond struct {
+	UserInfo interface{} `json:"userInfo"`
+	Token    interface{} `json:"tokenInfo"`
+}
+
+type UserInfo struct {
+	UID       uint64 `json:"uid"`
 	UserName  string `json:"username"`
+	UserPwsd  string `json:"-"`
 	NickName  string `json:"nickname"`
 	Gender    uint8  `json:"gender"`
 	Birthday  int64  `json:"birthday"`
 	Signature string `json:"signature"`
+	Face200   string `json:"face200"`
 	Mobile    string `json:"mobile"`
 	Email     string `json:"email"`
-	Face      string `json:"face"`
-	Face200   string `json:"face200"`
-	Srcface   string `json:"srcface"`
+	Rules     string `json:"-"`
 }
 
-func createLoginRespond(entity *UserBase) *UserLoginRespond {
-	return &UserLoginRespond{
-		UserID:    entity.UID,
+func createLoginRespond(entity *UserBase) *UserInfo {
+	return &UserInfo{
+		UID:       entity.UID,
 		UserName:  entity.UserName,
 		NickName:  entity.NickName,
 		Gender:    entity.Gender,
@@ -33,9 +37,7 @@ func createLoginRespond(entity *UserBase) *UserLoginRespond {
 		Signature: entity.Signature,
 		Mobile:    entity.Mobile,
 		Email:     entity.Email,
-		Face:      entity.Face,
 		Face200:   entity.Face200,
-		Srcface:   entity.Srcface,
 	}
 }
 

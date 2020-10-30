@@ -27,10 +27,9 @@ const (
 )
 
 type JwtObj struct {
-	User     interface{} `json:"userInfo"`
-	Token    string      `json:"token"`
-	Expire   time.Time   `json:"expire"`
-	ExpireTs int64       `json:"expire_ts"`
+	Token    string    `json:"token"`
+	Expire   time.Time `json:"expire"`
+	ExpireTs int64     `json:"expire_ts"`
 }
 
 func jwtTokenVerify(tokenString string) (int64, error) {
@@ -57,7 +56,7 @@ func jwtTokenVerify(tokenString string) (int64, error) {
 	return int64(uid), err
 }
 
-func JwtGenerateToken(obj interface{}, userID uint64) (*JwtObj, error) {
+func JwtGenerateToken(userID uint64) (*JwtObj, error) {
 	expireTime := time.Now().Add(ExpireTime)
 	stdClaims := jwt.StandardClaims{
 		ExpiresAt: expireTime.Unix(),
@@ -71,8 +70,8 @@ func JwtGenerateToken(obj interface{}, userID uint64) (*JwtObj, error) {
 	if err != nil {
 		logrus.WithError(err).Error("config is wrong, can not generate jwt")
 	}
-	data := &JwtObj{User: obj, Token: tokenString, Expire: expireTime, ExpireTs: expireTime.Unix()}
-	return data, err
+	data := JwtObj{Token: tokenString, Expire: expireTime, ExpireTs: expireTime.Unix()}
+	return &data, err
 }
 
 func JwtIntercept(context *gin.Context) {

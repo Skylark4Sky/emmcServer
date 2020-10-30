@@ -4,6 +4,7 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/extension"
 	. "GoServer/utils/config"
+	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/string"
@@ -97,6 +98,8 @@ func AdminUserLogin(ctx *gin.Context) {
 	}
 
 	data, err := adminLogin.Login(ctx)
+
+	SystemLog("Login ---->", data)
 
 	if err != nil {
 		RespondMessage(ctx, err)

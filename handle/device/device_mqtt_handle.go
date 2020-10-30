@@ -45,7 +45,7 @@ func SetMqttClient(brokerHost string, handle interface{}) {
 }
 
 func (expired *ExpiredMsg) ExecTask() error {
-	DeviceExpiredMsgOps(expired.Pattern, expired.Chann, expired.Message)
+	deviceExpiredMsgOps(expired.Pattern, expired.Chann, expired.Message)
 	return nil
 }
 
@@ -57,9 +57,9 @@ func (msg *MqMsg) ExecTask() error {
 			if ok && packet.Data != nil {
 				deviceSN := GetDeviceSN(msg.Topic)
 				//保存包数据入库
-				SaveDeviceTransferDataOps(msg.Broker, deviceSN, packet)
+				saveDeviceTransferDataOps(msg.Broker, deviceSN, packet)
 				//处理包数据
-				DeviceActBehaviorDataOps(packet, deviceSN, string(msg.Payload))
+				deviceActBehaviorDataOps(packet, deviceSN, string(msg.Payload))
 				MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 				MqttLog(packet.Data.(Protocol).Print())
 			} else {

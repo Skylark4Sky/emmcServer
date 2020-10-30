@@ -14,8 +14,8 @@ import (
 	"strings"
 )
 
-//后台用户注册
-func AdminUserRegister(ctx *gin.Context) {
+//后台用户
+func AdminUserAdd(ctx *gin.Context) {
 	var user AdminRegister
 	if err := ctx.ShouldBind(&user); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
@@ -78,7 +78,7 @@ func AdminUserRegister(ctx *gin.Context) {
 	RespondMessage(ctx, user.Register(ctx))
 }
 
-//普通用户登录
+//用户登录
 func AdminUserLogin(ctx *gin.Context) {
 	var adminLogin AdminLogin
 

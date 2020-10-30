@@ -92,3 +92,23 @@ func DeviceNoLoadSetting(ctx *gin.Context) {
 func DeviceRestart(ctx *gin.Context) {
 
 }
+
+func DeviceUpdateFirmware(ctx *gin.Context) {
+
+}
+
+func GetDeviceList(ctx *gin.Context) {
+
+}
+
+func GetDeviceTransferLogList(ctx *gin.Context) {
+
+}
+
+func GetModuleList(ctx *gin.Context) {
+
+}
+
+func GetModuleConnectLogList(ctx *gin.Context) {
+
+}

@@ -70,7 +70,6 @@ func getLoginType(account string, entity *UserInfo) uint8 {
 }
 
 func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
-
 	var rootDict = make(map[int16]interface{})
 	var menuDict = make(map[int16]interface{})
 	entity.RulesList = make([]Permission, 0)
@@ -169,7 +168,6 @@ func (M *AdminLogin) Login(ctx *gin.Context) (*LoginRespond, interface{}) {
 }
 
 func (M *AdminRegister) Register(ctx *gin.Context) interface{} {
-
 	var user CreateUserInfo
 	user.Base = UserBase{
 		RegisterSource: M.Source,

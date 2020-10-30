@@ -12,17 +12,22 @@ func registerDeviceRouter(deviceRouter *gin.RouterGroup) {
 		{
 			device.POST("connect", action.DeviceConnect)
 			device.GET("connect", action.DeviceConnect)
-			device.GET("start_charge", action.DeviceStartCharge)
-			device.GET("stop_charge", action.DeviceStopCharge)
 		}
 
 		authDevice := device.Use(JwtIntercept)
 		{
-			//authDevice.POST("start_charge", action.DeviceStartCharge)
-			//	authDevice.POST("stop_charge", action.DeviceStopCharge)
-			authDevice.POST("status_query", action.DeviceStatusQuery)
-			authDevice.POST("no_load_setting", action.DeviceNoLoadSetting)
-			authDevice.POST("restart", action.DeviceRestart)
+			//操作控制器 权重最高,需慎重处理
+			authDevice.POST("startCharge", action.DeviceStartCharge)
+			authDevice.POST("stopCharge", action.DeviceStopCharge)
+			authDevice.POST("statusQuery", action.DeviceStatusQuery)
+			authDevice.POST("noLoadSetting", action.DeviceNoLoadSetting)
+			authDevice.POST("reStart", action.DeviceRestart)
+			authDevice.POST("updateFirmware", action.DeviceUpdateFirmware)
+			//常规控制器
+			authDevice.POST("getDeviceList", action.GetDeviceList)
+			authDevice.POST("getDeviceTransferLog", action.GetDeviceTransferLogList)
+			authDevice.POST("getModuleList", action.GetModuleList)
+			authDevice.POST("getModuleConnectLog", action.GetModuleConnectLogList)
 		}
 	}
 }

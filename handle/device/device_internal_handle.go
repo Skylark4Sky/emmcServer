@@ -24,7 +24,7 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 }
 
 //保存上报数据入库
-func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
+func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
 	var comNum uint8 = 0
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
@@ -54,7 +54,7 @@ func SaveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 	createDeviceTransferLog(log)
 }
 
-func DeviceExpiredMsgOps(pattern, channel, message string) {
+func deviceExpiredMsgOps(pattern, channel, message string) {
 
 }
 
@@ -86,7 +86,7 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 	}
 }
 
-func DeviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
+func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{

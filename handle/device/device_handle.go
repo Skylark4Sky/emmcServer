@@ -47,6 +47,8 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		}
 	}
 
+	var respond interface{} = nil
+
 	if !hasRecord {
 		//创建对应关系 第一次连接仅建立关系，版本检测下次连接时在进行处理
 		var info CreateDeviceInfo
@@ -57,7 +59,6 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		info.Module.CreateTime = curTimestampMs
 		info.Device.CreateTime = curTimestampMs
 		CreateAsyncSQLTask(ASYNC_DEV_AND_MODULE_CREATE, info)
-		return CreateMessage(SUCCESS, nil)
 	} else {
 		module.Update(data.ModuleVersion)
 		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
@@ -74,7 +75,6 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		//		Size: 476448,
 		//	}
 		createConnectLog(ctx, module.ID, data.AccessWay, data.ModuleSN)
-		return CreateMessage(SUCCESS, nil)
 	}
-	return CreateMessage(SUCCESS, nil)
+	return CreateMessage(SUCCESS, respond)
 }

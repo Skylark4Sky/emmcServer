@@ -10,17 +10,18 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 	user := userRouter.Group("user")
 	{
 		{
-			//			user.POST("register", action.Register)      //admin register
-			user.POST("adminLogin", action.AdminUserLogin)            //admin
-			user.POST("weAppLogin", action.WechatLogin) //customer
-			user.GET("weAppLogin", action.WechatLogin)  //customer
+			user.POST("adminAdd", action.AdminUserAdd)
+			user.POST("adminLogin", action.AdminUserLogin)
+			user.POST("weAppLogin", action.WechatLogin)
+			user.GET("weAppLogin", action.WechatLogin)
 		}
 
 		authUser := user.Use(JwtIntercept)
 		{
-			authUser.POST("setWeAppUser", action.WeChatUpdateUserInfo)
-			authUser.POST("modify", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			authUser.POST("info", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
+			authUser.POST("updateWeAppUserInfo", action.WeChatUpdateUserInfo)
+			authUser.POST("modifyUserInfo", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
+			authUser.POST("modifyUserRole", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
+			authUser.POST("getUserInfo", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
 		}
 	}
 }

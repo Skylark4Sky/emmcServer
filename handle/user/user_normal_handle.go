@@ -30,20 +30,20 @@ type Permission struct {
 }
 
 // 查询
-type AdminUser struct {
-	User      UserInfo     `json:"user"`
+type UserInfo struct {
+	User      UserData     `json:"user"`
 	RulesList []Permission `json:"menus,omitempty"`
 }
 
 // 登录
-type AdminLogin struct {
+type UserLogin struct {
 	UserBase UserBase
 	Account  string `form:"account" json:"account" binding:"required"`
 	Pwsd     string `form:"pwsd" json:"pwsd" binding:"required"`
 }
 
 // 注册
-type AdminRegister struct {
+type UserRegister struct {
 	Source    uint8  `form:"source" json:"source" binding:"required"`
 	Name      string `form:"userName" json:"userName"`
 	Pwsd      string `form:"userPwsd" json:"userPwsd" binding:"required"`
@@ -55,7 +55,7 @@ type AdminRegister struct {
 	Email     string `form:"email" json:"email"`
 }
 
-func getLoginType(account string, entity *UserInfo) uint8 {
+func getLoginType(account string, entity *UserData) uint8 {
 	loginType := UNKNOWN
 
 	switch account {
@@ -69,7 +69,7 @@ func getLoginType(account string, entity *UserInfo) uint8 {
 	return loginType
 }
 
-func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
+func analysisRoleList(entity *UserInfo, roleMenus *[]UserRoleMenus) {
 	var rootDict = make(map[int16]interface{})
 	var menuDict = make(map[int16]interface{})
 	entity.RulesList = make([]Permission, 0)
@@ -112,7 +112,7 @@ func analysisRoleList(entity *AdminUser, roleMenus *[]UserRoleMenus) {
 	}
 }
 
-func fetchUserRules(entity *AdminUser) {
+func fetchUserRules(entity *UserInfo) {
 	if entity.User.Rules != "" && len(entity.User.Rules) >= 1 {
 		countSplit := strings.Split(entity.User.Rules, ",")
 		ruleids := make([]int16, len(countSplit))
@@ -130,8 +130,8 @@ func fetchUserRules(entity *AdminUser) {
 	}
 }
 
-func (M *AdminLogin) Login(ctx *gin.Context) (*LoginRespond, interface{}) {
-	admin := &AdminUser{}
+func (M *UserLogin) Run(ctx *gin.Context) (*LoginRespond, interface{}) {
+	admin := &UserInfo{}
 	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&admin.User).Error
 
 	if err != nil {
@@ -167,7 +167,7 @@ func (M *AdminLogin) Login(ctx *gin.Context) (*LoginRespond, interface{}) {
 	return &respond, nil
 }
 
-func (M *AdminRegister) Register(ctx *gin.Context) interface{} {
+func (M *UserRegister) Build(ctx *gin.Context) interface{} {
 	var user CreateUserInfo
 	user.Base = UserBase{
 		RegisterSource: M.Source,

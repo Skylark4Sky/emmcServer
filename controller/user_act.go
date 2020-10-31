@@ -14,26 +14,26 @@ import (
 	"strings"
 )
 
-//后台用户
-func AdminUserAdd(ctx *gin.Context) {
-	var user AdminRegister
-	if err := ctx.ShouldBind(&user); err != nil {
+//用户
+func AddUser(ctx *gin.Context) {
+	var register UserRegister
+	if err := ctx.ShouldBind(&register); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
-	if user.Name == "" && user.Mobile == "" && user.Email == "" {
+	if register.Name == "" && register.Mobile == "" && register.Email == "" {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
 		return
 	}
 
-	userNameLen := len([]rune(user.Name))
+	userNameLen := len([]rune(register.Name))
 	if userNameLen > 0 && userNameLen < 6 {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "用户名小于6位"))
 		return
 	}
 
-	PwsdLen := len([]rune(user.Pwsd))
+	PwsdLen := len([]rune(register.Pwsd))
 
 	if PwsdLen == 0 {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "密码不能空"))
@@ -43,27 +43,27 @@ func AdminUserAdd(ctx *gin.Context) {
 		return
 	}
 
-	Pwsd, err := PasswordHash(user.Pwsd)
+	Pwsd, err := PasswordHash(register.Pwsd)
 	if err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "参数错误"))
 		return
 	}
 
-	user.Pwsd = Pwsd
+	register.Pwsd = Pwsd
 
-	MobileLen := len([]rune(user.Mobile))
-	if MobileLen > 0 && VerifyMobileFormat(user.Mobile) == false {
+	MobileLen := len([]rune(register.Mobile))
+	if MobileLen > 0 && VerifyMobileFormat(register.Mobile) == false {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "手机格式错误"))
 		return
 	}
 
-	EmailLen := len([]rune(user.Email))
-	if EmailLen > 0 && VerifyEmailFormat(user.Email) == false {
+	EmailLen := len([]rune(register.Email))
+	if EmailLen > 0 && VerifyEmailFormat(register.Email) == false {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "邮箱格式错误"))
 		return
 	}
 
-	hasRecord, err := CheckUserIsExist(&user)
+	hasRecord, err := CheckUserIsExist(&register)
 
 	if err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
@@ -75,29 +75,29 @@ func AdminUserAdd(ctx *gin.Context) {
 		return
 	}
 
-	RespondMessage(ctx, user.Register(ctx))
+	RespondMessage(ctx, register.Build(ctx))
 }
 
 //用户登录
-func AdminUserLogin(ctx *gin.Context) {
-	var adminLogin AdminLogin
+func Login(ctx *gin.Context) {
+	var login UserLogin
 
-	if err := ctx.ShouldBind(&adminLogin); err != nil {
+	if err := ctx.ShouldBind(&login); err != nil {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, err))
 		return
 	}
 
-	if adminLogin.Account == "" {
+	if login.Account == "" {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, "账号不能为空"))
 		return
 	}
 
-	if adminLogin.Pwsd == "" {
+	if login.Pwsd == "" {
 		RespondMessage(ctx, CreateErrorMessage(USER_PWSD_EMPTY, "密码不能为空"))
 		return
 	}
 
-	data, err := adminLogin.Login(ctx)
+	data, err := login.Run(ctx)
 
 	SystemLog("Login ---->", data)
 

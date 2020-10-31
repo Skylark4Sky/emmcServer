@@ -13,7 +13,7 @@ type LoginRespond struct {
 	Token    interface{} `json:"tokenInfo"`
 }
 
-type UserInfo struct {
+type UserData struct {
 	UID       uint64 `json:"uid"`
 	UserName  string `json:"username"`
 	UserPwsd  string `json:"-"`
@@ -27,8 +27,8 @@ type UserInfo struct {
 	Rules     string `json:"-"`
 }
 
-func createLoginRespond(entity *UserBase) *UserInfo {
-	return &UserInfo{
+func createLoginRespond(entity *UserBase) *UserData {
+	return &UserData{
 		UID:       entity.UID,
 		UserName:  entity.UserName,
 		NickName:  entity.NickName,
@@ -51,7 +51,7 @@ func updateAuthTime(entity *UserAuth) {
 	CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_USER_AUTH_TIME, entity, map[string]interface{}{"update_time": entity.UpdateTime})
 }
 
-func CheckUserIsExist(user *AdminRegister) (bool, error) {
+func CheckUserIsExist(user *UserRegister) (bool, error) {
 	entity := UserBase{}
 
 	dict := make(map[string]string)

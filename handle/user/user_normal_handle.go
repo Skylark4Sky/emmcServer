@@ -132,8 +132,8 @@ func fetchUserRules(entity *UserInfo) {
 
 func FetchUserInfo(userID uint64,ctx *gin.Context)  (*UserInfo, interface{}) {
 
-	admin := &UserInfo{}
-	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", userID).Scan(&admin.User).Error
+	userInfo := &UserInfo{}
+	err := ExecSQL().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", userID).Scan(&userInfo.User).Error
 
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -143,14 +143,14 @@ func FetchUserInfo(userID uint64,ctx *gin.Context)  (*UserInfo, interface{}) {
 	}
 
 	//检出菜单
-	fetchUserRules(admin)
+	fetchUserRules(userInfo)
 
-	return admin,nil
+	return userInfo,nil
 }
 
 func (M *UserLogin) Run(ctx *gin.Context) (*LoginRespond, interface{}) {
-	admin := &UserInfo{}
-	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&admin.User).Error
+	userInfo := &UserInfo{}
+	err := ExecSQL().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&userInfo.User).Error
 
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -159,26 +159,26 @@ func (M *UserLogin) Run(ctx *gin.Context) (*LoginRespond, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	var loginType uint8 = getLoginType(M.Account, &admin.User)
+	var loginType uint8 = getLoginType(M.Account, &userInfo.User)
 
-	if chkOk := PasswordVerify(M.Pwsd, admin.User.UserPwsd); chkOk != true {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, admin.User.UID)
+	if chkOk := PasswordVerify(M.Pwsd, userInfo.User.UserPwsd); chkOk != true {
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, userInfo.User.UID)
 		return nil, CreateErrorMessage(USER_PWSD_ERROR, nil)
 	}
 
 	//检出菜单
-	fetchUserRules(admin)
+	fetchUserRules(userInfo)
 
-	tokenData, err := JwtGenerateToken(admin.User.UID)
+	tokenData, err := JwtGenerateToken(userInfo.User.UID)
 	if err != nil {
-		createLoginLog(ctx, LOGIN_FAILURED, loginType, admin.User.UID)
+		createLoginLog(ctx, LOGIN_FAILURED, loginType, userInfo.User.UID)
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	createLoginLog(ctx, LOGIN_SUCCEED, loginType, admin.User.UID)
+	createLoginLog(ctx, LOGIN_SUCCEED, loginType, userInfo.User.UID)
 
 	respond := LoginRespond{
-		UserInfo: admin,
+		UserInfo: userInfo,
 		Token:    tokenData,
 	}
 

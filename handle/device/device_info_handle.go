@@ -1,5 +1,11 @@
 package device
 
+import (
+	. "GoServer/middleWare/dataBases/mysql"
+	. "GoServer/handle/user"
+	. "GoServer/utils/respond"
+)
+
 type RequestListData struct {
 	UserID    uint64 `fomr:"userID" json:"userID" binding:"required"`
 	PageNum   int64  `form:"pageNum" json:"pageNum" binding:"required"`   //起始页
@@ -9,7 +15,17 @@ type RequestListData struct {
 }
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
-	return nil,nil
+	userInfo := &UserInfo{}
+	err := ExecSQL().Table("user_base").Select("user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+
+	if err != nil {
+		if IsRecordNotFound(err) {
+			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
+		}
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+	}
+
+	return userInfo,nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {

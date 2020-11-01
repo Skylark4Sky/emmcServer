@@ -16,7 +16,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, i
 		return false, CreateErrorMessage(PARAM_ERROR, err)
 	}
 	if requestParam.UserID != userID {
-		return false, CreateErrorMessage(PARAM_ERROR, err)
+		return false, CreateErrorMessage(PARAM_ERROR, nil)
 	}
 
 	return true, nil

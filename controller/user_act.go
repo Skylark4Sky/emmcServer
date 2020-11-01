@@ -77,6 +77,9 @@ func AddUser(ctx *gin.Context) {
 	RespondMessage(ctx, register.Build(ctx))
 }
 
+func Logout (ctx *gin.Context) {
+	RespondMessage(ctx, CreateMessage(SUCCESS, nil))
+}
 //用户登录
 func Login(ctx *gin.Context) {
 	var login UserLogin

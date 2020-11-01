@@ -11,6 +11,7 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 	{
 		{
 			user.POST("login", action.Login)
+			user.POST("logout", action.Logout)
 			user.POST("weAppLogin", action.WechatLogin)
 			user.GET("weAppLogin", action.WechatLogin)
 		}

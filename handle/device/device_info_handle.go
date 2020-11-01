@@ -4,6 +4,12 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/utils/respond"
+	"strconv"
+	"strings"
+)
+
+const (
+	SELECT_DEVICE_LIST = 110
 )
 
 type RequestListData struct {
@@ -12,6 +18,22 @@ type RequestListData struct {
 	PageSize  int64  `form:"pageSize" json:"pageSize" binding:"required"` //每页大小
 	StartTime int64  `form:"startTime" json:"startTime"`
 	EndTime   int64  `form:"endTime" json:"startTime"`
+}
+
+func checkUserRules(entity *UserInfo, roleValue int) (isFind bool) {
+	isFind = false
+	if entity.User.Rules != "" && len(entity.User.Rules) >= 1 {
+		countSplit := strings.Split(entity.User.Rules, ",")
+		for _, ids := range countSplit {
+			if role, err := strconv.Atoi(ids); err == nil {
+				if role == roleValue {
+					isFind = true
+					break
+				}
+			}
+		}
+	}
+	return
 }
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
@@ -23,6 +45,10 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
 		}
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+	}
+
+	if checkUserRules(userInfo,SELECT_DEVICE_LIST) == false {
+		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
 	return userInfo, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"strings"
+	. "GoServer/utils/string"
 )
 
 const StartPage = 1
@@ -78,11 +79,13 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 func addTimeCond(db  *gorm.DB, timeField string, startTime , endTime int64) *gorm.DB {
 	dbEntity := db
 	if startTime > 0 {
-		dbEntity = dbEntity.Where(" ? >= ?",timeField,startTime * 1000)
+		cond := StringJoin([]interface{}{" ",timeField," >= ?"})
+		dbEntity = dbEntity.Where(cond,startTime * 1000)
 	}
 
 	if endTime > 0 {
-		dbEntity = dbEntity.Where(" ? <= ?",timeField,endTime * 1000)
+		cond := StringJoin([]interface{}{" ",timeField," <= ?"})
+		dbEntity = dbEntity.Where(cond,endTime * 1000)
 	}
 	return dbEntity
 }

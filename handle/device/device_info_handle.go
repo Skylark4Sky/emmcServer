@@ -10,6 +10,9 @@ import (
 
 const (
 	SELECT_DEVICE_LIST = 4
+	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
+	SELECT_TMODULE_LIST = 12
+	SELECT_MODULE_CONNECT_LOG_LIST = 20
 )
 
 type RequestListData struct {
@@ -20,10 +23,25 @@ type RequestListData struct {
 	EndTime   int64  `form:"endTime" json:"startTime"`
 }
 
-func checkUserRules(entity *UserInfo, roleValue int) (isFind bool) {
+func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, errMsg interface{}) {
+
 	isFind = false
-	if entity.User.Rules != "" && len(entity.User.Rules) >= 1 {
-		countSplit := strings.Split(entity.User.Rules, ",")
+	errMsg = nil
+
+	userInfo := &UserInfo{}
+	err := ExecSQL().Table("user_base").Select("user_role.id,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+
+	if err != nil {
+		if IsRecordNotFound(err) {
+			errMsg = CreateErrorMessage(USER_NO_EXIST, nil)
+			return
+		}
+		errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
+		return
+	}
+
+	if userInfo.User.Rules != "" && len(userInfo.User.Rules) >= 1 {
+		countSplit := strings.Split(userInfo.User.Rules, ",")
 		for _, ids := range countSplit {
 			if role, err := strconv.Atoi(ids); err == nil {
 				if role == roleValue {
@@ -33,37 +51,62 @@ func checkUserRules(entity *UserInfo, roleValue int) (isFind bool) {
 			}
 		}
 	}
+
 	return
 }
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
-	userInfo := &UserInfo{}
-	err := ExecSQL().Table("user_base").Select("user_role.id,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_DEVICE_LIST)
 
-	if err != nil {
-		if IsRecordNotFound(err) {
-			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
-		}
-		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-	}
-
-	if checkUserRules(userInfo,SELECT_DEVICE_LIST) == false {
+	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	
+	if hasRole {
 
-	return userInfo, nil
+	}
+
+	return nil, nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
+	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_DEVICE_TRANSFER_LOG_LIST)
+
+	if errMsg != nil {
+		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
+	}
+
+	if hasRole {
+
+	}
+
 	return nil, nil
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
+	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_TMODULE_LIST)
+
+	if errMsg != nil {
+		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
+	}
+
+	if hasRole {
+
+	}
+
 	return nil, nil
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
+	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_MODULE_CONNECT_LOG_LIST)
+
+	if errMsg != nil {
+		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
+	}
+
+	if hasRole {
+
+	}
+
 	return nil, nil
 }

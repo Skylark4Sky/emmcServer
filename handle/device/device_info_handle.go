@@ -4,7 +4,6 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/model/device"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
 	"github.com/jinzhu/gorm"
@@ -110,8 +109,16 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
 
 	if request.RequestCond != nil {
-		SystemLog("---request.RequestCond:", request.RequestCond)
-
+		condMap := request.RequestCond.(map[string] string)
+		if condName, ok := condMap["cond"];ok {
+			if request.StartTime > 0 &&  request.EndTime > 0 {
+				if condName == "update_time" {
+					db = addTimeCond(db, "update_time", request.StartTime, request.EndTime)
+				} else {
+					db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+				}
+			}
+		}
 	} else {
 		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}

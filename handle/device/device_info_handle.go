@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	SELECT_DEVICE_LIST = 4
+	SELECT_DEVICE_LIST              = 4
 	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
-	SELECT_TMODULE_LIST = 12
-	SELECT_MODULE_CONNECT_LOG_LIST = 20
+	SELECT_TMODULE_LIST             = 12
+	SELECT_MODULE_CONNECT_LOG_LIST  = 20
 )
 
 type RequestListData struct {
@@ -56,7 +56,7 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 }
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
-	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_DEVICE_LIST)
+	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
@@ -70,7 +70,7 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
-	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_DEVICE_TRANSFER_LOG_LIST)
+	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_TRANSFER_LOG_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
@@ -84,7 +84,7 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
-	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_TMODULE_LIST)
+	hasRole, errMsg := checkUserRulesGroup(request, SELECT_TMODULE_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
@@ -98,7 +98,7 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
-	hasRole,errMsg  := checkUserRulesGroup(request,SELECT_MODULE_CONNECT_LOG_LIST)
+	hasRole, errMsg := checkUserRulesGroup(request, SELECT_MODULE_CONNECT_LOG_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")

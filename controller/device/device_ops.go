@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, interface{}) {
+func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {
 	userID := ctx.MustGet(JwtCtxUidKey)
 	if userID.(uint64) <= 0 {
 		return false, CreateErrorMessage(PARAM_ERROR, nil)
@@ -20,7 +20,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, i
 		return false, CreateErrorMessage(PARAM_ERROR, "起始页不能小于1")
 	}
 
-	if requestParam.PageSize < 20 || requestParam.PageSize > 200 {
+	if requestParam.PageSize < minSize || requestParam.PageSize > maxSize {
 		return false, CreateErrorMessage(PARAM_ERROR, "页大小设置错误 20 - 200")
 	}
 
@@ -34,7 +34,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, i
 // 返回设备列表
 func GetDeviceList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -52,7 +52,7 @@ func GetDeviceList(ctx *gin.Context) {
 // 返回设备上报日志
 func GetDeviceTransferLogList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -69,7 +69,7 @@ func GetDeviceTransferLogList(ctx *gin.Context) {
 
 func GetModuleList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -86,7 +86,7 @@ func GetModuleList(ctx *gin.Context) {
 
 func GetModuleConnectLogList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}

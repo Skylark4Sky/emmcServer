@@ -26,6 +26,16 @@ type RequestListData struct {
 	EndTime   int64  `form:"endTime" json:"startTime"`
 }
 
+type PageInfo struct {
+	Total int64 `json:"total,omitempty"`
+	Size int `json:"size,omitempty"`
+}
+
+type RespondListData struct {
+	List interface{} `json:"list"`
+	Page PageInfo `json:"page,omitempty"`
+}
+
 func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, errMsg interface{}) {
 
 	isFind = false
@@ -63,7 +73,7 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 	return
 }
 
-func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
+func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
 	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
 	if errMsg != nil {
@@ -75,7 +85,7 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 	}
 
 	var deviceList []DeviceInfo
-	var total int = 0
+	var total int64 = 0
 
 	db := ExecSQL().Debug()
 	db = db.Limit(request.PageSize).Offset((request.PageNum-1)*request.PageSize).Order("id desc")
@@ -90,7 +100,14 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 		}
 	}
 
-	return deviceList, nil
+	var respond = RespondListData{
+		List: deviceList,
+		Page: PageInfo{
+			Total: total,
+			Size: len(deviceList),
+		},
+	}
+	return &respond, nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {

@@ -109,10 +109,11 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
 
 	if request.RequestCond != nil {
-		condMap := request.RequestCond.(map[string] string)
+		condMap := request.RequestCond.(map[string] interface{})
+		//condMap := RequestCond.(map[string]string)
 		if condName, ok := condMap["cond"];ok {
 			if request.StartTime > 0 &&  request.EndTime > 0 {
-				if condName == "update_time" {
+				if condName.(string) == "update_time" {
 					db = addTimeCond(db, "update_time", request.StartTime, request.EndTime)
 				} else {
 					db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)

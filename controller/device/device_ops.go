@@ -20,7 +20,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, i
 		return false, CreateErrorMessage(PARAM_ERROR, "起始页不能小于1")
 	}
 
-	if  requestParam.PageSize <= 20 || requestParam.PageSize >= 200 {
+	if requestParam.PageSize < 20 || requestParam.PageSize > 200 {
 		return false, CreateErrorMessage(PARAM_ERROR, "页大小设置错误 20 - 200")
 	}
 

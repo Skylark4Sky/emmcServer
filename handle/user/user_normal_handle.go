@@ -133,9 +133,14 @@ func fetchUserRules(entity *UserInfo) {
 func FetchUserInfo(userID uint64,ctx *gin.Context)  (*UserInfo, interface{}) {
 
 	userInfo := &UserInfo{}
-	err := ExecSQL().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", userID).Scan(&userInfo.User).Error
 
-	if err != nil {
+	db := ExecSQL().Table("user_base")
+	db = db.Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules")
+	db = db.Joins("inner join user_role ON user_base.user_role = user_role.id")
+	db = db.Where("uid = ?", userID)
+
+	//err := ExecSQL().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", userID).Scan(&userInfo.User).Error
+	if err := db.Scan(&userInfo.User).Error; err != nil {
 		if IsRecordNotFound(err) {
 			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
 		}
@@ -150,9 +155,12 @@ func FetchUserInfo(userID uint64,ctx *gin.Context)  (*UserInfo, interface{}) {
 
 func (M *UserLogin) Run(ctx *gin.Context) (*LoginRespond, interface{}) {
 	userInfo := &UserInfo{}
-	err := ExecSQL().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&userInfo.User).Error
+	db := ExecSQL().Table("user_base")
+	db = db.Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules")
+	db = db.Joins("inner join user_role ON user_base.user_role = user_role.id")
+	db = db.Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account)
 
-	if err != nil {
+	if err := db.Scan(&userInfo.User).Error; err != nil {
 		if IsRecordNotFound(err) {
 			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
 		}

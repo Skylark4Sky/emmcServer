@@ -4,9 +4,12 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/utils/respond"
+	. "GoServer/model/device"
 	"strconv"
 	"strings"
 )
+
+const StartPage = 1
 
 const (
 	SELECT_DEVICE_LIST              = 4
@@ -29,9 +32,14 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 	errMsg = nil
 
 	userInfo := &UserInfo{}
-	err := ExecSQL().Table("user_base").Select("user_role.id,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
 
-	if err != nil {
+	db := ExecSQL().Table("user_base")
+	db = db.Select("user_role.id,user_role.rules")
+	db = db.Joins("inner join user_role ON user_base.user_role = user_role.id")
+	db = db.Where("uid = ?", request.UserID)
+
+	//err := ExecSQL().Table("user_base").Select("user_role.id,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+	if err :=db.Scan(&userInfo.User).Error; err != nil {
 		if IsRecordNotFound(err) {
 			errMsg = CreateErrorMessage(USER_NO_EXIST, nil)
 			return
@@ -59,14 +67,30 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
 	if errMsg != nil {
+		return nil, errMsg
+	}
+
+	if !hasRole {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	if hasRole {
+	var deviceList []DeviceInfo
+	var total int = 0
 
+	db := ExecSQL().Debug()
+	db = db.Limit(request.PageSize).Offset((request.PageNum-1)*request.PageSize).Order("id desc")
+
+	if request.PageNum == StartPage {
+		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	}  else {
+		if err := db.Find(&deviceList).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
 	}
 
-	return nil, nil
+	return deviceList, nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {

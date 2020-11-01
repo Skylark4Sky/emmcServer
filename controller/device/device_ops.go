@@ -23,7 +23,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData) (bool, i
 }
 
 // 返回设备列表
-func GetDeviceList(ctx *gin.Context, request *RequestListData) {
+func GetDeviceList(ctx *gin.Context) {
 	var getListData RequestListData
 	if _, err := checkRequestParam(ctx, &getListData); err != nil {
 		RespondMessage(ctx, err)

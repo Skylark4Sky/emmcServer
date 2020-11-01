@@ -32,7 +32,7 @@ type Permission struct {
 // 查询
 type UserInfo struct {
 	User      UserData     `json:"user"`
-	RulesList []Permission `json:"menus,omitempty"`
+	RulesList []Permission `json:"permissions,omitempty"`
 }
 
 // 登录

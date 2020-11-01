@@ -5,6 +5,7 @@ import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/utils/respond"
 	. "GoServer/model/device"
+	"github.com/jinzhu/gorm"
 	"strconv"
 	"strings"
 )
@@ -23,7 +24,8 @@ type RequestListData struct {
 	PageNum   int64  `form:"pageNum" json:"pageNum" binding:"required"`   //起始页
 	PageSize  int64  `form:"pageSize" json:"pageSize" binding:"required"` //每页大小
 	StartTime int64  `form:"startTime" json:"startTime"`
-	EndTime   int64  `form:"endTime" json:"startTime"`
+	EndTime   int64  `form:"endTime" json:"endTime"`
+	RequestCond interface{} `form:"requestCond" json:"requestCond"`
 }
 
 type PageInfo struct {
@@ -73,6 +75,18 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 	return
 }
 
+func addTimeCond(db  *gorm.DB, timeField string, startTime , endTime int64) *gorm.DB {
+	dbEntity := db
+	if startTime > 0 {
+		dbEntity = dbEntity.Where(" ? >= ?",timeField,startTime * 1000)
+	}
+
+	if endTime > 0 {
+		dbEntity = dbEntity.Where(" ? <= ?",timeField,endTime * 1000)
+	}
+	return dbEntity
+}
+
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
 	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
@@ -88,7 +102,15 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	var total int64 = 0
 
 	db := ExecSQL().Debug()
+
+	//db = db.Select("access_way,device_sn,device_version,remark,type,create_time,update_time")
 	db = db.Limit(request.PageSize).Offset((request.PageNum-1)*request.PageSize).Order("id desc")
+
+	if request.RequestCond != nil {
+
+	} else {
+		db = addTimeCond(db,"create_time",request.StartTime,request.EndTime)
+	}
 
 	if request.PageNum == StartPage {
 		if err := db.Find(&deviceList).Count(&total).Error; err != nil {

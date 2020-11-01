@@ -1,8 +1,10 @@
 package security
 
 import (
+	"crypto/md5"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/hex"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,6 +23,14 @@ func AES_CBCDecrypt(cipherText []byte) (data string, err error) {
 	plainText := make([]byte, len(cipherText))
 	blockMode.CryptBlocks(plainText, cipherText)
 	return string(plainText), nil
+}
+
+func Md5Encrypt(data string) string {
+	md5Ctx := md5.New()                            //md5 init
+	md5Ctx.Write([]byte(data))                     //md5 updata
+	cipherStr := md5Ctx.Sum(nil)                   //md5 final
+	encryptedData := hex.EncodeToString(cipherStr) //hex_digest
+	return encryptedData
 }
 
 func PasswordHash(password string) (string, error) {

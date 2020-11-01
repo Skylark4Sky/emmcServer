@@ -2,12 +2,19 @@ package device
 
 import (
 	. "GoServer/handle/device"
+	. "GoServer/middleWare/extension"
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/respond"
 	"github.com/gin-gonic/gin"
 )
 
-func DeviceStartCharge(ctx *gin.Context) {
+func StartCharge(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
+
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
+
 	var postData mqtt.ComTaskStartTransfer
 	postData.ComID = 1
 	postData.Token = 123456789
@@ -24,7 +31,13 @@ func DeviceStartCharge(ctx *gin.Context) {
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
 }
 
-func DeviceStopCharge(ctx *gin.Context) {
+func StopCharge(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
+
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
+
 	var postData mqtt.ComTaskStopTransfer
 	postData.ComID = 1
 	postData.Token = 123456789
@@ -38,18 +51,35 @@ func DeviceStopCharge(ctx *gin.Context) {
 
 }
 
-func DeviceStatusQuery(ctx *gin.Context) {
+func StatusQuery(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
+
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
 
 }
 
-func DeviceNoLoadSetting(ctx *gin.Context) {
+func NoLoadSetting(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
 
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
 }
 
-func DeviceRestart(ctx *gin.Context) {
+func Restart(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
 
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
 }
 
-func DeviceUpdateFirmware(ctx *gin.Context) {
+func UpdateFirmware(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
 
+	if userID.(uint64) <= 0 {
+		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	}
 }

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	SELECT_DEVICE_LIST = 110
+	SELECT_DEVICE_LIST = 4
 )
 
 type RequestListData struct {
@@ -38,7 +38,7 @@ func checkUserRules(entity *UserInfo, roleValue int) (isFind bool) {
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 	userInfo := &UserInfo{}
-	err := ExecSQL().Debug().Table("user_base").Select("user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+	err := ExecSQL().Table("user_base").Select("user_role.id,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
 
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -50,6 +50,8 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 	if checkUserRules(userInfo,SELECT_DEVICE_LIST) == false {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
+
+	
 
 	return userInfo, nil
 }

@@ -24,6 +24,7 @@ type UserData struct {
 	Face200   string `json:"face200"`
 	Mobile    string `json:"mobile"`
 	Email     string `json:"email"`
+	RulesID	  int64  `json:"-"`
 	Rules     string `json:"-"`
 }
 

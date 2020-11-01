@@ -1,15 +1,16 @@
 package router
 
 import (
-	"GoServer/controller"
+	globalApi "GoServer/controller/global"
+	deviceApi "GoServer/controller/device"
 	"github.com/gin-gonic/gin"
 )
 
 func registerGeneralRouter(generalRouter *gin.RouterGroup) {
 	//手机验证码
-	generalRouter.POST("sms", action.SMSLimiter, action.GetSMS)
+	generalRouter.POST("sms", globalApi.SMSLimiter, globalApi.GetSMS)
 	//设备
-	generalRouter.POST("device", action.DeviceConnect)
-	generalRouter.GET("device", action.DeviceConnect)
+	generalRouter.POST("device", deviceApi.DeviceConnect)
+	generalRouter.GET("device", deviceApi.DeviceConnect)
 	//generalRouter.GET("deviceList", action.DeviceList)
 }

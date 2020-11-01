@@ -1,4 +1,4 @@
-package action
+package global
 
 import "github.com/gin-gonic/gin"
 // 短信限流器

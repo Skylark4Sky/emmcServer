@@ -32,7 +32,7 @@ type JwtObj struct {
 	ExpireTs int64     `json:"expire_ts"`
 }
 
-func jwtTokenVerify(tokenString string) (int64, error) {
+func jwtTokenVerify(tokenString string) (uint64, error) {
 	if tokenString == "" {
 		return 0, errors.New("no token is found in Authorization Bearer")
 	}
@@ -53,7 +53,7 @@ func jwtTokenVerify(tokenString string) (int64, error) {
 		return 0, errors.New("token's issuer is wrong")
 	}
 	uid, err := strconv.ParseUint(claims.Id, 10, 64)
-	return int64(uid), err
+	return uint64(uid), err
 }
 
 func JwtGenerateToken(userID uint64) (*JwtObj, error) {
@@ -78,10 +78,7 @@ func JwtIntercept(context *gin.Context) {
 	token, ok := context.GetQuery("_t")
 
 	if !ok {
-		//		fmt.Println("!ok")
 		hToken := context.GetHeader("Authorization")
-
-		//		fmt.Println("hToken:", hToken)
 		if len(hToken) < bearerLength {
 			context.AbortWithStatusJSON(http.StatusPreconditionFailed, gin.H{"msg": "header Authorization has not Bearer token"})
 			return

@@ -18,10 +18,7 @@ func registerUserRouter(userRouter *gin.RouterGroup) {
 		authUser := user.Use(JwtIntercept)
 		{
 			authUser.POST("addUser", action.AddUser)
-			authUser.POST("modifyUserInfo", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			authUser.POST("modifyUserRole", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			authUser.POST("getUserInfo", func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
-			authUser.POST("getUserMenus",func(context *gin.Context) { context.AbortWithStatusJSON(200, gin.H{"ok": true}) })
+			authUser.POST("getUserInfo", action.GetUserInfo)
 			// 微信小程序登录
 			authUser.POST("updateWeAppUserInfo", action.WeChatUpdateUserInfo)
 		}

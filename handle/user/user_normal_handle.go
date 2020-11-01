@@ -130,6 +130,24 @@ func fetchUserRules(entity *UserInfo) {
 	}
 }
 
+func FetchUserInfo(userID uint64,ctx *gin.Context)  (*UserInfo, interface{}) {
+
+	admin := &UserInfo{}
+	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", userID).Scan(&admin.User).Error
+
+	if err != nil {
+		if IsRecordNotFound(err) {
+			return nil, CreateErrorMessage(USER_NO_EXIST, nil)
+		}
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+	}
+
+	//检出菜单
+	fetchUserRules(admin)
+
+	return admin,nil
+}
+
 func (M *UserLogin) Run(ctx *gin.Context) (*LoginRespond, interface{}) {
 	admin := &UserInfo{}
 	err := ExecSQL().Debug().Table("user_base").Select("user_base.uid,user_base.user_name,user_base.user_pwsd,user_base.nick_name,user_base.gender,user_base.birthday,user_base.signature,user_base.face200,user_base.mobile,user_base.email,user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("email = ? or user_name = ? or mobile = ?", M.Account, M.Account, M.Account).Scan(&admin.User).Error

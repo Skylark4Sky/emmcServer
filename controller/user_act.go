@@ -4,7 +4,6 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/extension"
 	. "GoServer/utils/config"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/string"
@@ -99,7 +98,17 @@ func Login(ctx *gin.Context) {
 
 	data, err := login.Run(ctx)
 
-	SystemLog("Login ---->", data)
+	if err != nil {
+		RespondMessage(ctx, err)
+		return
+	}
+
+	RespondMessage(ctx, CreateMessage(SUCCESS, data))
+}
+
+func GetUserInfo(ctx *gin.Context) {
+	userID := ctx.MustGet(JwtCtxUidKey)
+	data, err := FetchUserInfo(userID.(uint64),ctx)
 
 	if err != nil {
 		RespondMessage(ctx, err)

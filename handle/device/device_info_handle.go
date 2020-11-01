@@ -1,8 +1,8 @@
 package device
 
 import (
-	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/handle/user"
+	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/utils/respond"
 )
 
@@ -16,7 +16,7 @@ type RequestListData struct {
 
 func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 	userInfo := &UserInfo{}
-	err := ExecSQL().Table("user_base").Select("user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
+	err := ExecSQL().Debug().Table("user_base").Select("user_role.rules").Joins("inner join user_role ON user_base.user_role = user_role.id").Where("uid = ?", request.UserID).Scan(&userInfo.User).Error
 
 	if err != nil {
 		if IsRecordNotFound(err) {
@@ -25,17 +25,17 @@ func (request *RequestListData) GetDeviceList() (interface{}, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 
-	return userInfo,nil
+	return userInfo, nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
-	return nil,nil
+	return nil, nil
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
-	return nil,nil
+	return nil, nil
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
-	return nil,nil
+	return nil, nil
 }

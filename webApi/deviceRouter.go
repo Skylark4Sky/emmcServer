@@ -12,13 +12,15 @@ func registerDeviceRouter(deviceRouter *gin.RouterGroup) {
 		{
 			device.POST("connect", deviceApi.DeviceConnect)
 			device.GET("connect", deviceApi.DeviceConnect)
+			device.GET("startCharge", deviceApi.StartCharge)
+			device.GET("stopCharge", deviceApi.StopCharge)
 		}
 
 		authDevice := device.Use(JwtIntercept)
 		{
 			//操作控制器 权重最高,需慎重处理
-			authDevice.POST("startCharge", deviceApi.StartCharge)
-			authDevice.POST("stopCharge", deviceApi.StopCharge)
+			//authDevice.POST("startCharge", deviceApi.StartCharge)
+			//authDevice.POST("stopCharge", deviceApi.StopCharge)
 			authDevice.POST("statusQuery", deviceApi.StatusQuery)
 			authDevice.POST("noLoadSetting", deviceApi.NoLoadSetting)
 			authDevice.POST("reStart", deviceApi.Restart)

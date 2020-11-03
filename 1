@@ -110,10 +110,12 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
 		if condName, ok := condMap["cond"]; ok {
-			if condName.(string) == "update_time" {
-				db = addTimeCond(db, "update_time", request.StartTime, request.EndTime)
-			} else {
-				db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+			if request.StartTime > 0 && request.EndTime > 0 {
+				if condName.(string) == "update_time" {
+					db = addTimeCond(db, "update_time", request.StartTime, request.EndTime)
+				} else {
+					db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+				}
 			}
 		}
 	} else {

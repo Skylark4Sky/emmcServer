@@ -9,11 +9,11 @@ import (
 )
 
 func StartCharge(ctx *gin.Context) {
-	userID := ctx.MustGet(JwtCtxUidKey)
+	//	userID := ctx.MustGet(JwtCtxUidKey)
 
-	if userID.(uint64) <= 0 {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
-	}
+	//	if userID.(uint64) <= 0 {
+	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	//	}
 
 	var postData mqtt.ComTaskStartTransfer
 	postData.ComID = 1
@@ -32,11 +32,11 @@ func StartCharge(ctx *gin.Context) {
 }
 
 func StopCharge(ctx *gin.Context) {
-	userID := ctx.MustGet(JwtCtxUidKey)
-
-	if userID.(uint64) <= 0 {
-		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
-	}
+	//	userID := ctx.MustGet(JwtCtxUidKey)
+	//
+	//	if userID.(uint64) <= 0 {
+	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
+	//	}
 
 	var postData mqtt.ComTaskStopTransfer
 	postData.ComID = 1

@@ -21,19 +21,38 @@ const (
 )
 
 const (
-	SELECT_TRANSFER_LOG_DEVICEID   = "device_id"
-	SELECT_TRANSFER_LOG_BEHAVIOR   = "behavior"
-	SELECT_TRANSFER_LOG_DEVICESN   = "device_sn"
-	SELECT_TRANSFER_LOG_TRANSFERID = "transfer_id"
-	SELECT_TRANSFER_LOG_TIMETYPE   = "time"
+	SELECT_CREATE_TIME = "create_time"
+	SELECT_UPDATE_TIME = "update_time"
 )
 
 const (
-	SELECT_DEVICE_LIST_TYPE            = "type"
-	SELECT_DEVICE_LIST_DEVICE_SN       = "device_sn"
-	SELECT_DEVICE_LIST_DEVICE_VERSION  = "device_version"
-	SELECT_DEVICE_LIST_TYPE_ACCESS_WAY = "access_way"
-	SELECT_DEVICE_LIST_TIMETYPE        = "time"
+	SELECT_DEVICE_TYPE            = "type"
+	SELECT_DEVICE_SN       = "device_sn"
+	SELECT_DEVICE_VERSION  = "device_version"
+	SELECT_DEVICE_ACCESS_WAY = "access_way"
+	SELECT_DEVICE_TIMETYPE        = "time"
+)
+
+const (
+	SELECT_TRANSFER_DEVICEID   = "device_id"
+	SELECT_TRANSFER_BEHAVIOR   = "behavior"
+	SELECT_TRANSFER_DEVICESN   = "device_sn"
+	SELECT_TRANSFER_ID = "transfer_id"
+	SELECT_TRANSFER_TIMETYPE   = "time"
+)
+
+const (
+	SELECT_MODULE_ACCESS_WAY   = "access_way"
+	SELECT_MODULE_SN   = "module_sn"
+	SELECT_MODULE_VERSION   = "module_version"
+	SELECT_MODULE_TIMETYPE   = "time"
+)
+
+const (
+	SELECT_CONNECT_ACCESS_WAY   = "access_way"
+	SELECT_CONNECT_MODULE_ID   = "module_id"
+	SELECT_CONNECT_MODULE_SN   = "module_sn"
+	SELECT_CONNECT_TIMETYPE   = "time"
 )
 
 type RequestListData struct {
@@ -147,6 +166,14 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		{
 			listSize = len(*listSearch.(*[]DeviceTransferLog))
 		}
+	case *[]ModuleInfo:
+		{
+			listSize = len(*listSearch.(*[]ModuleInfo))
+		}
+	case *[]ModuleConnectLog:
+		{
+			listSize = len(*listSearch.(*[]ModuleConnectLog))
+		}
 	}
 
 	respond = &RespondListData{
@@ -175,11 +202,11 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		for keyName, condValue := range condMap {
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
-			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+			case SELECT_DEVICE_TYPE, SELECT_DEVICE_SN, SELECT_DEVICE_VERSION, SELECT_DEVICE_ACCESS_WAY:
 				{
 					dbEntity = dbEntity.Where(cond, condValue)
 				}
-			case SELECT_DEVICE_LIST_TIMETYPE:
+			case SELECT_DEVICE_TIMETYPE:
 				{
 					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
@@ -208,12 +235,11 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 		for keyName, condValue := range condMap {
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
-
-			case SELECT_TRANSFER_LOG_DEVICEID, SELECT_TRANSFER_LOG_DEVICESN, SELECT_TRANSFER_LOG_BEHAVIOR, SELECT_TRANSFER_LOG_TRANSFERID:
+			case SELECT_TRANSFER_DEVICEID, SELECT_TRANSFER_DEVICESN, SELECT_TRANSFER_BEHAVIOR, SELECT_TRANSFER_ID:
 				{
 					dbEntity = dbEntity.Where(cond, condValue)
 				}
-			case SELECT_TRANSFER_LOG_TIMETYPE:
+			case SELECT_TRANSFER_TIMETYPE:
 				{
 					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
@@ -234,52 +260,30 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	var deviceList []DeviceInfo
-	var total int64 = 0
+	var moduleList []ModuleInfo
+	var respond *RespondListData = nil
 
-	db := ExecSQL().Debug()
-
-	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
-
-	if request.RequestCond != nil {
-		condMap := request.RequestCond.(map[string]interface{})
-
+	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+		dbEntity := db
 		for keyName, condValue := range condMap {
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
-			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+			case SELECT_MODULE_ACCESS_WAY, SELECT_MODULE_SN, SELECT_MODULE_VERSION:
 				{
-					db = db.Where(cond, condValue)
+					dbEntity = dbEntity.Where(cond, condValue)
 				}
-			case SELECT_DEVICE_LIST_TIMETYPE:
+			case SELECT_MODULE_TIMETYPE:
 				{
-					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
 			}
 		}
-	} else {
-		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+		return dbEntity
+	}); errMsg != nil {
+		return nil, errMsg
 	}
 
-	if request.PageNum == StartPage {
-		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	} else {
-		if err := db.Find(&deviceList).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	}
-
-	var respond = RespondListData{
-		List: deviceList,
-		Page: PageInfo{
-			Total: total,
-			Size:  len(deviceList),
-		},
-	}
-
-	return &respond, nil
+	return respond, nil
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
@@ -289,50 +293,28 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	var deviceList []DeviceInfo
-	var total int64 = 0
+	var connectList []ModuleConnectLog
+	var respond *RespondListData = nil
 
-	db := ExecSQL().Debug()
-
-	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
-
-	if request.RequestCond != nil {
-		condMap := request.RequestCond.(map[string]interface{})
-
+	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+		dbEntity := db
 		for keyName, condValue := range condMap {
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
-			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+			case SELECT_CONNECT_ACCESS_WAY, SELECT_CONNECT_MODULE_ID, SELECT_CONNECT_MODULE_SN:
 				{
-					db = db.Where(cond, condValue)
+					dbEntity = dbEntity.Where(cond, condValue)
 				}
-			case SELECT_DEVICE_LIST_TIMETYPE:
+			case SELECT_CONNECT_TIMETYPE:
 				{
-					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
 			}
 		}
-	} else {
-		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+		return dbEntity
+	}); errMsg != nil {
+		return nil, errMsg
 	}
 
-	if request.PageNum == StartPage {
-		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	} else {
-		if err := db.Find(&deviceList).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	}
-
-	var respond = RespondListData{
-		List: deviceList,
-		Page: PageInfo{
-			Total: total,
-			Size:  len(deviceList),
-		},
-	}
-
-	return &respond, nil
+	return respond, nil
 }

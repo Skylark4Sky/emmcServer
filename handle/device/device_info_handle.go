@@ -21,12 +21,11 @@ const (
 )
 
 const (
-	SELECT_TRANSFER_LOG_DEVICEID     = "device_id"
-	SELECT_TRANSFER_LOG_BEHAVIOR     = "behavior"
-	SELECT_TRANSFER_LOG_DEVICESN     = "device_sn"
-	SELECT_TRANSFER_LOG_TRANSFERID   = "transfer_id"
-	SELECT_TRANSFER_LOG_TRANSFERTIME = "transfer_time"
-	SELECT_TRANSFER_LOG_CREATETIME   = "create_time"
+	SELECT_TRANSFER_LOG_DEVICEID   = "device_id"
+	SELECT_TRANSFER_LOG_BEHAVIOR   = "behavior"
+	SELECT_TRANSFER_LOG_DEVICESN   = "device_sn"
+	SELECT_TRANSFER_LOG_TRANSFERID = "transfer_id"
+	SELECT_TRANSFER_LOG_TIMETYPE   = "time"
 )
 
 const (
@@ -47,8 +46,8 @@ type RequestListData struct {
 }
 
 type PageInfo struct {
-	Total int64 `json:"total,omitempty"`
-	Size  int   `json:"size,omitempty"`
+	Total int64 `json:"total"`
+	Size  int   `json:"size"`
 }
 
 type RespondListData struct {
@@ -109,6 +108,58 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 	return dbEntity
 }
 
+func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB) (errMsg interface{}, respond *RespondListData) {
+	errMsg = nil
+	respond = nil
+
+	var total int64 = 0
+
+	db := ExecSQL().Debug()
+	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
+
+	if request.RequestCond != nil {
+		condMap := request.RequestCond.(map[string]interface{})
+		if condFilter != nil {
+			db = condFilter(db, condMap)
+		}
+	} else {
+		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+	}
+
+	if request.PageNum == StartPage {
+		if err := db.Find(listSearch).Count(&total).Error; err != nil {
+			errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	} else {
+		if err := db.Find(listSearch).Error; err != nil {
+			errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	}
+
+	var listSize int = 0
+
+	switch listSearch.(type) {
+	case *[]DeviceInfo:
+		{
+			listSize = len(*listSearch.(*[]DeviceInfo))
+		}
+	case *[]DeviceTransferLog:
+		{
+			listSize = len(*listSearch.(*[]DeviceTransferLog))
+		}
+	}
+
+	respond = &RespondListData{
+		List: listSearch,
+		Page: PageInfo{
+			Total: total,
+			Size:  listSize,
+		},
+	}
+
+	return
+}
+
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
 	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
@@ -117,51 +168,29 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	}
 
 	var deviceList []DeviceInfo
-	var total int64 = 0
+	var respond *RespondListData = nil
 
-	db := ExecSQL().Debug()
-
-	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
-
-	if request.RequestCond != nil {
-		condMap := request.RequestCond.(map[string]interface{})
-
+	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+		dbEntity := db
 		for keyName, condValue := range condMap {
-			fmt.Println("keyName:", keyName)
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
 			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
 				{
-					db = db.Where(cond, condValue)
+					dbEntity = dbEntity.Where(cond, condValue)
 				}
 			case SELECT_DEVICE_LIST_TIMETYPE:
 				{
-					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
 			}
 		}
-	} else {
-		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+		return dbEntity
+	}); errMsg != nil {
+		return nil, errMsg
 	}
 
-	if request.PageNum == StartPage {
-		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	} else {
-		if err := db.Find(&deviceList).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	}
-
-	var respond = RespondListData{
-		List: deviceList,
-		Page: PageInfo{
-			Total: total,
-			Size:  len(deviceList),
-		},
-	}
-	return &respond, nil
+	return respond, nil
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
@@ -172,51 +201,30 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 	}
 
 	var transferList []DeviceTransferLog
-	var total int64 = 0
+	var respond *RespondListData = nil
 
-	db := ExecSQL().Debug()
-
-	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
-
-	if request.RequestCond != nil {
-		condMap := request.RequestCond.(map[string]interface{})
-
+	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+		dbEntity := db
 		for keyName, condValue := range condMap {
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
-			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+
+			case SELECT_TRANSFER_LOG_DEVICEID, SELECT_TRANSFER_LOG_DEVICESN, SELECT_TRANSFER_LOG_BEHAVIOR, SELECT_TRANSFER_LOG_TRANSFERID:
 				{
-					db = db.Where(cond, condValue)
+					dbEntity = dbEntity.Where(cond, condValue)
 				}
-			case SELECT_DEVICE_LIST_TIMETYPE:
+			case SELECT_TRANSFER_LOG_TIMETYPE:
 				{
-					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
 				}
 			}
 		}
-	} else {
-		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+		return dbEntity
+	}); errMsg != nil {
+		return nil, errMsg
 	}
 
-	if request.PageNum == StartPage {
-		if err := db.Find(&transferList).Count(&total).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	} else {
-		if err := db.Find(&deviceList).Error; err != nil {
-			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
-		}
-	}
-
-	var respond = RespondListData{
-		List: deviceList,
-		Page: PageInfo{
-			Total: total,
-			Size:  len(deviceList),
-		},
-	}
-
-	return &respond, nil
+	return respond, nil
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
@@ -237,7 +245,6 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 		condMap := request.RequestCond.(map[string]interface{})
 
 		for keyName, condValue := range condMap {
-			fmt.Println("keyName:", keyName)
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
 			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
@@ -293,7 +300,6 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 		condMap := request.RequestCond.(map[string]interface{})
 
 		for keyName, condValue := range condMap {
-			fmt.Println("keyName:", keyName)
 			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
 			switch keyName {
 			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:

@@ -4,7 +4,13 @@ import (
 	. "GoServer/handle/device"
 	. "GoServer/middleWare/extension"
 	. "GoServer/utils/respond"
+	. "GoServer/utils/string"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	MIN_PAGE_SIZE = 20
+	MAX_PAGE_SIZE = 200
 )
 
 func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {
@@ -21,7 +27,8 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize 
 	}
 
 	if requestParam.PageSize < minSize || requestParam.PageSize > maxSize {
-		return false, CreateErrorMessage(PARAM_ERROR, "页大小设置错误 20 - 200")
+		errMsg := StringJoin([]interface{}{"页大小设置错误 ", MIN_PAGE_SIZE, " - ", MAX_PAGE_SIZE})
+		return false, CreateErrorMessage(PARAM_ERROR, errMsg)
 	}
 
 	if requestParam.UserID != userID {
@@ -34,7 +41,7 @@ func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize 
 // 返回设备列表
 func GetDeviceList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -52,7 +59,7 @@ func GetDeviceList(ctx *gin.Context) {
 // 返回设备上报日志
 func GetDeviceTransferLogList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -69,7 +76,7 @@ func GetDeviceTransferLogList(ctx *gin.Context) {
 
 func GetModuleList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}
@@ -86,7 +93,7 @@ func GetModuleList(ctx *gin.Context) {
 
 func GetModuleConnectLogList(ctx *gin.Context) {
 	var getListData RequestListData
-	if _, err := checkRequestParam(ctx, &getListData, 20, 200); err != nil {
+	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
 		return
 	}

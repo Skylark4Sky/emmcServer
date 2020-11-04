@@ -6,7 +6,6 @@ import (
 	. "GoServer/model/device"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"strings"
@@ -19,6 +18,15 @@ const (
 	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
 	SELECT_TMODULE_LIST             = 12
 	SELECT_MODULE_CONNECT_LOG_LIST  = 20
+)
+
+const (
+	SELECT_TRANSFER_LOG_DEVICEID     = "device_id"
+	SELECT_TRANSFER_LOG_BEHAVIOR     = "behavior"
+	SELECT_TRANSFER_LOG_DEVICESN     = "device_sn"
+	SELECT_TRANSFER_LOG_TRANSFERID   = "transfer_id"
+	SELECT_TRANSFER_LOG_TRANSFERTIME = "transfer_time"
+	SELECT_TRANSFER_LOG_CREATETIME   = "create_time"
 )
 
 const (
@@ -48,11 +56,8 @@ type RespondListData struct {
 	Page PageInfo    `json:"page,omitempty"`
 }
 
-func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, errMsg interface{}) {
-
-	isFind = false
+func checkUserRulesGroup(request *RequestListData, roleValue int) (errMsg interface{}) {
 	errMsg = nil
-
 	userInfo := &UserInfo{}
 
 	db := ExecSQL().Table("user_base")
@@ -69,6 +74,8 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 		return
 	}
 
+	var isFind = false
+
 	if userInfo.User.Rules != "" && len(userInfo.User.Rules) >= 1 {
 		countSplit := strings.Split(userInfo.User.Rules, ",")
 		for _, ids := range countSplit {
@@ -81,7 +88,11 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (isFind bool, 
 		}
 	}
 
-	return
+	if isFind == false {
+		errMsg = CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
+	}
+
+	return nil
 }
 
 func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.DB {
@@ -99,14 +110,10 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 }
 
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
-	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
+	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
 	if errMsg != nil {
 		return nil, errMsg
-	}
-
-	if !hasRole {
-		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
 	var deviceList []DeviceInfo
@@ -158,43 +165,168 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
-	hasRole, errMsg := checkUserRulesGroup(request, SELECT_DEVICE_TRANSFER_LOG_LIST)
+	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_TRANSFER_LOG_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	if hasRole {
+	var transferList []DeviceTransferLog
+	var total int64 = 0
 
+	db := ExecSQL().Debug()
+
+	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
+
+	if request.RequestCond != nil {
+		condMap := request.RequestCond.(map[string]interface{})
+
+		for keyName, condValue := range condMap {
+			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
+			switch keyName {
+			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+				{
+					db = db.Where(cond, condValue)
+				}
+			case SELECT_DEVICE_LIST_TIMETYPE:
+				{
+					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+				}
+			}
+		}
+	} else {
+		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}
 
-	return nil, nil
+	if request.PageNum == StartPage {
+		if err := db.Find(&transferList).Count(&total).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	} else {
+		if err := db.Find(&deviceList).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	}
+
+	var respond = RespondListData{
+		List: deviceList,
+		Page: PageInfo{
+			Total: total,
+			Size:  len(deviceList),
+		},
+	}
+
+	return &respond, nil
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
-	hasRole, errMsg := checkUserRulesGroup(request, SELECT_TMODULE_LIST)
+	errMsg := checkUserRulesGroup(request, SELECT_TMODULE_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	if hasRole {
+	var deviceList []DeviceInfo
+	var total int64 = 0
 
+	db := ExecSQL().Debug()
+
+	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
+
+	if request.RequestCond != nil {
+		condMap := request.RequestCond.(map[string]interface{})
+
+		for keyName, condValue := range condMap {
+			fmt.Println("keyName:", keyName)
+			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
+			switch keyName {
+			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+				{
+					db = db.Where(cond, condValue)
+				}
+			case SELECT_DEVICE_LIST_TIMETYPE:
+				{
+					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+				}
+			}
+		}
+	} else {
+		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}
 
-	return nil, nil
+	if request.PageNum == StartPage {
+		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	} else {
+		if err := db.Find(&deviceList).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	}
+
+	var respond = RespondListData{
+		List: deviceList,
+		Page: PageInfo{
+			Total: total,
+			Size:  len(deviceList),
+		},
+	}
+
+	return &respond, nil
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
-	hasRole, errMsg := checkUserRulesGroup(request, SELECT_MODULE_CONNECT_LOG_LIST)
+	errMsg := checkUserRulesGroup(request, SELECT_MODULE_CONNECT_LOG_LIST)
 
 	if errMsg != nil {
 		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
 	}
 
-	if hasRole {
+	var deviceList []DeviceInfo
+	var total int64 = 0
 
+	db := ExecSQL().Debug()
+
+	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
+
+	if request.RequestCond != nil {
+		condMap := request.RequestCond.(map[string]interface{})
+
+		for keyName, condValue := range condMap {
+			fmt.Println("keyName:", keyName)
+			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
+			switch keyName {
+			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+				{
+					db = db.Where(cond, condValue)
+				}
+			case SELECT_DEVICE_LIST_TIMETYPE:
+				{
+					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+				}
+			}
+		}
+	} else {
+		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}
 
-	return nil, nil
+	if request.PageNum == StartPage {
+		if err := db.Find(&deviceList).Count(&total).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	} else {
+		if err := db.Find(&deviceList).Error; err != nil {
+			return nil, CreateErrorMessage(SYSTEM_ERROR, err)
+		}
+	}
+
+	var respond = RespondListData{
+		List: deviceList,
+		Page: PageInfo{
+			Total: total,
+			Size:  len(deviceList),
+		},
+	}
+
+	return &respond, nil
 }

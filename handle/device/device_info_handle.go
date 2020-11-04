@@ -6,6 +6,7 @@ import (
 	. "GoServer/model/device"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"strings"
@@ -18,6 +19,14 @@ const (
 	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
 	SELECT_TMODULE_LIST             = 12
 	SELECT_MODULE_CONNECT_LOG_LIST  = 20
+)
+
+const (
+	SELECT_DEVICE_LIST_TYPE            = "type"
+	SELECT_DEVICE_LIST_DEVICE_SN       = "device_sn"
+	SELECT_DEVICE_LIST_DEVICE_VERSION  = "device_version"
+	SELECT_DEVICE_LIST_TYPE_ACCESS_WAY = "access_way"
+	SELECT_DEVICE_LIST_TIMETYPE        = "time"
 )
 
 type RequestListData struct {
@@ -109,11 +118,19 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
-		if condName, ok := condMap["cond"]; ok {
-			if condName.(string) == "update_time" {
-				db = addTimeCond(db, "update_time", request.StartTime, request.EndTime)
-			} else {
-				db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
+
+		for keyName, condValue := range condMap {
+			fmt.Println("keyName:", keyName)
+			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
+			switch keyName {
+			case SELECT_DEVICE_LIST_TYPE, SELECT_DEVICE_LIST_DEVICE_SN, SELECT_DEVICE_LIST_DEVICE_VERSION, SELECT_DEVICE_LIST_TYPE_ACCESS_WAY:
+				{
+					db = db.Where(cond, condValue)
+				}
+			case SELECT_DEVICE_LIST_TIMETYPE:
+				{
+					db = addTimeCond(db, condValue.(string), request.StartTime, request.EndTime)
+				}
 			}
 		}
 	} else {

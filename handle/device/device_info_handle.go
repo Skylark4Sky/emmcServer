@@ -26,32 +26,32 @@ const (
 )
 
 const (
-	SELECT_DEVICE_TYPE            = "type"
-	SELECT_DEVICE_SN       = "device_sn"
-	SELECT_DEVICE_VERSION  = "device_version"
+	SELECT_DEVICE_TYPE       = "type"
+	SELECT_DEVICE_SN         = "device_sn"
+	SELECT_DEVICE_VERSION    = "device_version"
 	SELECT_DEVICE_ACCESS_WAY = "access_way"
-	SELECT_DEVICE_TIMETYPE        = "time"
+	SELECT_DEVICE_TIMETYPE   = "time"
 )
 
 const (
-	SELECT_TRANSFER_DEVICEID   = "device_id"
-	SELECT_TRANSFER_BEHAVIOR   = "behavior"
-	SELECT_TRANSFER_DEVICESN   = "device_sn"
-	SELECT_TRANSFER_ID = "transfer_id"
-	SELECT_TRANSFER_TIMETYPE   = "time"
+	SELECT_TRANSFER_DEVICEID = "device_id"
+	SELECT_TRANSFER_BEHAVIOR = "behavior"
+	SELECT_TRANSFER_DEVICESN = "device_sn"
+	SELECT_TRANSFER_ID       = "transfer_id"
+	SELECT_TRANSFER_TIMETYPE = "time"
 )
 
 const (
-	SELECT_MODULE_ACCESS_WAY   = "access_way"
-	SELECT_MODULE_SN   = "module_sn"
-	SELECT_MODULE_VERSION   = "module_version"
+	SELECT_MODULE_ACCESS_WAY = "access_way"
+	SELECT_MODULE_SN         = "module_sn"
+	SELECT_MODULE_VERSION    = "module_version"
 	SELECT_MODULE_TIMETYPE   = "time"
 )
 
 const (
-	SELECT_CONNECT_ACCESS_WAY   = "access_way"
-	SELECT_CONNECT_MODULE_ID   = "module_id"
-	SELECT_CONNECT_MODULE_SN   = "module_sn"
+	SELECT_CONNECT_ACCESS_WAY = "access_way"
+	SELECT_CONNECT_MODULE_ID  = "module_id"
+	SELECT_CONNECT_MODULE_SN  = "module_sn"
 	SELECT_CONNECT_TIMETYPE   = "time"
 )
 

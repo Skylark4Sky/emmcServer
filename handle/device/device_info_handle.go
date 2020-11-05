@@ -26,32 +26,32 @@ const (
 )
 
 const (
-	SELECT_DEVICE_TYPE       = "type"
 	SELECT_DEVICE_SN         = "device_sn"
 	SELECT_DEVICE_VERSION    = "device_version"
+	SELECT_DEVICE_TYPE       = "type"
 	SELECT_DEVICE_ACCESS_WAY = "access_way"
 	SELECT_DEVICE_TIMETYPE   = "time"
 )
 
 const (
-	SELECT_TRANSFER_DEVICEID = "device_id"
-	SELECT_TRANSFER_BEHAVIOR = "behavior"
-	SELECT_TRANSFER_DEVICESN = "device_sn"
 	SELECT_TRANSFER_ID       = "transfer_id"
+	SELECT_TRANSFER_DEVICEID = "device_id"
+	SELECT_TRANSFER_DEVICESN = "device_sn"
+	SELECT_TRANSFER_BEHAVIOR = "behavior"
 	SELECT_TRANSFER_TIMETYPE = "time"
 )
 
 const (
-	SELECT_MODULE_ACCESS_WAY = "access_way"
 	SELECT_MODULE_SN         = "module_sn"
 	SELECT_MODULE_VERSION    = "module_version"
+	SELECT_MODULE_ACCESS_WAY = "access_way"
 	SELECT_MODULE_TIMETYPE   = "time"
 )
 
 const (
-	SELECT_CONNECT_ACCESS_WAY = "access_way"
 	SELECT_CONNECT_MODULE_ID  = "module_id"
 	SELECT_CONNECT_MODULE_SN  = "module_sn"
+	SELECT_CONNECT_ACCESS_WAY = "access_way"
 	SELECT_CONNECT_TIMETYPE   = "time"
 )
 
@@ -127,14 +127,18 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 	return dbEntity
 }
 
-func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB) (errMsg interface{}, respond *RespondListData) {
+func generalSQLFormat(db *gorm.DB, request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB) (errMsg interface{}, respond *RespondListData) {
 	errMsg = nil
 	respond = nil
 
 	var total int64 = 0
 
 	db := ExecSQL().Debug()
-	db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize).Order("id desc")
+
+	//db := ExecSQL().Table("user_base")
+	//db = db.Select("user_role.id,user_role.rules")
+	//db = db.Joins("inner join user_role ON user_base.user_role = user_role.id")
+	//db = db.Where("uid = ?", request.UserID)
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
@@ -145,13 +149,17 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}
 
+	db = db.Order("id desc").Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
+
 	if request.PageNum == StartPage {
 		if err := db.Find(listSearch).Count(&total).Error; err != nil {
 			errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
+			return
 		}
 	} else {
 		if err := db.Find(listSearch).Error; err != nil {
 			errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
+			return
 		}
 	}
 
@@ -196,6 +204,8 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 
 	var deviceList []DeviceInfo
 	var respond *RespondListData = nil
+
+	db := ExecSQL().Table("device_info")
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db

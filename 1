@@ -112,24 +112,16 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (errMsg interf
 }
 
 func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.DB {
-
 	dbEntity := db
-
-	if startTime > 0 && endTime > 0 {
-		cond := StringJoin([]interface{}{" (", timeField, " BETWEEN ? AND ?)"})
-		dbEntity = dbEntity.Where(cond, startTime*1000, endTime*1000)
-	} else {
-		if startTime > 0 {
-			cond := StringJoin([]interface{}{" ", timeField, " >= ?"})
-			dbEntity = dbEntity.Where(cond, startTime*1000)
-		}
-
-		if endTime > 0 {
-			cond := StringJoin([]interface{}{" ", timeField, " <= ?"})
-			dbEntity = dbEntity.Where(cond, endTime*1000)
-		}
+	if startTime > 0 {
+		cond := StringJoin([]interface{}{" ", timeField, " >= ?"})
+		dbEntity = dbEntity.Where(cond, startTime*1000)
 	}
 
+	if endTime > 0 {
+		cond := StringJoin([]interface{}{" ", timeField, " <= ?"})
+		dbEntity = dbEntity.Where(cond, endTime*1000)
+	}
 	return dbEntity
 }
 
@@ -263,6 +255,7 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 		}
 
 		if timefilter, ok := condMap[SELECT_TRANSFER_TIMETYPE]; ok {
+
 			dbEntity = addTimeCond(dbEntity, timefield.(string), request.StartTime, request.EndTime)
 		}
 

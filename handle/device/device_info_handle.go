@@ -241,7 +241,7 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
-
+		
 		if transferID, ok := condMap[SELECT_TRANSFER_ID]; ok {
 			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_ID, " = ?"})
 			dbEntity = dbEntity.Where(cond, transferID)
@@ -262,8 +262,8 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 			dbEntity = dbEntity.Where(cond, behavior)
 		}
 
-		if timefilter, ok := condMap[SELECT_TRANSFER_TIMETYPE]; ok {
-			dbEntity = addTimeCond(dbEntity, timefield.(string), request.StartTime, request.EndTime)
+		if timeType, ok := condMap[SELECT_TRANSFER_TIMETYPE]; ok {
+			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
 		return dbEntity

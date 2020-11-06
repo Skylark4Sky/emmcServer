@@ -19,38 +19,17 @@ const (
 )
 
 const (
-	SELECT_CREATE_TIME = "create_time"
-	SELECT_UPDATE_TIME = "update_time"
-)
-
-const (
-	SELECT_DEVICE_SN         = "device_sn"
-	SELECT_DEVICE_VERSION    = "device_version"
-	SELECT_DEVICE_TYPE       = "type"
-	SELECT_DEVICE_ACCESS_WAY = "access_way"
-	SELECT_DEVICE_TIMETYPE   = "time"
-)
-
-const (
-	SELECT_TRANSFER_ID       = "transfer_id"
-	SELECT_TRANSFER_DEVICEID = "device_id"
-	SELECT_TRANSFER_DEVICESN = "device_sn"
-	SELECT_TRANSFER_BEHAVIOR = "behavior"
-	SELECT_TRANSFER_TIMETYPE = "time"
-)
-
-const (
-	SELECT_MODULE_SN         = "module_sn"
-	SELECT_MODULE_VERSION    = "module_version"
-	SELECT_MODULE_ACCESS_WAY = "access_way"
-	SELECT_MODULE_TIMETYPE   = "time"
-)
-
-const (
-	SELECT_CONNECT_MODULE_ID  = "module_id"
-	SELECT_CONNECT_MODULE_SN  = "module_sn"
-	SELECT_CONNECT_ACCESS_WAY = "access_way"
-	SELECT_CONNECT_TIMETYPE   = "time"
+	DEVICE_ID_KEY      = "device_id"
+	DEVICE_SN_KEY      = "device_sn"
+	DEVICE_VERSION_KEY = "device_version"
+	TYPE_KEY           = "type"
+	ACCESS_WAY_KEY     = "access_way"
+	TRANSFER_ID_KEY    = "transfer_id"
+	BEHAVIOR_KEY       = "behavior"
+	TIMETYPE_KEY       = "time"
+	MODULE_ID_KEY      = "module_id"
+	MODULE_SN_KEY      = "module_sn"
+	MODULE_VERSION_KEY = "module_version"
 )
 
 type RequestListData struct {
@@ -208,19 +187,31 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
-		for keyName, condValue := range condMap {
-			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
-			switch keyName {
-			case SELECT_DEVICE_TYPE, SELECT_DEVICE_SN, SELECT_DEVICE_VERSION, SELECT_DEVICE_ACCESS_WAY:
-				{
-					dbEntity = dbEntity.Where(cond, condValue)
-				}
-			case SELECT_DEVICE_TIMETYPE:
-				{
-					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
-				}
-			}
+
+		if deviceSN, ok := condMap[DEVICE_SN_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", DEVICE_SN_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, deviceSN)
 		}
+
+		if deviceVersion, ok := condMap[DEVICE_VERSION_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", DEVICE_VERSION_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, deviceVersion)
+		}
+
+		if deviceType, ok := condMap[TYPE_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", TYPE_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, deviceType)
+		}
+
+		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, accessWay)
+		}
+
+		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
+			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
+		}
+
 		return dbEntity
 	}); errMsg != nil {
 		return nil, errMsg
@@ -242,27 +233,27 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
 
-		if transferID, ok := condMap[SELECT_TRANSFER_ID]; ok {
-			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_ID, " = ?"})
+		if transferID, ok := condMap[TRANSFER_ID_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", TRANSFER_ID_KEY, " = ?"})
 			dbEntity = dbEntity.Where(cond, transferID)
 		}
 
-		if deviceID, ok := condMap[SELECT_TRANSFER_DEVICEID]; ok {
-			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_DEVICEID, " = ?"})
+		if deviceID, ok := condMap[DEVICE_ID_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", DEVICE_ID_KEY, " = ?"})
 			dbEntity = dbEntity.Where(cond, deviceID)
 		}
 
-		if deviceSN, ok := condMap[SELECT_TRANSFER_DEVICESN]; ok {
-			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_DEVICESN, " = ?"})
+		if deviceSN, ok := condMap[DEVICE_SN_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", DEVICE_SN_KEY, " = ?"})
 			dbEntity = dbEntity.Where(cond, deviceSN)
 		}
 
-		if behavior, ok := condMap[SELECT_TRANSFER_BEHAVIOR]; ok {
-			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_BEHAVIOR, " = ?"})
+		if behavior, ok := condMap[BEHAVIOR_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", BEHAVIOR_KEY, " = ?"})
 			dbEntity = dbEntity.Where(cond, behavior)
 		}
 
-		if timeType, ok := condMap[SELECT_TRANSFER_TIMETYPE]; ok {
+		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
@@ -286,19 +277,26 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
-		for keyName, condValue := range condMap {
-			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
-			switch keyName {
-			case SELECT_MODULE_ACCESS_WAY, SELECT_MODULE_SN, SELECT_MODULE_VERSION:
-				{
-					dbEntity = dbEntity.Where(cond, condValue)
-				}
-			case SELECT_MODULE_TIMETYPE:
-				{
-					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
-				}
-			}
+
+		if moduleSN, ok := condMap[MODULE_SN_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", MODULE_SN_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, moduleSN)
 		}
+
+		if moduleVersion, ok := condMap[MODULE_VERSION_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", MODULE_VERSION_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, moduleVersion)
+		}
+
+		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, accessWay)
+		}
+
+		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
+			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
+		}
+
 		return dbEntity
 	}); errMsg != nil {
 		return nil, errMsg
@@ -319,19 +317,26 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 
 	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
-		for keyName, condValue := range condMap {
-			cond := StringJoin([]interface{}{" ", keyName, " = ?"})
-			switch keyName {
-			case SELECT_CONNECT_ACCESS_WAY, SELECT_CONNECT_MODULE_ID, SELECT_CONNECT_MODULE_SN:
-				{
-					dbEntity = dbEntity.Where(cond, condValue)
-				}
-			case SELECT_CONNECT_TIMETYPE:
-				{
-					dbEntity = addTimeCond(dbEntity, condValue.(string), request.StartTime, request.EndTime)
-				}
-			}
+
+		if moduleID, ok := condMap[MODULE_ID_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", MODULE_ID_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, moduleID)
 		}
+
+		if moduleSN, ok := condMap[MODULE_SN_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", MODULE_SN_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, moduleSN)
+		}
+
+		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
+			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
+			dbEntity = dbEntity.Where(cond, accessWay)
+		}
+
+		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
+			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
+		}
+
 		return dbEntity
 	}); errMsg != nil {
 		return nil, errMsg

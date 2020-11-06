@@ -116,7 +116,7 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 	dbEntity := db
 
 	if startTime > 0 && endTime > 0 {
-		cond := StringJoin([]interface{}{" (", timeField, " BETWEEN ? AND ?)"})
+		cond := StringJoin([]interface{}{"(", timeField, " BETWEEN ? AND ?)"})
 		dbEntity = dbEntity.Where(cond, startTime*1000, endTime*1000)
 	} else {
 		if startTime > 0 {
@@ -139,7 +139,7 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 
 	var total int64 = 0
 
-	db := ExecSQL().Debug()
+	db := ExecSQL()
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
@@ -241,7 +241,7 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
 		dbEntity := db
-		
+
 		if transferID, ok := condMap[SELECT_TRANSFER_ID]; ok {
 			cond := StringJoin([]interface{}{" ", SELECT_TRANSFER_ID, " = ?"})
 			dbEntity = dbEntity.Where(cond, transferID)

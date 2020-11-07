@@ -39,9 +39,9 @@ const (
 	SORT_FIELD_KEY     = "sortField"
 	SORT_ORDER_KEY     = "sortOrder"
 	STAR_TTIME_KEY     = "startTime"
-	END_TIME_KEY	   = "endTime"
-	CREATE_TIME_KEY	   = "create_time"
-	UPDATE_TIME_KEY	   = "update_time"
+	END_TIME_KEY       = "endTime"
+	CREATE_TIME_KEY    = "create_time"
+	UPDATE_TIME_KEY    = "update_time"
 )
 
 type RequestListData struct {
@@ -114,15 +114,15 @@ func addTimeCond(db *gorm.DB, timeField string, condMap map[string]interface{}) 
 
 	if startTime > 0 && endTime > 0 {
 		cond := StringJoin([]interface{}{"(", timeField, " BETWEEN ? AND ?)"})
-		dbEntity = dbEntity.Where(cond, startTime*1000, endTime*1000)
+		dbEntity = dbEntity.Where(cond, startTime, endTime)
 	} else {
 		if startTime > 0 {
 			cond := StringJoin([]interface{}{" ", timeField, " >= ?"})
-			dbEntity = dbEntity.Where(cond, startTime*1000)
+			dbEntity = dbEntity.Where(cond, startTime)
 		}
 		if endTime > 0 {
 			cond := StringJoin([]interface{}{" ", timeField, " <= ?"})
-			dbEntity = dbEntity.Where(cond, endTime*1000)
+			dbEntity = dbEntity.Where(cond, endTime)
 		}
 	}
 	return dbEntity
@@ -192,30 +192,39 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm.DB {
 	dbEntity := db
 	switch key {
-	case CREATE_TIME_KEY,UPDATE_TIME_KEY: {
-		if keyValue, ok := condMap[TIMETYPE_KEY]; ok {
-			timeType := keyValue.(string)
-			if timeType == CREATE_TIME_KEY {
-				dbEntity = addTimeCond(dbEntity,CREATE_TIME_KEY,condMap)
-			}
-			if timeType == UPDATE_TIME_KEY {
-				dbEntity = addTimeCond(dbEntity,UPDATE_TIME_KEY,condMap)
+	case CREATE_TIME_KEY:
+		{
+			if keyValue, ok := condMap[TIMETYPE_KEY]; ok {
+				timeType := keyValue.(string)
+				if timeType == CREATE_TIME_KEY {
+					dbEntity = addTimeCond(dbEntity, CREATE_TIME_KEY, condMap)
+				}
 			}
 		}
-	}
+	case UPDATE_TIME_KEY:
+		{
+			if keyValue, ok := condMap[TIMETYPE_KEY]; ok {
+				timeType := keyValue.(string)
+				if timeType == UPDATE_TIME_KEY {
+					dbEntity = addTimeCond(dbEntity, UPDATE_TIME_KEY, condMap)
+				}
+			}
+		}
 	default:
 		if keyValue, ok := condMap[key]; ok {
 			switch key {
 			case ACCESS_WAY_KEY:
-				if keyValue != "0" {
+				if keyValue != "0" && keyValue != "" {
 					cond := StringJoin([]interface{}{" ", key, " = ?"})
 					dbEntity = dbEntity.Where(cond, keyValue)
 				}
-			case STAR_TTIME_KEY,END_TIME_KEY:
+			case STAR_TTIME_KEY, END_TIME_KEY:
 				break
 			default:
-				cond := StringJoin([]interface{}{" ", key, " = ?"})
-				dbEntity = dbEntity.Where(cond, keyValue)
+				if keyValue != "" {
+					cond := StringJoin([]interface{}{" ", key, " = ?"})
+					dbEntity = dbEntity.Where(cond, keyValue)
+				}
 			}
 		}
 	}
@@ -237,7 +246,8 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		db = addWhereCond(db, condMap, DEVICE_VERSION_KEY)
 		db = addWhereCond(db, condMap, TYPE_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
+		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
@@ -262,7 +272,7 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, BEHAVIOR_KEY)
-		db = addWhereCond(db, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg

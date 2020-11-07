@@ -188,6 +188,36 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 	return
 }
 
+func getOrderCond(condMap map[string]interface{}) (orderCond string) {
+	orderCond = ""
+	if sortField, ok := condMap[SORTFIELD]; ok {
+		if sortOrder, ok := condMap[SORTORDER]; ok {
+			var order string = DESCEND_ORDER
+			if sortOrder == ASCEND_ORDER {
+				order = ASCEND_ORDER
+			} else {
+				order = DESCEND_ORDER
+			}
+			orderCond = StringJoin([]interface{}{sortField, " ", order})
+		}
+	}
+	return
+}
+
+func addWhereCond(db *gorm.DB,request *RequestListData,condMap map[string]interface{}, key string) (dbEntity *gorm.DB) {
+	dbEntity = db
+	if keyValue, ok := condMap[key]; ok {
+		switch key {
+		case TIMETYPE_KEY:
+			dbEntity = addTimeCond(dbEntity, keyValue.(string), request.StartTime, request.EndTime)
+		default:
+			cond := StringJoin([]interface{}{" ", key, " = ?"})
+			dbEntity = dbEntity.Where(cond, keyValue)
+		}
+	}
+	return
+}
+
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
 	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
 
@@ -199,48 +229,13 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		var orderCond string = ""
 		dbEntity := db
-
-		if deviceSN, ok := condMap[DEVICE_SN_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", DEVICE_SN_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, deviceSN)
-		}
-
-		if deviceVersion, ok := condMap[DEVICE_VERSION_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", DEVICE_VERSION_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, deviceVersion)
-		}
-
-		if deviceType, ok := condMap[TYPE_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", TYPE_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, deviceType)
-		}
-
-		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
-			if accessWay != "0" {
-				cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
-				dbEntity = dbEntity.Where(cond, accessWay)
-			}
-		}
-
-		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
-			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
-		}
-
-		if sortField, ok := condMap[SORTFIELD]; ok {
-			if sortOrder, ok := condMap[SORTORDER]; ok {
-				var order string = "desc"
-				if sortOrder == ASCEND_ORDER {
-					order = "asc"
-				} else {
-					order = "desc"
-				}
-				orderCond = StringJoin([]interface{}{sortField, " ", order})
-			}
-		}
-
-		return dbEntity, orderCond
+		dbEntity = addWhereCond(db,request,condMap,DEVICE_SN_KEY)
+		dbEntity = addWhereCond(db,request,condMap,DEVICE_VERSION_KEY)
+		dbEntity = addWhereCond(db,request,condMap,TYPE_KEY)
+		dbEntity = addWhereCond(db,request,condMap,ACCESS_WAY_KEY)
+		dbEntity = addWhereCond(db,request,condMap,TIMETYPE_KEY)
+		return dbEntity, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}
@@ -287,17 +282,6 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
-		if sortField, ok := condMap[SORTFIELD]; ok {
-			if sortOrder, ok := condMap[SORTORDER]; ok {
-				var order string = "desc"
-				if sortOrder == ASCEND_ORDER {
-					order = "asc"
-				}
-				orderCond := StringJoin([]interface{}{sortField, " ", order})
-				dbEntity = dbEntity.Order(orderCond)
-			}
-		}
-
 		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
@@ -339,6 +323,18 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
+		if sortField, ok := condMap[SORTFIELD]; ok {
+			if sortOrder, ok := condMap[SORTORDER]; ok {
+				var order string = "desc"
+				if sortOrder == ASCEND_ORDER {
+					order = "asc"
+				} else {
+					order = "desc"
+				}
+				orderCond = StringJoin([]interface{}{sortField, " ", order})
+			}
+		}
+
 		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
@@ -378,6 +374,18 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 
 		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
+		}
+
+		if sortField, ok := condMap[SORTFIELD]; ok {
+			if sortOrder, ok := condMap[SORTORDER]; ok {
+				var order string = "desc"
+				if sortOrder == ASCEND_ORDER {
+					order = "asc"
+				} else {
+					order = "desc"
+				}
+				orderCond = StringJoin([]interface{}{sortField, " ", order})
+			}
 		}
 
 		return dbEntity, orderCond

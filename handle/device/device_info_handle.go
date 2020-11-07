@@ -36,16 +36,18 @@ const (
 	MODULE_ID_KEY      = "module_id"
 	MODULE_SN_KEY      = "module_sn"
 	MODULE_VERSION_KEY = "module_version"
-	SORTFIELD          = "sortField"
-	SORTORDER          = "sortOrder"
+	SORT_FIELD_KEY     = "sortField"
+	SORT_ORDER_KEY     = "sortOrder"
+	STAR_TTIME_KEY     = "startTime"
+	END_TIME_KEY	   = "endTime"
+	CREATE_TIME_KEY	   = "create_time"
+	UPDATE_TIME_KEY	   = "update_time"
 )
 
 type RequestListData struct {
 	UserID      uint64      `fomr:"userID" json:"userID" binding:"required"`
 	PageNum     int64       `form:"pageNum" json:"pageNum" binding:"required"`   //起始页
 	PageSize    int64       `form:"pageSize" json:"pageSize" binding:"required"` //每页大小
-	StartTime   int64       `form:"startTime" json:"startTime"`
-	EndTime     int64       `form:"endTime" json:"endTime"`
 	RequestCond interface{} `form:"requestCond" json:"requestCond"`
 }
 
@@ -98,8 +100,18 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (errMsg interf
 	return nil
 }
 
-func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.DB {
+func addTimeCond(db *gorm.DB, timeField string, condMap map[string]interface{}) *gorm.DB {
 	dbEntity := db
+
+	var startTime int64 = 0
+	var endTime int64 = 0
+	if startTimeValue, ok := condMap[STAR_TTIME_KEY]; ok {
+		startTime, _ = strconv.ParseInt(startTimeValue.(string), 10, 64)
+	}
+	if endTimeValue, ok := condMap[END_TIME_KEY]; ok {
+		endTime, _ = strconv.ParseInt(endTimeValue.(string), 10, 64)
+	}
+
 	if startTime > 0 && endTime > 0 {
 		cond := StringJoin([]interface{}{"(", timeField, " BETWEEN ? AND ?)"})
 		dbEntity = dbEntity.Where(cond, startTime*1000, endTime*1000)
@@ -130,8 +142,6 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		if condFilter != nil {
 			db, orderCond = condFilter(db, condMap)
 		}
-	} else {
-		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
 	}
 
 	totalRows := db.NewScope(listSearch).DB()
@@ -165,8 +175,8 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 
 func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	orderCond = ""
-	if sortField, ok := condMap[SORTFIELD]; ok {
-		if sortOrder, ok := condMap[SORTORDER]; ok {
+	if sortField, ok := condMap[SORT_FIELD_KEY]; ok {
+		if sortOrder, ok := condMap[SORT_ORDER_KEY]; ok {
 			var order string = "desc"
 			if sortOrder == ASCEND_ORDER {
 				order = "asc"
@@ -179,20 +189,34 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	return
 }
 
-func addWhereCond(db *gorm.DB, request *RequestListData, condMap map[string]interface{}, key string) *gorm.DB {
+func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm.DB {
 	dbEntity := db
-	if keyValue, ok := condMap[key]; ok {
-		switch key {
-		case TIMETYPE_KEY:
-			dbEntity = addTimeCond(dbEntity, keyValue.(string), request.StartTime, request.EndTime)
-		case ACCESS_WAY_KEY:
-			if keyValue != "0" {
+	switch key {
+	case CREATE_TIME_KEY,UPDATE_TIME_KEY: {
+		if keyValue, ok := condMap[TIMETYPE_KEY]; ok {
+			timeType := keyValue.(string)
+			if timeType == CREATE_TIME_KEY {
+				dbEntity = addTimeCond(dbEntity,CREATE_TIME_KEY,condMap)
+			}
+			if timeType == UPDATE_TIME_KEY {
+				dbEntity = addTimeCond(dbEntity,UPDATE_TIME_KEY,condMap)
+			}
+		}
+	}
+	default:
+		if keyValue, ok := condMap[key]; ok {
+			switch key {
+			case ACCESS_WAY_KEY:
+				if keyValue != "0" {
+					cond := StringJoin([]interface{}{" ", key, " = ?"})
+					dbEntity = dbEntity.Where(cond, keyValue)
+				}
+			case STAR_TTIME_KEY,END_TIME_KEY:
+				break
+			default:
 				cond := StringJoin([]interface{}{" ", key, " = ?"})
 				dbEntity = dbEntity.Where(cond, keyValue)
 			}
-		default:
-			cond := StringJoin([]interface{}{" ", key, " = ?"})
-			dbEntity = dbEntity.Where(cond, keyValue)
 		}
 	}
 	return dbEntity
@@ -209,11 +233,11 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, request, condMap, DEVICE_SN_KEY)
-		db = addWhereCond(db, request, condMap, DEVICE_VERSION_KEY)
-		db = addWhereCond(db, request, condMap, TYPE_KEY)
-		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
+		db = addWhereCond(db, condMap, DEVICE_VERSION_KEY)
+		db = addWhereCond(db, condMap, TYPE_KEY)
+		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, condMap, TIMETYPE_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
@@ -234,11 +258,11 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, request, condMap, TRANSFER_ID_KEY)
-		db = addWhereCond(db, request, condMap, DEVICE_ID_KEY)
-		db = addWhereCond(db, request, condMap, DEVICE_SN_KEY)
-		db = addWhereCond(db, request, condMap, BEHAVIOR_KEY)
-		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, TRANSFER_ID_KEY)
+		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
+		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
+		db = addWhereCond(db, condMap, BEHAVIOR_KEY)
+		db = addWhereCond(db, condMap, TIMETYPE_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
@@ -258,10 +282,10 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, request, condMap, MODULE_SN_KEY)
-		db = addWhereCond(db, request, condMap, MODULE_VERSION_KEY)
-		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, MODULE_SN_KEY)
+		db = addWhereCond(db, condMap, MODULE_VERSION_KEY)
+		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, condMap, TIMETYPE_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
@@ -281,10 +305,10 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, request, condMap, MODULE_ID_KEY)
-		db = addWhereCond(db, request, condMap, MODULE_SN_KEY)
-		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, MODULE_ID_KEY)
+		db = addWhereCond(db, condMap, MODULE_SN_KEY)
+		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, condMap, TIMETYPE_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg

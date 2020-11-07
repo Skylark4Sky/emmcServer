@@ -3,6 +3,7 @@ package string
 import (
 	"bytes"
 	"math/rand"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -55,16 +56,28 @@ func RandEmail() string {
 func StringJoin(args []interface{}) string {
 	var buffer bytes.Buffer
 	if len(args) > 0 {
-		for _, v := range args {
-			switch v.(type) {
-			case uint8, uint16, uint32, uint64, uint:
-			case int8, int16, int32, int64, int:
-				val := v.(int64)
-				buffer.WriteString(strconv.FormatInt(val, 10))
-				break
-			case string:
-				buffer.WriteString(v.(string))
-				break
+		for _, arg := range args {
+			t := reflect.TypeOf(arg)
+			val := reflect.ValueOf(arg)
+			var scratch [64]byte
+
+			switch t.Kind() {
+			case reflect.Bool:
+				{
+					if val.Bool() {
+						buffer.WriteString("1")
+					} else {
+						buffer.WriteString("0")
+					}
+				}
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				b := strconv.AppendInt(scratch[:0], val.Int(), 10)
+				buffer.Write(b)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+				b := strconv.AppendUint(scratch[:0], val.Uint(), 10)
+				buffer.Write(b)
+			case reflect.String:
+				buffer.WriteString(val.String())
 			}
 		}
 	}

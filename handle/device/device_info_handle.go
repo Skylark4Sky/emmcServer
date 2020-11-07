@@ -4,6 +4,7 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/model/device"
+	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
 	"github.com/jinzhu/gorm"
@@ -19,6 +20,11 @@ const (
 )
 
 const (
+	ASCEND_ORDER  = "ascend"
+	DESCEND_ORDER = "descend"
+)
+
+const (
 	DEVICE_ID_KEY      = "device_id"
 	DEVICE_SN_KEY      = "device_sn"
 	DEVICE_VERSION_KEY = "device_version"
@@ -30,6 +36,8 @@ const (
 	MODULE_ID_KEY      = "module_id"
 	MODULE_SN_KEY      = "module_sn"
 	MODULE_VERSION_KEY = "module_version"
+	SORTFIELD          = "sortField"
+	SORTORDER          = "sortOrder"
 )
 
 type RequestListData struct {
@@ -42,12 +50,12 @@ type RequestListData struct {
 }
 
 type PageInfo struct {
-	Total int64 `json:"total"`
-	Size  int   `json:"size"`
+	Total      int64 `json:"total"`
+	CurPageNum int64 `json:"pageNum"`
 }
 
 type RespondListData struct {
-	List interface{} `json:"list"`
+	List interface{} `json:"datalist"`
 	Page PageInfo    `json:"page,omitempty"`
 }
 
@@ -112,18 +120,19 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 	return dbEntity
 }
 
-func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB) (errMsg interface{}, respond *RespondListData) {
+func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string)) (errMsg interface{}, respond *RespondListData) {
 	errMsg = nil
 	respond = nil
 
 	var total int64 = 0
+	var orderCond string = ""
 
-	db := ExecSQL()
+	db := ExecSQL().Debug()
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
 		if condFilter != nil {
-			db = condFilter(db, condMap)
+			db, orderCond = condFilter(db, condMap)
 		}
 	} else {
 		db = addTimeCond(db, "create_time", request.StartTime, request.EndTime)
@@ -131,7 +140,11 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 
 	totalRows := db.NewScope(listSearch).DB()
 
-	db = db.Order("id desc").Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
+	if orderCond != "" {
+		db = db.Order(orderCond).Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
+	} else {
+		db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
+	}
 
 	if err := db.Find(listSearch).Error; err != nil {
 		errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
@@ -143,32 +156,32 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		return
 	}
 
-	var listSize int = 0
-
-	switch listSearch.(type) {
-	case *[]DeviceInfo:
-		{
-			listSize = len(*listSearch.(*[]DeviceInfo))
-		}
-	case *[]DeviceTransferLog:
-		{
-			listSize = len(*listSearch.(*[]DeviceTransferLog))
-		}
-	case *[]ModuleInfo:
-		{
-			listSize = len(*listSearch.(*[]ModuleInfo))
-		}
-	case *[]ModuleConnectLog:
-		{
-			listSize = len(*listSearch.(*[]ModuleConnectLog))
-		}
-	}
+	//	var listSize int = 0
+	//
+	//	switch listSearch.(type) {
+	//	case *[]DeviceInfo:
+	//		{
+	//			listSize = len(*listSearch.(*[]DeviceInfo))
+	//		}
+	//	case *[]DeviceTransferLog:
+	//		{
+	//			listSize = len(*listSearch.(*[]DeviceTransferLog))
+	//		}
+	//	case *[]ModuleInfo:
+	//		{
+	//			listSize = len(*listSearch.(*[]ModuleInfo))
+	//		}
+	//	case *[]ModuleConnectLog:
+	//		{
+	//			listSize = len(*listSearch.(*[]ModuleConnectLog))
+	//		}
+	//	}
 
 	respond = &RespondListData{
 		List: listSearch,
 		Page: PageInfo{
-			Total: total,
-			Size:  listSize,
+			Total:      total,
+			CurPageNum: request.PageNum,
 		},
 	}
 
@@ -185,7 +198,8 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	var deviceList []DeviceInfo
 	var respond *RespondListData = nil
 
-	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
+		var orderCond string = ""
 		dbEntity := db
 
 		if deviceSN, ok := condMap[DEVICE_SN_KEY]; ok {
@@ -204,19 +218,34 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		}
 
 		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, accessWay)
+			if accessWay != "0" {
+				cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
+				dbEntity = dbEntity.Where(cond, accessWay)
+			}
 		}
 
 		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
-		return dbEntity
+		if sortField, ok := condMap[SORTFIELD]; ok {
+			if sortOrder, ok := condMap[SORTORDER]; ok {
+				var order string = "desc"
+				if sortOrder == ASCEND_ORDER {
+					order = "asc"
+				} else {
+					order = "desc"
+				}
+				orderCond = StringJoin([]interface{}{sortField, " ", order})
+			}
+		}
+
+		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
 	}
 
+	SystemLog("respond:-->", respond, "request:", request)
 	return respond, nil
 }
 
@@ -230,7 +259,8 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 	var transferList []DeviceTransferLog
 	var respond *RespondListData = nil
 
-	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
+		var orderCond string = ""
 		dbEntity := db
 
 		if transferID, ok := condMap[TRANSFER_ID_KEY]; ok {
@@ -257,7 +287,18 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
-		return dbEntity
+		if sortField, ok := condMap[SORTFIELD]; ok {
+			if sortOrder, ok := condMap[SORTORDER]; ok {
+				var order string = "desc"
+				if sortOrder == ASCEND_ORDER {
+					order = "asc"
+				}
+				orderCond := StringJoin([]interface{}{sortField, " ", order})
+				dbEntity = dbEntity.Order(orderCond)
+			}
+		}
+
+		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
 	}
@@ -275,7 +316,8 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 	var moduleList []ModuleInfo
 	var respond *RespondListData = nil
 
-	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
+		var orderCond string = ""
 		dbEntity := db
 
 		if moduleSN, ok := condMap[MODULE_SN_KEY]; ok {
@@ -297,7 +339,7 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
-		return dbEntity
+		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
 	}
@@ -315,7 +357,8 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	var connectList []ModuleConnectLog
 	var respond *RespondListData = nil
 
-	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) *gorm.DB {
+	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
+		var orderCond string = ""
 		dbEntity := db
 
 		if moduleID, ok := condMap[MODULE_ID_KEY]; ok {
@@ -337,7 +380,7 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
 		}
 
-		return dbEntity
+		return dbEntity, orderCond
 	}); errMsg != nil {
 		return nil, errMsg
 	}

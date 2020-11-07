@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	MIN_PAGE_SIZE = 20
-	MAX_PAGE_SIZE = 200
+	MIN_PAGE_SIZE = 10
+	MAX_PAGE_SIZE = 100
 )
 
 func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {

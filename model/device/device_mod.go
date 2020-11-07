@@ -12,7 +12,7 @@ const (
 )
 
 type ModuleConnectLog struct {
-	ID         uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"`
+	ID         uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"`
 	ModuleID   uint64 `gorm:"column:module_id;type:bigint(20) unsigned" json:"module_id"`     // 模组id
 	AccessWay  uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`   // 接入方式 1 GSM， 2，WIFI 3蓝牙
 	ModuleSn   string `gorm:"column:module_sn;type:varchar(64)" json:"module_sn"`             // 模组序列号
@@ -21,7 +21,7 @@ type ModuleConnectLog struct {
 }
 
 type ModuleInfo struct {
-	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"`    // 设备ID
+	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"`   // 设备ID
 	DeviceID      uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 对应设备关系
 	AccessWay     uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`        // 接入方式
 	ModuleSn      string `gorm:"column:module_sn;type:varchar(64)" json:"module_sn"`                  // 模组序列号
@@ -31,19 +31,20 @@ type ModuleInfo struct {
 }
 
 type DeviceInfo struct {
-	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"` // 设备ID
-	AccessWay     uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`     // 当前接入方式
-	DeviceSn      string `gorm:"column:device_sn;type:varchar(64)" json:"device_sn"`               // 设备序列号
-	DeviceVersion string `gorm:"column:device_version;type:varchar(32)" json:"device_version"`     // 设备固件版本
-	Remark        string `gorm:"column:remark;type:varchar(255)" json:"remark"`                    // 设备备注
-	Localtion     string `gorm:"column:localtion;type:varchar(255)" json:"localtion"`              // 设备所在地址
-	Type          int8   `gorm:"column:type;type:tinyint(2) unsigned" json:"type"`                 // 设备类型
-	CreateTime    int64  `gorm:"column:create_time;type:bigint(13) unsigned" json:"create_time"`   // 创建时间
-	UpdateTime    int64  `gorm:"column:update_time;type:bigint(13) unsigned" json:"update_time"`   // 更新时间
+	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"` // 设备ID
+	AccessWay     uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`      // 当前接入方式
+	DeviceSn      string `gorm:"column:device_sn;type:varchar(64)" json:"device_sn"`                // 设备序列号
+	DeviceVersion string `gorm:"column:device_version;type:varchar(32)" json:"device_version"`      // 设备固件版本
+	Remark        string `gorm:"column:remark;type:varchar(255)" json:"remark"`                     // 设备备注
+	Localtion     string `gorm:"column:localtion;type:varchar(255)" json:"localtion"`               // 设备所在地址
+	Type          int8   `gorm:"column:type;type:tinyint(2) unsigned" json:"type"`                  // 设备类型
+	Status        int8   `gorm:"column:status;type:tinyint(2) unsigned" json:"status"`              // 设备状态
+	CreateTime    int64  `gorm:"column:create_time;type:bigint(13) unsigned" json:"create_time"`    // 创建时间
+	UpdateTime    int64  `gorm:"column:update_time;type:bigint(13) unsigned" json:"update_time"`    // 更新时间
 }
 
 type DeviceTransferLog struct {
-	ID           uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"`
+	ID           uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"module_id`
 	DeviceID     uint64 `gorm:"column:device_id;type:bigint(20) unsigned" json:"device_id"`         // 设备ID
 	Behavior     uint8  `gorm:"column:behavior;type:tinyint(2)" json:"behavior"`                    // 传输行为
 	DeviceSn     string `gorm:"column:device_sn;type:varchar(64)" json:"device_sn"`                 // 设备串号

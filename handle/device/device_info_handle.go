@@ -99,9 +99,7 @@ func checkUserRulesGroup(request *RequestListData, roleValue int) (errMsg interf
 }
 
 func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.DB {
-
 	dbEntity := db
-
 	if startTime > 0 && endTime > 0 {
 		cond := StringJoin([]interface{}{"(", timeField, " BETWEEN ? AND ?)"})
 		dbEntity = dbEntity.Where(cond, startTime*1000, endTime*1000)
@@ -110,13 +108,11 @@ func addTimeCond(db *gorm.DB, timeField string, startTime, endTime int64) *gorm.
 			cond := StringJoin([]interface{}{" ", timeField, " >= ?"})
 			dbEntity = dbEntity.Where(cond, startTime*1000)
 		}
-
 		if endTime > 0 {
 			cond := StringJoin([]interface{}{" ", timeField, " <= ?"})
 			dbEntity = dbEntity.Where(cond, endTime*1000)
 		}
 	}
-
 	return dbEntity
 }
 
@@ -155,27 +151,6 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
 		return
 	}
-
-	//	var listSize int = 0
-	//
-	//	switch listSearch.(type) {
-	//	case *[]DeviceInfo:
-	//		{
-	//			listSize = len(*listSearch.(*[]DeviceInfo))
-	//		}
-	//	case *[]DeviceTransferLog:
-	//		{
-	//			listSize = len(*listSearch.(*[]DeviceTransferLog))
-	//		}
-	//	case *[]ModuleInfo:
-	//		{
-	//			listSize = len(*listSearch.(*[]ModuleInfo))
-	//		}
-	//	case *[]ModuleConnectLog:
-	//		{
-	//			listSize = len(*listSearch.(*[]ModuleConnectLog))
-	//		}
-	//	}
 
 	respond = &RespondListData{
 		List: listSearch,
@@ -259,34 +234,12 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		var orderCond string = ""
-		dbEntity := db
-
-		if transferID, ok := condMap[TRANSFER_ID_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", TRANSFER_ID_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, transferID)
-		}
-
-		if deviceID, ok := condMap[DEVICE_ID_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", DEVICE_ID_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, deviceID)
-		}
-
-		if deviceSN, ok := condMap[DEVICE_SN_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", DEVICE_SN_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, deviceSN)
-		}
-
-		if behavior, ok := condMap[BEHAVIOR_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", BEHAVIOR_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, behavior)
-		}
-
-		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
-			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
-		}
-
-		return dbEntity, orderCond
+		db = addWhereCond(db, request, condMap, TRANSFER_ID_KEY)
+		db = addWhereCond(db, request, condMap, DEVICE_ID_KEY)
+		db = addWhereCond(db, request, condMap, DEVICE_SN_KEY)
+		db = addWhereCond(db, request, condMap, BEHAVIOR_KEY)
+		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}
@@ -305,41 +258,11 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		var orderCond string = ""
-		dbEntity := db
-
-		if moduleSN, ok := condMap[MODULE_SN_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", MODULE_SN_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, moduleSN)
-		}
-
-		if moduleVersion, ok := condMap[MODULE_VERSION_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", MODULE_VERSION_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, moduleVersion)
-		}
-
-		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, accessWay)
-		}
-
-		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
-			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
-		}
-
-		if sortField, ok := condMap[SORTFIELD]; ok {
-			if sortOrder, ok := condMap[SORTORDER]; ok {
-				var order string = "desc"
-				if sortOrder == ASCEND_ORDER {
-					order = "asc"
-				} else {
-					order = "desc"
-				}
-				orderCond = StringJoin([]interface{}{sortField, " ", order})
-			}
-		}
-
-		return dbEntity, orderCond
+		db = addWhereCond(db, request, condMap, MODULE_SN_KEY)
+		db = addWhereCond(db, request, condMap, MODULE_VERSION_KEY)
+		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}
@@ -358,41 +281,11 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		var orderCond string = ""
-		dbEntity := db
-
-		if moduleID, ok := condMap[MODULE_ID_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", MODULE_ID_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, moduleID)
-		}
-
-		if moduleSN, ok := condMap[MODULE_SN_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", MODULE_SN_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, moduleSN)
-		}
-
-		if accessWay, ok := condMap[ACCESS_WAY_KEY]; ok {
-			cond := StringJoin([]interface{}{" ", ACCESS_WAY_KEY, " = ?"})
-			dbEntity = dbEntity.Where(cond, accessWay)
-		}
-
-		if timeType, ok := condMap[TIMETYPE_KEY]; ok {
-			dbEntity = addTimeCond(dbEntity, timeType.(string), request.StartTime, request.EndTime)
-		}
-
-		if sortField, ok := condMap[SORTFIELD]; ok {
-			if sortOrder, ok := condMap[SORTORDER]; ok {
-				var order string = "desc"
-				if sortOrder == ASCEND_ORDER {
-					order = "asc"
-				} else {
-					order = "desc"
-				}
-				orderCond = StringJoin([]interface{}{sortField, " ", order})
-			}
-		}
-
-		return dbEntity, orderCond
+		db = addWhereCond(db, request, condMap, MODULE_ID_KEY)
+		db = addWhereCond(db, request, condMap, MODULE_SN_KEY)
+		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}

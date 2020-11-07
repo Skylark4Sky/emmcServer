@@ -204,12 +204,17 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	return
 }
 
-func addWhereCond(db *gorm.DB,request *RequestListData,condMap map[string]interface{}, key string)  *gorm.DB {
+func addWhereCond(db *gorm.DB, request *RequestListData, condMap map[string]interface{}, key string) *gorm.DB {
 	dbEntity := db
 	if keyValue, ok := condMap[key]; ok {
 		switch key {
 		case TIMETYPE_KEY:
 			dbEntity = addTimeCond(dbEntity, keyValue.(string), request.StartTime, request.EndTime)
+		case ACCESS_WAY_KEY:
+			if keyValue != "0" {
+				cond := StringJoin([]interface{}{" ", key, " = ?"})
+				dbEntity = dbEntity.Where(cond, keyValue)
+			}
 		default:
 			cond := StringJoin([]interface{}{" ", key, " = ?"})
 			dbEntity = dbEntity.Where(cond, keyValue)
@@ -229,13 +234,12 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 	var respond *RespondListData = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		dbEntity := db
-		dbEntity = addWhereCond(db,request,condMap,DEVICE_SN_KEY)
-		dbEntity = addWhereCond(db,request,condMap,DEVICE_VERSION_KEY)
-		dbEntity = addWhereCond(db,request,condMap,TYPE_KEY)
-		dbEntity = addWhereCond(db,request,condMap,ACCESS_WAY_KEY)
-		dbEntity = addWhereCond(db,request,condMap,TIMETYPE_KEY)
-		return dbEntity, getOrderCond(condMap)
+		db = addWhereCond(db, request, condMap, DEVICE_SN_KEY)
+		db = addWhereCond(db, request, condMap, DEVICE_VERSION_KEY)
+		db = addWhereCond(db, request, condMap, TYPE_KEY)
+		db = addWhereCond(db, request, condMap, ACCESS_WAY_KEY)
+		db = addWhereCond(db, request, condMap, TIMETYPE_KEY)
+		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}

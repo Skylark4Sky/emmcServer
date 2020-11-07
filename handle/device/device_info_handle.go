@@ -192,11 +192,11 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	orderCond = ""
 	if sortField, ok := condMap[SORTFIELD]; ok {
 		if sortOrder, ok := condMap[SORTORDER]; ok {
-			var order string = DESCEND_ORDER
+			var order string = "desc"
 			if sortOrder == ASCEND_ORDER {
-				order = ASCEND_ORDER
+				order = "asc"
 			} else {
-				order = DESCEND_ORDER
+				order = "desc"
 			}
 			orderCond = StringJoin([]interface{}{sortField, " ", order})
 		}
@@ -204,8 +204,8 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	return
 }
 
-func addWhereCond(db *gorm.DB,request *RequestListData,condMap map[string]interface{}, key string) (dbEntity *gorm.DB) {
-	dbEntity = db
+func addWhereCond(db *gorm.DB,request *RequestListData,condMap map[string]interface{}, key string)  *gorm.DB {
+	dbEntity := db
 	if keyValue, ok := condMap[key]; ok {
 		switch key {
 		case TIMETYPE_KEY:
@@ -215,7 +215,7 @@ func addWhereCond(db *gorm.DB,request *RequestListData,condMap map[string]interf
 			dbEntity = dbEntity.Where(cond, keyValue)
 		}
 	}
-	return
+	return dbEntity
 }
 
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {

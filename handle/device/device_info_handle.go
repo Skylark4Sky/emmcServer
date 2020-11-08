@@ -61,7 +61,7 @@ type RespondListData struct {
 	Page PageInfo    `json:"page,omitempty"`
 }
 
-func checkUserRulesGroup(request *RequestListData, roleValue int) (errMsg interface{}) {
+func CheckUserRulesGroup(request *RequestListData, roleValue int) (errMsg interface{}) {
 	errMsg = nil
 	userInfo := &UserInfo{}
 
@@ -232,14 +232,10 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 }
 
 func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) {
-	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_LIST)
-
-	if errMsg != nil {
-		return nil, errMsg
-	}
 
 	var deviceList []DeviceInfo
 	var respond *RespondListData = nil
+	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
@@ -258,14 +254,9 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 }
 
 func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interface{}) {
-	errMsg := checkUserRulesGroup(request, SELECT_DEVICE_TRANSFER_LOG_LIST)
-
-	if errMsg != nil {
-		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
-	}
-
 	var transferList []DeviceTransferLog
 	var respond *RespondListData = nil
+	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
 		db = addWhereCond(db, condMap, TRANSFER_ID_KEY)
@@ -282,14 +273,9 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 }
 
 func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
-	errMsg := checkUserRulesGroup(request, SELECT_TMODULE_LIST)
-
-	if errMsg != nil {
-		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
-	}
-
 	var moduleList []ModuleInfo
 	var respond *RespondListData = nil
+	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
@@ -306,14 +292,9 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 }
 
 func (request *RequestListData) GetModuleConnectLogList() (interface{}, interface{}) {
-	errMsg := checkUserRulesGroup(request, SELECT_MODULE_CONNECT_LOG_LIST)
-
-	if errMsg != nil {
-		return nil, CreateErrorMessage(SYSTEM_ERROR, "没有操作权限")
-	}
-
 	var connectList []ModuleConnectLog
 	var respond *RespondListData = nil
+	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
 		db = addWhereCond(db, condMap, MODULE_ID_KEY)

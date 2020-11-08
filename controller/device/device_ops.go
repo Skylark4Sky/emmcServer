@@ -46,6 +46,11 @@ func GetDeviceList(ctx *gin.Context) {
 		return
 	}
 
+	if errMsg := CheckUserRulesGroup(&getListData, SELECT_DEVICE_LIST); errMsg != nil {
+		RespondMessage(ctx, errMsg)
+		return
+	}
+
 	data, err := getListData.GetDeviceList()
 
 	if err != nil {
@@ -61,6 +66,11 @@ func GetDeviceTransferLogList(ctx *gin.Context) {
 	var getListData RequestListData
 	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
+		return
+	}
+
+	if errMsg := CheckUserRulesGroup(&getListData, SELECT_DEVICE_TRANSFER_LOG_LIST); errMsg != nil {
+		RespondMessage(ctx, errMsg)
 		return
 	}
 
@@ -81,6 +91,11 @@ func GetModuleList(ctx *gin.Context) {
 		return
 	}
 
+	if errMsg := CheckUserRulesGroup(&getListData, SELECT_TMODULE_LIST); errMsg != nil {
+		RespondMessage(ctx, errMsg)
+		return
+	}
+
 	data, err := getListData.GetModuleList()
 
 	if err != nil {
@@ -95,6 +110,11 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 	var getListData RequestListData
 	if _, err := checkRequestParam(ctx, &getListData, MIN_PAGE_SIZE, MAX_PAGE_SIZE); err != nil {
 		RespondMessage(ctx, err)
+		return
+	}
+
+	if errMsg := CheckUserRulesGroup(&getListData, SELECT_MODULE_CONNECT_LOG_LIST); errMsg != nil {
+		RespondMessage(ctx, errMsg)
 		return
 	}
 

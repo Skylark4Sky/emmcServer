@@ -20,8 +20,8 @@ const (
 	ASYNC_USER_LOGIN_LOG                            //用户登录日志 3
 	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间 4
 	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志 5
-	ASYNC_UP_MODULE_INFO  	                        //更新模组版本 6
-	ASYNC_UP_DEVICE_INFO    	                    //更新设备版本 7
+	ASYNC_UP_MODULE_INFO                            //更新模组版本 6
+	ASYNC_UP_DEVICE_INFO                            //更新设备版本 7
 	ASYNC_DEV_AND_MODULE_CREATE                     //建立设备与模组关系 8
 	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址 9
 	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料 10
@@ -245,7 +245,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 		transactionCreateUserInfo(&entity, false)
 		break
 	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_INFO, ASYNC_UP_MODULE_INFO:
-		if err := ExecSQL().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
+		if err := ExecSQL().Debug().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_INFO == task.Type {

@@ -3,24 +3,27 @@ package device
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
+	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
-	. "GoServer/utils/time"
-	. "GoServer/model"
-	"time"
 	. "GoServer/utils/string"
+	. "GoServer/utils/time"
+	"time"
 )
 
 // 修改设备状态
 func changeDeviceStatus(device_sn string, status int8) {
-	device := &DeviceInfo{}
-	device.ID = Redis().GetDeviceIDFromRedis(device_sn)
-	deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": status}
-	SystemLog("SetDeviceStatusFromRedis - deviceUpdateMap: ",deviceUpdateMap)
-	CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
-	Redis().SetDeviceStatusFromRedis(device_sn,int(status))
+	deviceID := Redis().GetDeviceIDFromRedis(device_sn)
+	if deviceID != 0 {
+		device := &DeviceInfo{}
+		device.ID = Redis().GetDeviceIDFromRedis(device_sn)
+		deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": status}
+		SystemLog("SetDeviceStatusFromRedis - deviceUpdateMap: ", deviceUpdateMap)
+		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+		Redis().SetDeviceStatusFromRedis(device_sn, int(status))
+	}
 }
 
 //保存设备上报状态
@@ -67,14 +70,14 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 }
 
 func deviceExpiredMsgOps(pattern, channel, message string) {
-	deviceSN := GetDeviceSN(message,":")
+	deviceSN := GetDeviceSN(message, ":")
 	if deviceID := Redis().GetDeviceIDFromRedis(deviceSN); deviceID != 0 {
 		switch message {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
-				changeDeviceStatus(deviceSN,DEVICE_OFFLINE)
+				changeDeviceStatus(deviceSN, DEVICE_OFFLINE)
 			}
-		case GetComdDataKey(deviceSN),GetDeviceInfoKey(deviceSN):
+		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
 			{
 			}
 		}
@@ -145,18 +148,19 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 				timeout = LEISURE_TIME
 			}
 
-			status := Redis().GetDeviceStatusFromRedis(cacheKey);
+			status := Redis().GetDeviceStatusFromRedis(cacheKey)
 
 			switch deviceStatus.Behavior {
 			case mqtt.GISUNLINK_CHARGEING:
 				{
 					if status != int(DEVICE_WORKING) {
-						changeDeviceStatus(cacheKey,DEVICE_WORKING)
+						changeDeviceStatus(cacheKey, DEVICE_WORKING)
 					}
 				}
-			case  mqtt.GISUNLINK_CHARGE_LEISURE: {
+			case mqtt.GISUNLINK_CHARGE_LEISURE:
+				{
 					if status != int(DEVICE_ONLINE) {
-						changeDeviceStatus(cacheKey,DEVICE_ONLINE)
+						changeDeviceStatus(cacheKey, DEVICE_ONLINE)
 					}
 				}
 			}

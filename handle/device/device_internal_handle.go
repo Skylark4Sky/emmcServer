@@ -8,6 +8,7 @@ import (
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
+	. "GoServer/model"
 	"time"
 	. "GoServer/utils/string"
 )
@@ -61,23 +62,21 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		switch message {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
-
+				device := &DeviceInfo{}
+				deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": DEVICE_OFFLINE}
+				CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
 			}
 		case GetDeviceIDKey(deviceSN):
 			{
-
 			}
 		case GetRawDataKey(deviceSN):
 			{
-
 			}
 		case GetComdDataKey(deviceSN):
 			{
-
 			}
 		case GetDeviceInfoKey(deviceSN):
 			{
-
 			}
 		}
 	}

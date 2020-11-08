@@ -67,12 +67,12 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 	} else {
 		module.Update(data.ModuleVersion)
 		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_VERSION, module, moduleUpdateMap)
+		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_INFO, module, moduleUpdateMap)
 		device := &DeviceInfo{}
 		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime, DEVICE_ONLINE)
 		device.DeviceSn = data.DeviceSN
 		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime, "status": device.Status}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_VERSION, device, deviceUpdateMap)
+		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
 		// 检测并返回固件版本
 		// 返回版本升级格式
 		//	data := &FirmwareInfo{

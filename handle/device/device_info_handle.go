@@ -293,7 +293,7 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
-		db = addWhereCond(db, condMap, MODULE_VERSION_KEY)
+		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)

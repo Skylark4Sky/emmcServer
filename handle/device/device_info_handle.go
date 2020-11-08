@@ -35,7 +35,7 @@ const (
 	TIMETYPE_KEY       = "time"
 	MODULE_ID_KEY      = "module_id"
 	MODULE_SN_KEY      = "module_sn"
-	MODULE_VERSION_KEY = "module_version"
+	DEVICE_STATUS 	   = "status"
 	SORT_FIELD_KEY     = "sortField"
 	SORT_ORDER_KEY     = "sortOrder"
 	STAR_TTIME_KEY     = "startTime"
@@ -241,6 +241,7 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, DEVICE_VERSION_KEY)
 		db = addWhereCond(db, condMap, TYPE_KEY)
+		db = addWhereCond(db, condMap, DEVICE_STATUS)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)

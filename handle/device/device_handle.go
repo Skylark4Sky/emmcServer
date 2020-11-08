@@ -15,8 +15,9 @@ const (
 )
 
 const (
-	DEVICE_ONLINE int8 = 1
-	DEVICE_OFFLINE int8 = 0
+	DEVICE_OFFLINE 	int8 = 0
+	DEVICE_ONLINE 	int8 = 1
+	DEVICE_WORKING 	int8 = 2
 )
 
 type RequestData struct {

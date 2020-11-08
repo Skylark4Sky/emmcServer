@@ -13,6 +13,16 @@ import (
 	. "GoServer/utils/string"
 )
 
+// 修改设备状态
+func changeDeviceStatus(device_sn string, status int8) {
+	device := &DeviceInfo{}
+	device.ID = Redis().GetDeviceIDFromRedis(device_sn)
+	deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": status}
+	SystemLog("SetDeviceStatusFromRedis - deviceUpdateMap: ",deviceUpdateMap)
+	CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+	Redis().SetDeviceStatusFromRedis(device_sn,int(status))
+}
+
 //保存设备上报状态
 func createDeviceTransferLog(transfer *DeviceTransferLog) {
 	if transfer == nil {
@@ -62,22 +72,9 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		switch message {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
-				device := &DeviceInfo{}
-				device.ID = deviceID
-				deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": DEVICE_OFFLINE}
-				SystemLog("deviceExpiredMsgOps: ",message," deviceUpdateMap: ",deviceUpdateMap)
-				CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+				changeDeviceStatus(deviceSN,DEVICE_OFFLINE)
 			}
-		case GetDeviceIDKey(deviceSN):
-			{
-			}
-		case GetRawDataKey(deviceSN):
-			{
-			}
-		case GetComdDataKey(deviceSN):
-			{
-			}
-		case GetDeviceInfoKey(deviceSN):
+		case GetComdDataKey(deviceSN),GetDeviceInfoKey(deviceSN):
 			{
 			}
 		}
@@ -148,10 +145,24 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 				timeout = LEISURE_TIME
 			}
 
+			status := Redis().GetDeviceStatusFromRedis(cacheKey);
+
+			switch deviceStatus.Behavior {
+			case mqtt.GISUNLINK_CHARGEING:
+				{
+					if status != int(DEVICE_WORKING) {
+						changeDeviceStatus(cacheKey,DEVICE_WORKING)
+					}
+				}
+			case  mqtt.GISUNLINK_CHARGE_LEISURE: {
+					if status != int(DEVICE_ONLINE) {
+						changeDeviceStatus(cacheKey,DEVICE_ONLINE)
+					}
+				}
+			}
+
 			//更新令牌时间
 			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)
-			//写入原始数据
-			Redis().UpdateDeviceRawDataToRedis(cacheKey, playload)
 		}
 	}
 }

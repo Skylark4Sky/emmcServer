@@ -328,6 +328,12 @@ func (c *Cacher) HGetInt64(key, field string) (reply int64, err error) {
 	return
 }
 
+// HGetiInt64 HGet的工具方法，当字段值为int64类型时使用
+func (c *Cacher) HGetUint64(key, field string) (reply uint64, err error) {
+	reply, err = RedisUint64(c.HGet(key, field))
+	return
+}
+
 // HGetBool HGet的工具方法，当字段值为bool类型时使用
 func (c *Cacher) HGetBool(key, field string) (reply bool, err error) {
 	reply, err = RedisBool(c.HGet(key, field))

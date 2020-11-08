@@ -44,7 +44,7 @@ func CreateSQLAndRetLastID(entity interface{}) (uint64, error) {
 	var id []uint64
 
 	tx := ExecSQL().Begin()
-	if err := tx.Debug().Create(entity).Error; err != nil {
+	if err := tx.Create(entity).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}

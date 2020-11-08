@@ -135,7 +135,7 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 	var total int64 = 0
 	var orderCond string = ""
 
-	db := ExecSQL().Debug()
+	db := ExecSQL()
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})

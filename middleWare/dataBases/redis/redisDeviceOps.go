@@ -33,40 +33,40 @@ type DeviceStatus struct {
 	ProtoVersion uint16 `json:"protoVersion"`
 }
 
-func getDeviceTokenKey(deviceSN string) string {
+func GetDeviceTokenKey(deviceSN string) string {
 	return StringJoin([]interface{}{DEVICETOEKNKEY, deviceSN})
 }
 
-func getDeviceIDKey(deviceSN string) string {
+func GetDeviceIDKey(deviceSN string) string {
 	return StringJoin([]interface{}{DEVICEIDKEY, deviceSN})
 }
 
-func getRawDataKey(deviceSN string) string {
+func GetRawDataKey(deviceSN string) string {
 	return StringJoin([]interface{}{RAWDATAKEY, deviceSN})
 }
 
-func getComdDataKey(deviceSN string) string {
+func GetComdDataKey(deviceSN string) string {
 	return StringJoin([]interface{}{COMDATAKEY, deviceSN})
 }
 
-func getDeviceInfoKey(deviceSN string) string {
+func GetDeviceInfoKey(deviceSN string) string {
 	return StringJoin([]interface{}{DEVICEINFOKEY, deviceSN})
 }
 
 //更新令牌时间
 func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceStatus, timeout int64) {
-	c.Set(getDeviceTokenKey(deviceSN), status, timeout) //15分钟过期,正常1-2分钟后续数据就上来了
+	c.Set(GetDeviceTokenKey(deviceSN), status, timeout) //15分钟过期,正常1-2分钟后续数据就上来了
 }
 
 //插入对应令牌
 func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
-	c.Set(getDeviceTokenKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
-	c.Set(getDeviceIDKey(deviceSN), deviceID, 0)      //全局设备列表
+	c.Set(GetDeviceTokenKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
+	c.Set(GetDeviceIDKey(deviceSN), deviceID, 0)      //全局设备列表
 }
 
 //取设备ID
-func (c *Cacher) GetDeviceIDFromRedis(deviceSN string, key_field string) uint64 {
-	deviceID, err := c.GetUint64(getDeviceIDKey(deviceSN))
+func (c *Cacher) GetDeviceIDFromRedis(deviceSN string) uint64 {
+	deviceID, err := c.GetUint64(GetDeviceIDKey(deviceSN))
 	if err != nil {
 		return 0
 	}
@@ -75,12 +75,12 @@ func (c *Cacher) GetDeviceIDFromRedis(deviceSN string, key_field string) uint64 
 
 //更新原始上报数据
 func (c *Cacher) UpdateDeviceRawDataToRedis(deviceSN string, rawData string) {
-	c.Set(getRawDataKey(deviceSN), rawData, 0)
+	c.Set(GetRawDataKey(deviceSN), rawData, 0)
 }
 
 // 获取某一端口数据
 func (c *Cacher) GetDeviceComDataFormRedis(deviceSN string, comID uint8, comData interface{}) error {
-	str, err := RedisString(c.HGet(getComdDataKey(deviceSN), strconv.Itoa(int(comID))))
+	str, err := RedisString(c.HGet(GetComdDataKey(deviceSN), strconv.Itoa(int(comID))))
 	if err != nil {
 		return err
 	}
@@ -89,12 +89,12 @@ func (c *Cacher) GetDeviceComDataFormRedis(deviceSN string, comID uint8, comData
 
 //更新端口数据
 func (c *Cacher) UpdateDeviceComDataToRedis(deviceSN string, comID uint8, comData interface{}) {
-	c.HSet(getComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
+	c.HSet(GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
 }
 
 //更新工作状态数据统计
 func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interface{}) {
-	c.Set(getDeviceInfoKey(deviceSN), infoData, 0)
+	c.Set(GetDeviceInfoKey(deviceSN), infoData, 0)
 }
 
 //统计当前工作端口数量
@@ -143,7 +143,7 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
 	defer Redis().BatchEnd(conn)
 	comList := make(map[uint8]mqtt.ComData)
 	for i := 0; i < maxCom; i++ {
-		Redis().BatchHGet(conn, getComdDataKey(deviceSN), strconv.Itoa(i))
+		Redis().BatchHGet(conn, GetComdDataKey(deviceSN), strconv.Itoa(i))
 	}
 
 	pipe_list, _ := RedisValues(Redis().BatchExec(conn))
@@ -177,7 +177,7 @@ func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comO
 		comData.Id = comID
 
 		comOps(&comData)
-		Redis().BatchHSet(conn, getComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
+		Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
 	}
 
 	Redis().BatchExec(conn)

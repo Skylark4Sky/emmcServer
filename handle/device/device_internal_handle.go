@@ -9,6 +9,7 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
 	"time"
+	. "GoServer/utils/string"
 )
 
 //保存设备上报状态
@@ -42,7 +43,7 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 
 	log := &DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
-		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn, "deviceID"),
+		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn),
 		TransferAct:  packet.Json.Act,
 		DeviceSn:     device_sn,
 		ComNum:       comNum,
@@ -55,7 +56,31 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 }
 
 func deviceExpiredMsgOps(pattern, channel, message string) {
-	SystemLog("deviceExpiredMsgOps: ", "pattern: ", pattern, "channel: ", channel, "message: ", message)
+	deviceSN := GetDeviceSN(message,":")
+	if deviceID := Redis().GetDeviceIDFromRedis(deviceSN); deviceID != 0 {
+		switch message {
+		case GetDeviceTokenKey(deviceSN): //这里处理过期key
+			{
+
+			}
+		case GetDeviceIDKey(deviceSN):
+			{
+
+			}
+		case GetRawDataKey(deviceSN):
+			{
+
+			}
+		case GetComdDataKey(deviceSN):
+			{
+
+			}
+		case GetDeviceInfoKey(deviceSN):
+			{
+
+			}
+		}
+	}
 }
 
 //比较数据

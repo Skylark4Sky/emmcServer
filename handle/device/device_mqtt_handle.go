@@ -55,7 +55,7 @@ func (msg *MqMsg) ExecTask() error {
 		{
 			ok, packet := MessageUnpack(msg.Topic, []byte(msg.Payload))
 			if ok && packet.Data != nil {
-				deviceSN := GetDeviceSN(msg.Topic)
+				deviceSN := GetDeviceSN(msg.Topic,"/")
 				//保存包数据入库
 				saveDeviceTransferDataOps(msg.Broker, deviceSN, packet)
 				//处理包数据

@@ -42,17 +42,6 @@ func RandEmail() string {
 	return RandomWord(6) + "@" + RandomWord(4) + "." + RandomWord(3)
 }
 
-//func ArgsToJsonData(args []interface{}) zap.Field {
-//	det := make([]string, 0)
-//	if len(args) > 0 {
-//		for _, v := range args {
-//			det = append(det, fmt.Sprintf("%+v", v))
-//		}
-//	}
-//	zap := zap.Any("detail", det)
-//	return zap
-//}
-
 func StringJoin(args []interface{}) string {
 	var buffer bytes.Buffer
 	if len(args) > 0 {
@@ -84,10 +73,11 @@ func StringJoin(args []interface{}) string {
 	return buffer.String()
 }
 
-func GetDeviceSN(topic string) string {
-	clrString := strings.TrimFunc(topic, func(c rune) bool { return strings.ContainsRune("/", c) })
+func GetDeviceSN(topic string, partition string) string {
+	// partition --> "/" or ":"
+	clrString := strings.TrimFunc(topic, func(c rune) bool { return strings.ContainsRune(partition, c) })
 
-	stringArray := strings.Split(clrString, "/")
+	stringArray := strings.Split(clrString, partition)
 
 	return stringArray[len(stringArray)-1]
 }

@@ -78,10 +78,11 @@ func (module *ModuleInfo) Create(accessway uint8, moduleSN string, module_versio
 	module.CreateTime = GetTimestampMs()
 }
 
-func (device *DeviceInfo) Create(accessway uint8, sn string, version string) {
+func (device *DeviceInfo) Create(accessway uint8, sn string, version string, status int8) {
 	device.AccessWay = accessway
 	device.DeviceSn = sn
 	device.DeviceVersion = version
+	device.Status = status
 	device.CreateTime = GetTimestampMs()
 }
 
@@ -90,11 +91,12 @@ func (module *ModuleInfo) Update(module_version string) {
 	module.UpdateTime = GetTimestampMs()
 }
 
-func (device *DeviceInfo) Update(id uint64, accessway uint8, version string, time int64) {
+func (device *DeviceInfo) Update(id uint64, accessway uint8, version string, time int64, status int8) {
 	device.ID = id
 	device.AccessWay = accessway
 	device.DeviceVersion = version
 	device.UpdateTime = time
+	device.Status = status
 }
 
 func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_sn string, data string, serverIP string, behavior uint8, transferTime int64) {

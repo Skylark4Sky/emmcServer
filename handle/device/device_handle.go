@@ -14,6 +14,11 @@ const (
 	LEISURE_TIME   = 300 //空闲时300秒
 )
 
+const (
+	DEVICE_ONLINE int8 = 1
+	DEVICE_OFFLINE int8 = 0
+)
+
 type RequestData struct {
 	AccessWay     uint8  `form:"type" json:"type" binding:"required"`
 	ModuleSN      string `form:"module_sn" json:"module_sn" binding:"required"`
@@ -54,7 +59,7 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		var info CreateDeviceInfo
 		curTimestampMs := GetTimestampMs()
 		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
-		info.Device.Create(data.AccessWay, data.DeviceSN, data.DeviceVersion)
+		info.Device.Create(data.AccessWay, data.DeviceSN, data.DeviceVersion, DEVICE_ONLINE)
 		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
 		info.Module.CreateTime = curTimestampMs
 		info.Device.CreateTime = curTimestampMs
@@ -64,9 +69,9 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
 		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_VERSION, module, moduleUpdateMap)
 		device := &DeviceInfo{}
-		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime)
+		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime, DEVICE_ONLINE)
 		device.DeviceSn = data.DeviceSN
-		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime}
+		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime, "status": device.Status}
 		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_VERSION, device, deviceUpdateMap)
 		// 检测并返回固件版本
 		// 返回版本升级格式

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	CHARGEING_TIME = 150 //忙时150秒
-	LEISURE_TIME   = 300 //空闲时300秒
+	CHARGEING_TIME = 60 //忙时150秒
+	LEISURE_TIME   = 120 //空闲时300秒
 )
 
 const (

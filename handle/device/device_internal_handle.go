@@ -63,7 +63,9 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
 				device := &DeviceInfo{}
+				device.ID = deviceID
 				deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": DEVICE_OFFLINE}
+				SystemLog("deviceExpiredMsgOps: ",message," deviceUpdateMap: ",deviceUpdateMap)
 				CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
 			}
 		case GetDeviceIDKey(deviceSN):

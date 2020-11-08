@@ -295,7 +295,8 @@ func (request *RequestListData) GetModuleList() (interface{}, interface{}) {
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
 		db = addWhereCond(db, condMap, MODULE_VERSION_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
+		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg
@@ -318,7 +319,7 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 		db = addWhereCond(db, condMap, MODULE_ID_KEY)
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
-		db = addWhereCond(db, condMap, TIMETYPE_KEY)
+		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {
 		return nil, errMsg

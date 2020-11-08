@@ -210,6 +210,18 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 				}
 			}
 		}
+	case DEVICE_STATUS:
+		{
+			if keyValue, ok := condMap[DEVICE_STATUS]; ok {
+				if keyValue == "1" && keyValue != "" {
+					cond := StringJoin([]interface{}{"(", key, " BETWEEN ? AND ?)"})
+					dbEntity = dbEntity.Where(cond, DEVICE_ONLINE,DEVICE_WORKING)
+				} else if keyValue != "" {
+					cond := StringJoin([]interface{}{" ", key, " = ?"})
+					dbEntity = dbEntity.Where(cond, keyValue)
+				}
+			}
+		}
 	default:
 		if keyValue, ok := condMap[key]; ok {
 			switch key {

@@ -14,6 +14,7 @@ const (
 	REDIS_DEVICE_INFO_KEY  = "info:"
 )
 
+//info
 const (
 	REDIS_DEVICE_ID_FIELD    		= "id"
 	REDIS_DEVICE_DATA_TOTAL_FIELD   = "total"

@@ -39,7 +39,10 @@ func changeDeviceStatus(device_sn string, updateFlags uint8, status int8, worker
 			Redis().SetDeviceWorkerToRedis(device_sn, int(worker))
 		}
 
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+		if updateFlags != 0 {
+			SystemLog("deviceID: ", deviceID, " deviceUpdateMap: ", deviceUpdateMap)
+			CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+		}
 	}
 }
 
@@ -92,6 +95,7 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		switch message {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
+				SystemLog("deviceExpiredMsgOps: ", deviceSN, " DEVICE_OFFLINE")
 				changeDeviceStatus(deviceSN, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
 			}
 		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
@@ -183,7 +187,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 				{
 					if status != int(DEVICE_ONLINE) {
 						updateFlags |= UPDATE_DEVICE_STATUS
-						workerStatus = DEVICE_OFFLINE
+						workerStatus = DEVICE_ONLINE
 					}
 				}
 			}
@@ -193,7 +197,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 			}
 
 			//更新状态
-			changeDeviceStatus(cacheKey, updateFlags, workerStatus, int8(worker))
+			changeDeviceStatus(cacheKey, updateFlags, workerStatus, int8(deviceStatus.Worker))
 
 			//更新令牌时间
 			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)

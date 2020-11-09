@@ -16,12 +16,12 @@ const (
 
 //info
 const (
-	REDIS_DEVICE_ID_FIELD    		= "id"
-	REDIS_DEVICE_DATA_TOTAL_FIELD   = "total"
-	REDIS_DEVICE_STATUS			    = "status"
-	REDIS_RAW_DATA_FIELD     		= "rawData"
+	REDIS_INFO_DEVICE_ID_FIELD         = "id"
+	REDIS_INFO_DEVICE_DATA_TOTAL_FIELD = "total"
+	REDIS_INFO_DEVICE_STATUS_FIELD     = "status"
+	REDIS_INFO_DEVICE_WORKER_FIELD     = "worker"
+	REDIS_INFO_RAW_DATA_FIELD          = "rawData"
 )
-
 
 type DeviceTatolInfo struct {
 	UseEnergy      uint64 `json:"energy"`
@@ -59,14 +59,26 @@ func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceSta
 
 //插入对应令牌
 func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
-	c.Set(GetDeviceTokenKey(deviceSN), deviceID, 900) //15分钟过期,正常1-2分钟后续数据就上来了
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_DEVICE_ID_FIELD, deviceID) //插入设备ID
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_DEVICE_STATUS, 1) 	//设备在线状态
+	c.Set(GetDeviceTokenKey(deviceSN), deviceID, 900)                        //15分钟过期,正常1-2分钟后续数据就上来了
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_ID_FIELD, deviceID) //插入设备ID
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, 1)    //设备在线状态
+}
+
+func (c *Cacher) GetDeviceWorkerFormRedis(deviceSN string) int {
+	worker, err := c.HGetInt(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_WORKER_FIELD)
+	if err != nil {
+		return 0
+	}
+	return worker
+}
+
+func (c *Cacher) SetDeviceWorkerToRedis(deviceSN string, worker int) {
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_WORKER_FIELD, worker)
 }
 
 //取设备状态
 func (c *Cacher) GetDeviceStatusFromRedis(deviceSN string) int {
-	status, err := c.HGetInt(GetDeviceInfoKey(deviceSN), REDIS_DEVICE_STATUS)
+	status, err := c.HGetInt(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD)
 	if err != nil {
 		return 0
 	}
@@ -74,13 +86,13 @@ func (c *Cacher) GetDeviceStatusFromRedis(deviceSN string) int {
 }
 
 //设置设备状态
-func (c *Cacher) SetDeviceStatusFromRedis(deviceSN string, status int) {
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_DEVICE_STATUS, status) //全局设备列表
+func (c *Cacher) SetDeviceStatusToRedis(deviceSN string, status int) {
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, status)
 }
 
 //取设备ID
 func (c *Cacher) GetDeviceIDFromRedis(deviceSN string) uint64 {
-	deviceID, err := c.HGetUint64(GetDeviceInfoKey(deviceSN), REDIS_DEVICE_ID_FIELD)
+	deviceID, err := c.HGetUint64(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_ID_FIELD)
 	if err != nil {
 		return 0
 	}
@@ -103,7 +115,7 @@ func (c *Cacher) UpdateDeviceComDataToRedis(deviceSN string, comID uint8, comDat
 
 //更新工作状态数据统计
 func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interface{}) {
-	c.HSet(GetDeviceInfoKey(deviceSN),REDIS_DEVICE_DATA_TOTAL_FIELD, infoData)
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_DATA_TOTAL_FIELD, infoData)
 }
 
 //统计当前工作端口数量

@@ -39,6 +39,7 @@ type DeviceInfo struct {
 	Localtion     string `gorm:"column:localtion;type:varchar(255)" json:"localtion"`               // 设备所在地址
 	Type          int8   `gorm:"column:type;type:tinyint(2) unsigned" json:"type"`                  // 设备类型
 	Status        int8   `gorm:"column:status;type:tinyint(2) unsigned" json:"status"`              // 设备状态
+	Worker        int8   `gorm:"column:worker;type:tinyint(2) unsigned" json:"worker"`              // 设备状态
 	CreateTime    int64  `gorm:"column:create_time;type:bigint(13) unsigned" json:"create_time"`    // 创建时间
 	UpdateTime    int64  `gorm:"column:update_time;type:bigint(13) unsigned" json:"update_time"`    // 更新时间
 }

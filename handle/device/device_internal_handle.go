@@ -13,16 +13,33 @@ import (
 	"time"
 )
 
-// 修改设备状态
-func changeDeviceStatus(device_sn string, status int8) {
+const (
+	UPDATE_DEVICE_STATUS            = 0x02
+	UPDATE_DEVICE_WORKER            = 0x04
+	UPDATE_DEVICE_STATUS_AND_WORKER = 0x06
+)
+
+func changeDeviceStatus(device_sn string, updateFlags uint8, status int8, worker int8) {
 	deviceID := Redis().GetDeviceIDFromRedis(device_sn)
 	if deviceID != 0 {
 		device := &DeviceInfo{}
 		device.ID = Redis().GetDeviceIDFromRedis(device_sn)
-		deviceUpdateMap := map[string]interface{}{"update_time": GetTimestampMs(), "status": status}
-		SystemLog("SetDeviceStatusFromRedis - deviceUpdateMap: ", deviceUpdateMap)
+
+		var deviceUpdateMap = make(map[string]interface{})
+
+		deviceUpdateMap["update_time"] = GetTimestampMs()
+
+		if (updateFlags & UPDATE_DEVICE_STATUS) == UPDATE_DEVICE_STATUS {
+			deviceUpdateMap["status"] = status
+			Redis().SetDeviceStatusToRedis(device_sn, int(status))
+		}
+
+		if (updateFlags & UPDATE_DEVICE_WORKER) == UPDATE_DEVICE_WORKER {
+			deviceUpdateMap["worker"] = worker
+			Redis().SetDeviceWorkerToRedis(device_sn, int(worker))
+		}
+
 		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
-		Redis().SetDeviceStatusFromRedis(device_sn, int(status))
 	}
 }
 
@@ -75,7 +92,7 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		switch message {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
-				changeDeviceStatus(deviceSN, DEVICE_OFFLINE)
+				changeDeviceStatus(deviceSN, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
 			}
 		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
 			{
@@ -149,21 +166,34 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 			}
 
 			status := Redis().GetDeviceStatusFromRedis(cacheKey)
+			worker := Redis().GetDeviceWorkerFormRedis(cacheKey)
+
+			var updateFlags uint8 = 0
+			var workerStatus int8 = DEVICE_WORKING
 
 			switch deviceStatus.Behavior {
 			case mqtt.GISUNLINK_CHARGEING:
 				{
 					if status != int(DEVICE_WORKING) {
-						changeDeviceStatus(cacheKey, DEVICE_WORKING)
+						updateFlags |= UPDATE_DEVICE_STATUS
+						workerStatus = DEVICE_WORKING
 					}
 				}
 			case mqtt.GISUNLINK_CHARGE_LEISURE:
 				{
 					if status != int(DEVICE_ONLINE) {
-						changeDeviceStatus(cacheKey, DEVICE_ONLINE)
+						updateFlags |= UPDATE_DEVICE_STATUS
+						workerStatus = DEVICE_OFFLINE
 					}
 				}
 			}
+
+			if uint8(worker) != deviceStatus.Worker {
+				updateFlags |= UPDATE_DEVICE_WORKER
+			}
+
+			//更新状态
+			changeDeviceStatus(cacheKey, updateFlags, workerStatus, int8(worker))
 
 			//更新令牌时间
 			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)

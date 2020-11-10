@@ -35,7 +35,7 @@ const (
 	TIMETYPE_KEY       = "time"
 	MODULE_ID_KEY      = "module_id"
 	MODULE_SN_KEY      = "module_sn"
-	DEVICE_STATUS 	   = "status"
+	DEVICE_STATUS_KEY  = "status"
 	SORT_FIELD_KEY     = "sortField"
 	SORT_ORDER_KEY     = "sortOrder"
 	STAR_TTIME_KEY     = "startTime"
@@ -210,12 +210,15 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 				}
 			}
 		}
-	case DEVICE_STATUS:
+	case DEVICE_STATUS_KEY:
 		{
-			if keyValue, ok := condMap[DEVICE_STATUS]; ok {
+			if keyValue, ok := condMap[DEVICE_STATUS_KEY]; ok {
+				if keyValue == "255" && keyValue != "" {
+					break
+				}
 				if keyValue == "1" && keyValue != "" {
 					cond := StringJoin([]interface{}{"(", key, " BETWEEN ? AND ?)"})
-					dbEntity = dbEntity.Where(cond, DEVICE_ONLINE,DEVICE_WORKING)
+					dbEntity = dbEntity.Where(cond, DEVICE_ONLINE, DEVICE_WORKING)
 				} else if keyValue != "" {
 					cond := StringJoin([]interface{}{" ", key, " = ?"})
 					dbEntity = dbEntity.Where(cond, keyValue)
@@ -253,7 +256,7 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, DEVICE_VERSION_KEY)
 		db = addWhereCond(db, condMap, TYPE_KEY)
-		db = addWhereCond(db, condMap, DEVICE_STATUS)
+		db = addWhereCond(db, condMap, DEVICE_STATUS_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)

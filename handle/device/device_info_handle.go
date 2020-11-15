@@ -16,7 +16,7 @@ const (
 	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
 	SELECT_TMODULE_LIST             = 12
 	SELECT_MODULE_CONNECT_LOG_LIST  = 20
-	SYNC_DEVICE_STATUS				= 20
+	SYNC_DEVICE_STATUS              = 20
 )
 
 const (
@@ -45,7 +45,7 @@ const (
 )
 
 type RequestSyncData struct {
-	UserID      uint64      `fomr:"userID" json:"userID" binding:"required"`
+	UserID uint64 `fomr:"userID" json:"userID" binding:"required"`
 }
 
 type RequestListData struct {
@@ -340,7 +340,7 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	return respond, nil
 }
 
-func (request *RequestSyncData) SyncDeviceStatus () (interface{}, interface{}) {
+func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
-	return nil,nil
+	return nil, nil
 }

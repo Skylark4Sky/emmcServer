@@ -13,23 +13,26 @@ const (
 	MAX_PAGE_SIZE = 100
 )
 
-func checkRequestUserID(ctx *gin.Context) (ok bool,userID uint64, errMsg interface{}) {
+func checkRequestUserID(ctx *gin.Context, requestUserID uint64) (ok bool, userID uint64, errMsg interface{}) {
 	userID = ctx.MustGet(JwtCtxUidKey).(uint64)
+	ok = true
 	if userID <= 0 {
 		ok = false
 		errMsg = CreateErrorMessage(PARAM_ERROR, nil)
 	}
+
 	return
 }
 
 func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {
-	 ok,userID,errMsg := checkRequestUserID(ctx);
-	 if !ok {
-		return ok, errMsg
-	}
 
 	if err := ctx.ShouldBind(&requestParam); err != nil {
 		return false, CreateErrorMessage(PARAM_ERROR, err)
+	}
+
+	ok, userID, errMsg := checkRequestUserID(ctx, requestParam.UserID)
+	if !ok {
+		return ok, errMsg
 	}
 
 	if requestParam.PageNum <= 0 {
@@ -141,7 +144,12 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 func SyncDeviceStatus(ctx *gin.Context) {
 	var sync RequestSyncData
 
-	ok,_,errMsg := checkRequestUserID(ctx);
+	if err := ctx.ShouldBind(&sync); err != nil {
+		CreateErrorMessage(PARAM_ERROR, err)
+		return
+	}
+
+	ok, _, errMsg := checkRequestUserID(ctx, sync.UserID)
 	if !ok {
 		RespondMessage(ctx, errMsg)
 		return

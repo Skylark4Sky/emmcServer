@@ -30,13 +30,18 @@ const (
 	ASYNC_CREATE_USER_REGISTER_LOG                  //建立用户注册日志 13
 	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录 14
 	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录 15
+	ASYNC_UPDATE_DEVICE_STATUS                      //更新设备状态 16
 )
+
+type TaskFunc func(task  *AsyncSQLTask)
 
 type AsyncSQLTask struct {
 	Type      AsyncSQLTaskType
 	WhereSQL  string
 	RecordID  int64
-	UpdateMap map[string]interface{}
+	Lock	  *RedisLock
+	Func 	  TaskFunc
+	MapParam map[string]interface{}
 	Entity    interface{}
 }
 
@@ -67,11 +72,21 @@ func CreateAsyncSQLTask(asyncType AsyncSQLTaskType, entity interface{}) {
 }
 
 //根据map更新
-func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interface{}, updateMap map[string]interface{}) {
+func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interface{}, mapParam map[string]interface{}) {
 	var task AsyncSQLTask
 	task.Entity = entity
 	task.Type = asyncType
-	task.UpdateMap = updateMap
+	task.MapParam = mapParam
+	var work Job = &task
+	InsertAsyncTask(work)
+}
+
+func CreateAsyncSQLTaskWithCallback(asyncType AsyncSQLTaskType, entity interface{},lock *RedisLock, taskFunc TaskFunc) {
+	var task AsyncSQLTask
+	task.Entity = entity
+	task.Type = asyncType
+	task.Func = taskFunc
+	task.Lock = lock
 	var work Job = &task
 	InsertAsyncTask(work)
 }
@@ -245,7 +260,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 		transactionCreateUserInfo(&entity, false)
 		break
 	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_INFO, ASYNC_UP_MODULE_INFO:
-		if err := ExecSQL().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
+		if err := ExecSQL().Model(task.Entity).Updates(task.MapParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_INFO == task.Type {
@@ -268,6 +283,11 @@ func (task *AsyncSQLTask) ExecTask() error {
 		if err := ExecSQL().Create(task.Entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
+		}
+		break
+	case ASYNC_UPDATE_DEVICE_STATUS:
+		if(task.Func != nil) {
+			task.Func(task)
 		}
 		break
 	}

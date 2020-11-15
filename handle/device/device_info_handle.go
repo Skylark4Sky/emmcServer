@@ -3,6 +3,9 @@ package device
 import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
+	. "GoServer/middleWare/dataBases/redis"
+	. "GoServer/model"
+	. "GoServer/utils/log"
 	. "GoServer/model/device"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
@@ -340,7 +343,20 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	return respond, nil
 }
 
+func syncDeviceStatusTaskFunc (task  *AsyncSQLTask) {
+	SystemLog("syncDeviceStatusTaskFunc: ",task)
+}
+
 func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
+	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID:", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))
+	if err != nil {
+		return nil,CreateErrorMessage(RESPOND_RESUBMIT, err)
+	}
+	if !ok {
+		return nil,CreateErrorMessage(SYSTEM_ERROR, "system error")
+	}
+
+	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS,request,lock,syncDeviceStatusTaskFunc)
 	return nil, nil
 }

@@ -52,7 +52,6 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 	if transfer == nil {
 		return
 	}
-
 	transfer.CreateTime = GetTimestampMs()
 	if err := ExecSQL().Create(&transfer).Error; err != nil {
 		SystemLog("CreateDeviceTransferLog", err)

@@ -14,6 +14,7 @@ const (
 	PARAM_ERROR
 	AUTH_ERROR
 	SYSTEM_ERROR
+	RESPOND_RESUBMIT
 )
 
 var retType = map[int64]string{
@@ -25,6 +26,7 @@ var retType = map[int64]string{
 	PARAM_ERROR:        "param error",
 	AUTH_ERROR:         "auth error",
 	SYSTEM_ERROR:       "",
+	RESPOND_RESUBMIT:	"重复提交",
 }
 
 type MessageSucceedEntityWithData struct {

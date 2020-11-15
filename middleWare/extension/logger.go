@@ -40,6 +40,7 @@ func RequestLogger() gin.HandlerFunc {
 		c.Writer = blw
 
 		start := time.Now()
+		c.Set("requestTraceID", traceID)
 		c.Next()
 		latency := time.Since(start)
 

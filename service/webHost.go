@@ -49,10 +49,8 @@ func StatrWebService() error {
 
 	if router != nil {
 		router.Use(middleWare.Cors())
-		//router.Use(gin.Recovery())
 		router.Use(middleWare.Recovery())
 		router.Use(middleWare.RequestLogger())
-		//router.Use(middleWare.ResponseHandler())
 		router.NoMethod(middleWare.ExceptionInterceptor)
 		router.NoRoute(middleWare.ExceptionInterceptor)
 		ApiRegisterManage(router, middleWare.PrometheusHttp)

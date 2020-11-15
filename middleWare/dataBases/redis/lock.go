@@ -34,7 +34,7 @@ func (lock *RedisLock) Unlock() (err error) {
 }
 
 func (lock *RedisLock) key() string {
-	return StringJoin([]interface{}{"redislock:", lock.resource})
+	return StringJoin([]interface{}{"redisLock:", lock.resource})
 }
 
 func (lock *RedisLock) AddTimeout(ex_time int64) (ok bool, err error) {

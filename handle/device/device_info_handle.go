@@ -344,12 +344,13 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 }
 
 func syncDeviceStatusTaskFunc (task  *AsyncSQLTask) {
+	task.Lock.Unlock()
 	SystemLog("syncDeviceStatusTaskFunc: ",task)
 }
 
 func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
-	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID:", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))
+	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID_", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))
 	if err != nil {
 		return nil,CreateErrorMessage(SYSTEM_ERROR, err)
 	}

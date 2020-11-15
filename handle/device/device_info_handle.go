@@ -16,6 +16,7 @@ const (
 	SELECT_DEVICE_TRANSFER_LOG_LIST = 28
 	SELECT_TMODULE_LIST             = 12
 	SELECT_MODULE_CONNECT_LOG_LIST  = 20
+	SYNC_DEVICE_STATUS				= 20
 )
 
 const (
@@ -43,6 +44,10 @@ const (
 	UPDATE_TIME_KEY    = "update_time"
 )
 
+type RequestSyncData struct {
+	UserID      uint64      `fomr:"userID" json:"userID" binding:"required"`
+}
+
 type RequestListData struct {
 	UserID      uint64      `fomr:"userID" json:"userID" binding:"required"`
 	PageNum     int64       `form:"pageNum" json:"pageNum" binding:"required"`   //起始页
@@ -60,14 +65,14 @@ type RespondListData struct {
 	Page PageInfo    `json:"page,omitempty"`
 }
 
-func CheckUserRulesGroup(request *RequestListData, roleValue int) (errMsg interface{}) {
+func CheckUserRulesGroup(UserID uint64, roleValue int) (errMsg interface{}) {
 	errMsg = nil
 	userInfo := &UserInfo{}
 
 	db := ExecSQL().Table("user_base")
 	db = db.Select("user_role.id,user_role.rules")
 	db = db.Joins("inner join user_role ON user_base.user_role = user_role.id")
-	db = db.Where("uid = ?", request.UserID)
+	db = db.Where("uid = ?", UserID)
 
 	if err := db.Scan(&userInfo.User).Error; err != nil {
 		if IsRecordNotFound(err) {
@@ -333,4 +338,9 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	}
 
 	return respond, nil
+}
+
+func (request *RequestSyncData) SyncDeviceStatus () (interface{}, interface{}) {
+
+	return nil,nil
 }

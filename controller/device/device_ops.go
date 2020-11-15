@@ -13,11 +13,21 @@ const (
 	MAX_PAGE_SIZE = 100
 )
 
-func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {
-	userID := ctx.MustGet(JwtCtxUidKey)
-	if userID.(uint64) <= 0 {
-		return false, CreateErrorMessage(PARAM_ERROR, nil)
+func checkRequestUserID(ctx *gin.Context) (ok bool,userID uint64, errMsg interface{}) {
+	userID = ctx.MustGet(JwtCtxUidKey).(uint64)
+	if userID <= 0 {
+		ok = false
+		errMsg = CreateErrorMessage(PARAM_ERROR, nil)
 	}
+	return
+}
+
+func checkRequestParam(ctx *gin.Context, requestParam *RequestListData, minSize int64, maxSize int64) (bool, interface{}) {
+	 ok,userID,errMsg := checkRequestUserID(ctx);
+	 if !ok {
+		return ok, errMsg
+	}
+
 	if err := ctx.ShouldBind(&requestParam); err != nil {
 		return false, CreateErrorMessage(PARAM_ERROR, err)
 	}
@@ -46,7 +56,7 @@ func GetDeviceList(ctx *gin.Context) {
 		return
 	}
 
-	if errMsg := CheckUserRulesGroup(&getListData, SELECT_DEVICE_LIST); errMsg != nil {
+	if errMsg := CheckUserRulesGroup(getListData.UserID, SELECT_DEVICE_LIST); errMsg != nil {
 		RespondMessage(ctx, errMsg)
 		return
 	}
@@ -69,7 +79,7 @@ func GetDeviceTransferLogList(ctx *gin.Context) {
 		return
 	}
 
-	if errMsg := CheckUserRulesGroup(&getListData, SELECT_DEVICE_TRANSFER_LOG_LIST); errMsg != nil {
+	if errMsg := CheckUserRulesGroup(getListData.UserID, SELECT_DEVICE_TRANSFER_LOG_LIST); errMsg != nil {
 		RespondMessage(ctx, errMsg)
 		return
 	}
@@ -91,7 +101,7 @@ func GetModuleList(ctx *gin.Context) {
 		return
 	}
 
-	if errMsg := CheckUserRulesGroup(&getListData, SELECT_TMODULE_LIST); errMsg != nil {
+	if errMsg := CheckUserRulesGroup(getListData.UserID, SELECT_TMODULE_LIST); errMsg != nil {
 		RespondMessage(ctx, errMsg)
 		return
 	}
@@ -113,7 +123,7 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 		return
 	}
 
-	if errMsg := CheckUserRulesGroup(&getListData, SELECT_MODULE_CONNECT_LOG_LIST); errMsg != nil {
+	if errMsg := CheckUserRulesGroup(getListData.UserID, SELECT_MODULE_CONNECT_LOG_LIST); errMsg != nil {
 		RespondMessage(ctx, errMsg)
 		return
 	}
@@ -129,5 +139,24 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 }
 
 func SyncDeviceStatus(ctx *gin.Context) {
+	var sync RequestSyncData
 
+	ok,_,errMsg := checkRequestUserID(ctx);
+	if !ok {
+		RespondMessage(ctx, errMsg)
+		return
+	}
+
+	if errMsg := CheckUserRulesGroup(sync.UserID, SYNC_DEVICE_STATUS); errMsg != nil {
+		RespondMessage(ctx, errMsg)
+		return
+	}
+
+	data, err := sync.SyncDeviceStatus()
+
+	if err != nil {
+		RespondMessage(ctx, err)
+		return
+	}
+	RespondMessage(ctx, CreateMessage(SUCCESS, data))
 }

@@ -10,6 +10,7 @@ import (
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
 	"github.com/jinzhu/gorm"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -20,6 +21,10 @@ const (
 	SELECT_TMODULE_LIST             = 12
 	SELECT_MODULE_CONNECT_LOG_LIST  = 20
 	SYNC_DEVICE_STATUS              = 20
+)
+
+const (
+	shardingSize = 10
 )
 
 const (
@@ -344,8 +349,51 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 }
 
 func syncDeviceStatusTaskFunc (task  *AsyncSQLTask) {
-	task.Lock.Unlock()
-	SystemLog("syncDeviceStatusTaskFunc: ",task)
+	if (task.Entity == nil) {
+		task.Lock.Unlock()
+		return
+	}
+
+	request := task.Entity.(RequestSyncData)
+
+	type ResultDeviceSNList struct {
+		ID 		 uint64
+		DeviceSN string
+	}
+
+	var resultList []ResultDeviceSNList
+	db := ExecSQL().Table("device_info")
+	db = db.Select("id,device_sn")
+	db = db.Where("uid = ? AND status = ?", request.UserID,DEVICE_ONLINE)
+	if err := db.Scan(&resultList).Error; err != nil {
+		SystemLog("syncDeviceStatusTaskFunc request: ",request," Error: ",err)
+		return
+	}
+
+	totalDevices := len(resultList)
+
+	if totalDevices > 1 {
+		var shardingNum int = 1
+		if(totalDevices > shardingSize) {
+			shardingNum =  int(math.Ceil(float64((totalDevices + (shardingSize - 1))/shardingSize)))
+		}
+
+		var i int
+		for  i = 0; i < shardingNum; i++ {
+			var start int = i * shardingSize;
+			var offset int = shardingSize
+			if i == (shardingNum - 1) {
+				offset = (totalDevices - (i * shardingSize))
+			}
+
+			var k int
+			for k = 0; k < offset; k++ {
+				device := resultList[ start + k]
+				SystemLog("k = ",k ," device: ",device.DeviceSN)
+			}
+
+		}
+	}
 }
 
 func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
@@ -359,5 +407,5 @@ func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 	}
 
 	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS,request,lock,syncDeviceStatusTaskFunc)
-	return nil, nil
+	return nil, CreateMessage(SUCCESS,"提交成功")
 }

@@ -127,3 +127,7 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 
 	RespondMessage(ctx, CreateMessage(SUCCESS, data))
 }
+
+func SyncDeviceStatus(ctx *gin.Context) {
+
+}

@@ -10,7 +10,7 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
 	. "GoServer/utils/time"
-	//	"encoding/json"
+	"encoding/json"
 	"time"
 )
 
@@ -66,6 +66,16 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.Data.(*mqtt.ComList)
 		comNum = comList.ComNum
+
+		jsonString, err := json.Marshal(comList)
+
+		SystemLog("DataJson src:", packet.Data)
+		if err != nil {
+			SystemLog("DataJson Error:", err)
+		} else {
+			SystemLog("DataJson:", string(jsonString))
+		}
+
 		break
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
 		comList := packet.Data.(*mqtt.ComList)
@@ -87,15 +97,6 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 		ServerNode:   serverNode,
 		TransferTime: int64(packet.Json.Ctime),
 	}
-
-	//	jsonString, err := json.Marshal(packet.Data)
-	//
-	//	SystemLog("DataJson src:", packet.Data)
-	//	if err != nil {
-	//		SystemLog("DataJson Error:", err)
-	//	} else {
-	//		//	SystemLog("DataJson:", string(jsonString))
-	//	}
 
 	createDeviceTransferLog(log)
 }

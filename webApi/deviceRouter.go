@@ -28,6 +28,7 @@ func registerDeviceRouter(deviceRouter *gin.RouterGroup) {
 			authDevice.POST("getDeviceTransferLog", deviceApi.GetDeviceTransferLogList)
 			authDevice.POST("getModuleList", deviceApi.GetModuleList)
 			authDevice.POST("getModuleConnectLog", deviceApi.GetModuleConnectLogList)
+			authDevice.POST("syncDeviceStatus", deviceApi.SyncDeviceStatus)
 		}
 	}
 }

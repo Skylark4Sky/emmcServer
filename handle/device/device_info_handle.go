@@ -351,10 +351,10 @@ func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
 	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID:", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))
 	if err != nil {
-		return nil,CreateErrorMessage(RESPOND_RESUBMIT, err)
+		return nil,CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 	if !ok {
-		return nil,CreateErrorMessage(SYSTEM_ERROR, "system error")
+		return nil,CreateErrorMessage(RESPOND_RESUBMIT, nil)
 	}
 
 	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS,request,lock,syncDeviceStatusTaskFunc)

@@ -21,6 +21,7 @@ const (
 	REDIS_INFO_DEVICE_STATUS_FIELD     = "status"
 	REDIS_INFO_DEVICE_WORKER_FIELD     = "worker"
 	REDIS_INFO_RAW_DATA_FIELD          = "rawData"
+	REDIS_INFO_USER_ID_FIELD           = "userID"
 )
 
 type DeviceTatolInfo struct {

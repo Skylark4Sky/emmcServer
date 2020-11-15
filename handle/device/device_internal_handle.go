@@ -10,6 +10,7 @@ import (
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
 	. "GoServer/utils/time"
+	//	"encoding/json"
 	"time"
 )
 
@@ -86,6 +87,16 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 		ServerNode:   serverNode,
 		TransferTime: int64(packet.Json.Ctime),
 	}
+
+	//	jsonString, err := json.Marshal(packet.Data)
+	//
+	//	SystemLog("DataJson src:", packet.Data)
+	//	if err != nil {
+	//		SystemLog("DataJson Error:", err)
+	//	} else {
+	//		//	SystemLog("DataJson:", string(jsonString))
+	//	}
+
 	createDeviceTransferLog(log)
 }
 

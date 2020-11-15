@@ -245,7 +245,7 @@ func (task *AsyncSQLTask) ExecTask() error {
 		transactionCreateUserInfo(&entity, false)
 		break
 	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_INFO, ASYNC_UP_MODULE_INFO:
-		if err := ExecSQL().Debug().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
+		if err := ExecSQL().Model(task.Entity).Updates(task.UpdateMap).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 		if ASYNC_UP_DEVICE_INFO == task.Type {

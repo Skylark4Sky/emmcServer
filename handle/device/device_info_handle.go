@@ -4,7 +4,6 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/model/device"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
 	"github.com/jinzhu/gorm"
@@ -105,10 +104,11 @@ func addTimeCond(db *gorm.DB, timeField string, condMap map[string]interface{}) 
 
 	var startTime int64 = 0
 	var endTime int64 = 0
-	if startTimeValue, ok := condMap[STAR_TTIME_KEY]; ok {
+
+	if startTimeValue, ok := condMap[STAR_TTIME_KEY]; ok && startTimeValue != nil {
 		startTime, _ = strconv.ParseInt(startTimeValue.(string), 10, 64)
 	}
-	if endTimeValue, ok := condMap[END_TIME_KEY]; ok {
+	if endTimeValue, ok := condMap[END_TIME_KEY]; ok && endTimeValue != nil {
 		endTime, _ = strconv.ParseInt(endTimeValue.(string), 10, 64)
 	}
 
@@ -144,15 +144,23 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 		}
 	}
 
+	newScope := db.NewScope(listSearch)
+	joinSQL := newScope.DB()
+	tableName := newScope.GetModelStruct().TableName(db)
+
 	totalRows := db.NewScope(listSearch).DB()
 
 	if orderCond != "" {
 		db = db.Order(orderCond).Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
 	} else {
-		db = db.Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
+		db = db.Order("id asc").Limit(request.PageSize).Offset((request.PageNum - 1) * request.PageSize)
 	}
 
-	if err := db.Find(listSearch).Error; err != nil {
+	db = db.Select("id")
+
+	joinSQL = joinSQL.Joins(StringJoin([]interface{}{"inner join ? b ON ", tableName, ".id = b.id"}), db.Table(tableName).SubQuery())
+
+	if err := joinSQL.Find(listSearch).Error; err != nil {
 		errMsg = CreateErrorMessage(SYSTEM_ERROR, err)
 		return
 	}
@@ -175,6 +183,7 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 
 func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	orderCond = ""
+
 	if sortField, ok := condMap[SORT_FIELD_KEY]; ok {
 		if sortOrder, ok := condMap[SORT_ORDER_KEY]; ok {
 			var order string = "desc"
@@ -265,7 +274,6 @@ func (request *RequestListData) GetDeviceList() (*RespondListData, interface{}) 
 		return nil, errMsg
 	}
 
-	SystemLog("respond:-->", respond, "request:", request)
 	return respond, nil
 }
 
@@ -280,7 +288,9 @@ func (request *RequestListData) GetDeviceTransferLogList() (interface{}, interfa
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, BEHAVIOR_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
-		return db, getOrderCond(condMap)
+
+		defaultSortMap := map[string]interface{}{SORT_FIELD_KEY: "create_time", SORT_ORDER_KEY: DESCEND_ORDER}
+		return db, getOrderCond(defaultSortMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}

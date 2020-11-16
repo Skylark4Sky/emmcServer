@@ -6,11 +6,11 @@ import (
 	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
+	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
 	. "GoServer/utils/time"
-	. "GoServer/utils/float64"
-	//	"encoding/json"
+	"encoding/json"
 	"time"
 )
 
@@ -63,19 +63,17 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.Data.(*mqtt.ComList)
+		comPort := comList.ComPort
 		comNum = comList.ComNum
-		//com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 2)
-		//com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 2)
 
+		jsonString, err := json.Marshal(comPort)
 
-		//jsonString, err := json.Marshal(comList)
-
-		//SystemLog("DataJson src:", packet.Data)
-		//if err != nil {
-		//	SystemLog("DataJson Error:", err)
-		//} else {
-		//	SystemLog("DataJson:", string(jsonString))
-		//}
+		SystemLog("DataJson src:", comPort)
+		if err != nil {
+			SystemLog("DataJson Error:", err)
+		} else {
+			SystemLog("DataJson:", string(jsonString))
+		}
 
 		break
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
@@ -162,11 +160,11 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 			if len(cacherComData) > 1 {
 				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
 
-					dataTotal := &ComDataTotal {
-						ComData: *comData,
-						CurPower:0,
-						AveragePower:0,
-						MaxPower:0,
+					dataTotal := &ComDataTotal{
+						ComData:      *comData,
+						CurPower:     0,
+						AveragePower: 0,
+						MaxPower:     0,
 					}
 					dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
 					dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)

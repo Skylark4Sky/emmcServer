@@ -38,6 +38,7 @@ type DeviceStatus struct {
 	Behavior     uint8  `json:"behavior"`
 	Signal       int8   `json:"signal"`
 	Worker       uint8  `json:"worker"`
+	ID           uint64 `json:"id"`
 	ProtoVersion uint16 `json:"protoVersion"`
 }
 
@@ -60,7 +61,14 @@ func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceSta
 
 //插入对应令牌
 func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
-	c.Set(GetDeviceTokenKey(deviceSN), deviceID, 900)                        //15分钟过期,正常1-2分钟后续数据就上来了
+	status := DeviceStatus{
+		Behavior:     0,
+		Signal:       0,
+		Worker:       0,
+		ID:           deviceID,
+		ProtoVersion: 0,
+	}
+	c.Set(GetDeviceTokenKey(deviceSN), status, 900)                          //15分钟过期,正常1-2分钟后续数据就上来了
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_ID_FIELD, deviceID) //插入设备ID
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, 1)    //设备在线状态
 }
@@ -179,6 +187,34 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
 	}
 
 	return comList
+}
+
+//批量读设备Token
+func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8 {
+
+	conn := Redis().BatchStart()
+	defer Redis().BatchEnd(conn)
+	deviceList := make(map[uint64]uint8)
+
+	for _, deviceSN := range deviceMap {
+		Redis().BatchGet(conn, GetDeviceTokenKey(deviceSN))
+	}
+
+	token_list, _ := RedisValues(Redis().BatchExec(conn))
+
+	for _, v := range token_list {
+		statusValue, _ := RedisString(v, nil)
+		status := DeviceStatus{}
+		err := json.Unmarshal([]byte(statusValue), &status)
+		if err == nil {
+			if _, ok := deviceMap[status.ID]; ok {
+				deviceList[status.ID] = status.Behavior
+				delete(deviceMap, status.ID)
+			}
+		}
+	}
+
+	return deviceList
 }
 
 //批量写端口数据

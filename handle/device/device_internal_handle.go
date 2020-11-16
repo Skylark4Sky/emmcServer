@@ -20,8 +20,7 @@ const (
 	UPDATE_DEVICE_STATUS_AND_WORKER = 0x06
 )
 
-func changeDeviceStatus(device_sn string, updateFlags uint8, status int8, worker int8) {
-	deviceID := Redis().GetDeviceIDFromRedis(device_sn)
+func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, status int8, worker int8) {
 	if deviceID != 0 {
 		device := &DeviceInfo{}
 		device.ID = Redis().GetDeviceIDFromRedis(device_sn)
@@ -59,7 +58,7 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 }
 
 //保存上报数据入库
-func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt.Packet) {
+func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uint64, packet *mqtt.Packet) {
 	var comNum uint8 = 0
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
@@ -87,7 +86,7 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, packet *mqtt
 
 	log := &DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
-		DeviceID:     Redis().GetDeviceIDFromRedis(device_sn),
+		DeviceID:     deviceID,
 		TransferAct:  packet.Json.Act,
 		DeviceSn:     device_sn,
 		ComNum:       comNum,
@@ -107,7 +106,8 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
 				SystemLog("deviceExpiredMsgOps: ", deviceSN, " DEVICE_OFFLINE")
-				changeDeviceStatus(deviceSN, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
+				deviceID := Redis().GetDeviceIDFromRedis(deviceSN)
+				changeDeviceStatus(deviceSN, deviceID, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
 			}
 		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
 			{
@@ -144,7 +144,7 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 	}
 }
 
-func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload string) {
+func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
@@ -172,6 +172,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 				Behavior:     comList.ComBehavior,
 				Signal:       int8(comList.Signal),
 				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
+				ID:           deviceID,
 				ProtoVersion: comList.ComProtoVer,
 			}
 
@@ -208,7 +209,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, playload str
 			}
 
 			//更新状态
-			changeDeviceStatus(cacheKey, updateFlags, workerStatus, int8(deviceStatus.Worker))
+			changeDeviceStatus(cacheKey, deviceID, updateFlags, workerStatus, int8(deviceStatus.Worker))
 
 			//更新令牌时间
 			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)

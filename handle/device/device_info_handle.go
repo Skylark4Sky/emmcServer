@@ -5,8 +5,8 @@ import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/model"
-	. "GoServer/utils/log"
 	. "GoServer/model/device"
+	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
 	"github.com/jinzhu/gorm"
@@ -348,25 +348,25 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	return respond, nil
 }
 
-func syncDeviceStatusTaskFunc (task  *AsyncSQLTask) {
-	if (task.Entity == nil) {
+func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
+	if task.Entity == nil {
 		task.Lock.Unlock()
 		return
 	}
 
-	request := task.Entity.(RequestSyncData)
+	request := task.Entity.(*RequestSyncData)
 
 	type ResultDeviceSNList struct {
-		ID 		 uint64
+		ID       uint64
 		DeviceSN string
 	}
 
 	var resultList []ResultDeviceSNList
 	db := ExecSQL().Table("device_info")
 	db = db.Select("id,device_sn")
-	db = db.Where("uid = ? AND status = ?", request.UserID,DEVICE_ONLINE)
+	db = db.Where("uid = ? AND status = ?", request.UserID, DEVICE_ONLINE)
 	if err := db.Scan(&resultList).Error; err != nil {
-		SystemLog("syncDeviceStatusTaskFunc request: ",request," Error: ",err)
+		SystemLog("syncDeviceStatusTaskFunc request: ", request, " Error: ", err)
 		return
 	}
 
@@ -374,24 +374,36 @@ func syncDeviceStatusTaskFunc (task  *AsyncSQLTask) {
 
 	if totalDevices > 1 {
 		var shardingNum int = 1
-		if(totalDevices > shardingSize) {
-			shardingNum =  int(math.Ceil(float64((totalDevices + (shardingSize - 1))/shardingSize)))
+		if totalDevices > shardingSize {
+			shardingNum = int(math.Ceil(float64((totalDevices + (shardingSize - 1)) / shardingSize)))
 		}
 
 		var i int
-		for  i = 0; i < shardingNum; i++ {
-			var start int = i * shardingSize;
+		for i = 0; i < shardingNum; i++ {
+			var start int = i * shardingSize
 			var offset int = shardingSize
 			if i == (shardingNum - 1) {
 				offset = (totalDevices - (i * shardingSize))
 			}
 
 			var k int
+			deviceMap := make(map[uint64]string)
 			for k = 0; k < offset; k++ {
-				device := resultList[ start + k]
-				SystemLog("k = ",k ," device: ",device.DeviceSN)
+				device := resultList[start+k]
+				deviceMap[device.ID] = device.DeviceSN
 			}
 
+			BatchReadDeviceTokenFromRedis(deviceMap)
+
+			for deviceID, _ := range deviceMap {
+				var deviceInfo = DeviceInfo{
+					ID: deviceID,
+				}
+				db := ExecSQL().Debug()
+				db.Model(&deviceInfo).Updates(map[string]interface{}{"status": DEVICE_OFFLINE})
+			}
+
+			SystemLog("deviceMap: ", deviceMap)
 		}
 	}
 }
@@ -400,12 +412,12 @@ func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
 	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID_", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))
 	if err != nil {
-		return nil,CreateErrorMessage(SYSTEM_ERROR, err)
+		return nil, CreateErrorMessage(SYSTEM_ERROR, err)
 	}
 	if !ok {
-		return nil,CreateErrorMessage(RESPOND_RESUBMIT, nil)
+		return nil, CreateErrorMessage(RESPOND_RESUBMIT, nil)
 	}
 
-	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS,request,lock,syncDeviceStatusTaskFunc)
-	return nil, CreateMessage(SUCCESS,"提交成功")
+	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS, request, lock, syncDeviceStatusTaskFunc)
+	return nil, CreateMessage(SUCCESS, "提交成功")
 }

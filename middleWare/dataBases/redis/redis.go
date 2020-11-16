@@ -138,6 +138,10 @@ func (c *Cacher) BatchHGet(conn redis.Conn, key, field string) error {
 	return conn.Send("HGET", key, field)
 }
 
+func (c *Cacher) BatchGet(conn redis.Conn, key string) error {
+	return conn.Send("GET", key)
+}
+
 func (c *Cacher) BatchHSet(conn redis.Conn, key, field string, val interface{}) error {
 	value, err := c.encode(val)
 	if err != nil {
@@ -638,7 +642,7 @@ func (c *Cacher) Subscribe(onMessage func(pattern, channel, message string) erro
 				pattern := (*string)(unsafe.Pointer(&v.Pattern))
 				channel := (*string)(unsafe.Pointer(&v.Channel))
 				message := (*string)(unsafe.Pointer(&v.Data))
-				go onMessage(*pattern,*channel, *message)
+				go onMessage(*pattern, *channel, *message)
 			case redis.Subscription:
 			case error:
 				quit <- 1

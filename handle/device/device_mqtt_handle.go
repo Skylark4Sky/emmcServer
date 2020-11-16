@@ -1,6 +1,7 @@
 package device
 
 import (
+	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/mqttPacket"
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
@@ -55,11 +56,12 @@ func (msg *MqMsg) ExecTask() error {
 		{
 			ok, packet := MessageUnpack(msg.Topic, []byte(msg.Payload))
 			if ok && packet.Data != nil {
-				deviceSN := GetDeviceSN(msg.Topic,"/")
+				deviceSN := GetDeviceSN(msg.Topic, "/")
+				deviceID := Redis().GetDeviceIDFromRedis(deviceSN)
 				//保存包数据入库
-				saveDeviceTransferDataOps(msg.Broker, deviceSN, packet)
+				saveDeviceTransferDataOps(msg.Broker, deviceSN, deviceID, packet)
 				//处理包数据
-				deviceActBehaviorDataOps(packet, deviceSN, string(msg.Payload))
+				deviceActBehaviorDataOps(packet, deviceSN, deviceID, string(msg.Payload))
 				MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())
 				MqttLog(packet.Data.(Protocol).Print())
 			} else {

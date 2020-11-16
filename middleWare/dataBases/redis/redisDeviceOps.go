@@ -42,6 +42,13 @@ type DeviceStatus struct {
 	ProtoVersion uint16 `json:"protoVersion"`
 }
 
+type ComDataTotal struct {
+	mqtt.ComData
+	CurPower       float64 `json:"c_power"`        //当前端口使用功率
+	AveragePower   float64 `json:"a_power"`        //当前端口平均功率
+	MaxPower       float64 `json:"m_power"`        //当前端口最高使用功率
+}
+
 func GetDeviceTokenKey(deviceSN string) string {
 	return StringJoin([]interface{}{REDIS_DEVICE_TOEKN_KEY, deviceSN})
 }
@@ -128,7 +135,7 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 }
 
 //统计当前工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.ComData) uint8 {
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]ComDataTotal) uint8 {
 
 	deviceInfo := &DeviceTatolInfo{
 		UseEnergy:      0,
@@ -146,7 +153,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 			deviceInfo.UseEnergy += uint64(comData.UseEnergy)
 			deviceInfo.UseTime += uint64(comData.UseTime)
 			deviceInfo.CurElectricity += uint64(comData.CurElectricity)
-			maxPower += comData.MaxPower
+			//maxPower += comData.MaxPower
 			deviceInfo.EnableCount += 1
 		}
 	}
@@ -166,12 +173,12 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]mqtt.
 }
 
 //批量读端口数据
-func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
+func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]ComDataTotal {
 	var maxCom int = 10
 
 	conn := Redis().BatchStart()
 	defer Redis().BatchEnd(conn)
-	comList := make(map[uint8]mqtt.ComData)
+	comList := make(map[uint8]ComDataTotal)
 	for i := 0; i < maxCom; i++ {
 		Redis().BatchHGet(conn, GetComdDataKey(deviceSN), strconv.Itoa(i))
 	}
@@ -179,7 +186,7 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
 	pipe_list, _ := RedisValues(Redis().BatchExec(conn))
 	for _, v := range pipe_list {
 		comDataString, _ := RedisString(v, nil)
-		comData := mqtt.ComData{}
+		comData := ComDataTotal{}
 		err := json.Unmarshal([]byte(comDataString), &comData)
 		if err == nil {
 			comList[comData.Id] = comData
@@ -188,6 +195,31 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]mqtt.ComData {
 
 	return comList
 }
+
+//批量写端口数据
+func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData) *ComDataTotal ) {
+	if comList == nil {
+		return
+	}
+
+	conn := Redis().BatchStart()
+	defer Redis().BatchEnd(conn)
+
+	for _, comID := range comList.ComID {
+		var index uint8 = comID
+		if comList.ComNum <= 5 {
+			index = (comID % 5)
+		}
+		comData := (comList.ComPort[int(index)]).(mqtt.ComData)
+		comData.Id = comID
+
+		dataTotal := comOps(&comData)
+		Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), dataTotal)
+	}
+
+	Redis().BatchExec(conn)
+}
+
 
 //批量读设备Token
 func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8 {
@@ -215,28 +247,4 @@ func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8
 	}
 
 	return deviceList
-}
-
-//批量写端口数据
-func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData)) {
-	if comList == nil {
-		return
-	}
-
-	conn := Redis().BatchStart()
-	defer Redis().BatchEnd(conn)
-
-	for _, comID := range comList.ComID {
-		var index uint8 = comID
-		if comList.ComNum <= 5 {
-			index = (comID % 5)
-		}
-		comData := (comList.ComPort[int(index)]).(mqtt.ComData)
-		comData.Id = comID
-
-		comOps(&comData)
-		Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), comData)
-	}
-
-	Redis().BatchExec(conn)
 }

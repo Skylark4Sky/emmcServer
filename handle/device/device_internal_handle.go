@@ -6,10 +6,10 @@ import (
 	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
-	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/string"
 	. "GoServer/utils/time"
+	. "GoServer/utils/float64"
 	//	"encoding/json"
 	"time"
 )
@@ -64,6 +64,9 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.Data.(*mqtt.ComList)
 		comNum = comList.ComNum
+		//com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 2)
+		//com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 2)
+
 
 		//jsonString, err := json.Marshal(comList)
 
@@ -117,7 +120,7 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 }
 
 //比较数据
-func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]mqtt.ComData) {
+func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]ComDataTotal) {
 	//不存在缓存数据直接返回
 	if len(cacheData) <= 0 {
 		return
@@ -157,15 +160,28 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 
 			//批量写入数据
 			if len(cacherComData) > 1 {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {
-					cacherData := cacherComData[comData.Id]
-					comData.MaxPower = cacherData.MaxPower
-					if CmpPower(comData.CurPower, cacherData.MaxPower) == 1 {
-						comData.MaxPower = comData.CurPower
+				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
+
+					dataTotal := &ComDataTotal {
+						ComData: *comData,
+						CurPower:0,
+						AveragePower:0,
+						MaxPower:0,
 					}
+					dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
+					dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)
+					cacherData := cacherComData[comData.Id]
+					dataTotal.MaxPower = cacherData.MaxPower
+					if CmpPower(dataTotal.CurPower, cacherData.MaxPower) == 1 {
+						dataTotal.MaxPower = dataTotal.CurPower
+					}
+					return dataTotal
+
 				})
 			} else {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) {})
+				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
+					return nil
+				})
 			}
 
 			deviceStatus := &DeviceStatus{

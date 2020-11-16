@@ -129,9 +129,6 @@ type ComData struct {
 	ErrCode        uint8   `json:"errCode"`        //错误码
 	Enable         uint8   `json:"enable"`         //是否启用
 	Behavior       uint8   `json:"behavior"`       //最后状态行为
-	CurPower       float64 `json:"c_power"`        //当前端口使用功率
-	AveragePower   float64 `json:"a_power"`        //当前端口平均功率
-	MaxPower       float64 `json:"m_power"`        //当前端口最高使用功率
 }
 
 // 上报数据

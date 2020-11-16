@@ -1,7 +1,6 @@
 package mqttPacket
 
 import (
-	. "GoServer/utils/float64"
 	"bytes"
 )
 
@@ -154,8 +153,6 @@ func binaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			instance.EnableCount += com.Enable
 			break
 		}
-		com.CurPower = CalculateCurComPower(CUR_VOLTAGE, com.CurElectricity, 2)
-		com.AveragePower = CalculateCurAverageComPower(com.UseEnergy, com.UseTime, 2)
 		instance.ComPort[index] = com
 	}
 	return

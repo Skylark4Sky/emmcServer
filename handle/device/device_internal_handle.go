@@ -70,11 +70,40 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 			payloadData = string(jsonString)
 		}
 		break
-	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
+	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_STOP_CHARGE,mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN ,mqtt.GISUNLINK_UPDATE_FIRMWARE,mqtt.GISUNLINK_COM_UPDATE,mqtt.GISUNLINK_COM_NO_UPDATE: //开始,停止,完成,空载,故障,升级,参数刷新,没有刷新参数
 		comList := packet.Data.(*mqtt.ComList)
 		comNum = comList.ComNum
-		for _, comID := range comList.ComID {
-			comNum = comID
+		comPort := comList.ComPort
+		if jsonString, err := json.Marshal(comPort); err == nil {
+			payloadData = string(jsonString)
+		}
+		break
+	case mqtt.GISUNLINK_CHARGE_TASK:
+		comTaskStartTransfer := packet.Data.(*mqtt.ComTaskStartTransfer)
+		comNum = comTaskStartTransfer.ComID
+		if jsonString, err := json.Marshal(comTaskStartTransfer); err == nil {
+			payloadData = string(jsonString)
+		}
+		break
+	case mqtt.GISUNLINK_DEVIDE_STATUS:
+		comTaskStatusQueryTransfer := packet.Data.(*mqtt.ComTaskStatusQueryTransfer)
+		comNum = comTaskStatusQueryTransfer.ComID
+		if jsonString, err := json.Marshal(comTaskStatusQueryTransfer); err == nil {
+			payloadData = string(jsonString)
+		}
+		break
+	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
+		comTaskStopTransfer := packet.Data.(*mqtt.ComTaskStopTransfer)
+		comNum = comTaskStopTransfer.ComID
+		if jsonString, err := json.Marshal(comTaskStopTransfer); err == nil {
+			payloadData = string(jsonString)
+		}
+		break
+	case mqtt.GISUNLINK_SET_CONFIG:
+		deviceSetConfigTransfer := packet.Data.(*mqtt.DeviceSetConfigTransfer)
+		comNum = 0xFF
+		if jsonString, err := json.Marshal(deviceSetConfigTransfer); err == nil {
+			payloadData = string(jsonString)
 		}
 		break
 	}

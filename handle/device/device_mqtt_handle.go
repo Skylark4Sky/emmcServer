@@ -58,6 +58,7 @@ func (msg *MqMsg) ExecTask() error {
 			if ok && packet.Data != nil {
 				deviceSN := GetDeviceSN(msg.Topic, "/")
 				deviceID := Redis().GetDeviceIDFromRedis(deviceSN)
+				//SystemLog("deviceID----->", deviceID)
 				//保存包数据入库
 				saveDeviceTransferDataOps(msg.Broker, deviceSN, deviceID, packet)
 				//处理包数据

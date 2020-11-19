@@ -60,21 +60,15 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 //保存上报数据入库
 func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uint64, packet *mqtt.Packet) {
 	var comNum uint8 = 0
+	var payloadData string = ""
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行中,空闲中
 		comList := packet.Data.(*mqtt.ComList)
-		comPort := comList.ComPort
 		comNum = comList.ComNum
-
-		jsonString, err := json.Marshal(comPort)
-
-		SystemLog("DataJson src:", comPort)
-		if err != nil {
-			SystemLog("DataJson Error:", err)
-		} else {
-			SystemLog("DataJson:", string(jsonString))
+		comPort := comList.ComPort
+		if jsonString, err := json.Marshal(comPort); err == nil {
+			payloadData = string(jsonString)
 		}
-
 		break
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN: //开始,完成,空载,故障
 		comList := packet.Data.(*mqtt.ComList)
@@ -92,6 +86,7 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 		DeviceSn:     device_sn,
 		ComNum:       comNum,
 		TransferData: packet.Json.Data,
+		PayloadData:  payloadData,
 		Behavior:     packet.Json.Behavior,
 		ServerNode:   serverNode,
 		TransferTime: int64(packet.Json.Ctime),
@@ -112,6 +107,7 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 			}
 		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
 			{
+				SystemLog("deviceExpiredMsgOps: ", message)
 			}
 		}
 	}
@@ -145,11 +141,23 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 	}
 }
 
+func calculateComData(comData *mqtt.ComData) *ComDataTotal {
+	dataTotal := &ComDataTotal{
+		ComData:      *comData,
+		CurPower:     0,
+		AveragePower: 0,
+		MaxPower:     0,
+	}
+	dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
+	dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)
+	return dataTotal
+
+}
+
 func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
-
 			comList := packet.Data.(*mqtt.ComList)
 			//批量读当前所有接口
 			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
@@ -159,15 +167,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 			//批量写入数据
 			if len(cacherComData) > 1 {
 				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
-
-					dataTotal := &ComDataTotal{
-						ComData:      *comData,
-						CurPower:     0,
-						AveragePower: 0,
-						MaxPower:     0,
-					}
-					dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
-					dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)
+					dataTotal := calculateComData(comData)
 					cacherData := cacherComData[comData.Id]
 					dataTotal.MaxPower = cacherData.MaxPower
 					if CmpPower(dataTotal.CurPower, cacherData.MaxPower) == 1 {
@@ -178,7 +178,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 				})
 			} else {
 				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
-					return nil
+					return calculateComData(comData)
 				})
 			}
 

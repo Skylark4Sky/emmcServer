@@ -3,6 +3,7 @@ package redis
 import (
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
+	. "GoServer/utils/log"
 	. "GoServer/utils/string"
 	"encoding/json"
 	"strconv"
@@ -44,9 +45,9 @@ type DeviceStatus struct {
 
 type ComDataTotal struct {
 	mqtt.ComData
-	CurPower       float64 `json:"c_power"`        //当前端口使用功率
-	AveragePower   float64 `json:"a_power"`        //当前端口平均功率
-	MaxPower       float64 `json:"m_power"`        //当前端口最高使用功率
+	CurPower     float64 `json:"c_power"` //当前端口使用功率
+	AveragePower float64 `json:"a_power"` //当前端口平均功率
+	MaxPower     float64 `json:"m_power"` //当前端口最高使用功率
 }
 
 func GetDeviceTokenKey(deviceSN string) string {
@@ -197,7 +198,7 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]ComDataTotal {
 }
 
 //批量写端口数据
-func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData) *ComDataTotal ) {
+func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData) *ComDataTotal) {
 	if comList == nil {
 		return
 	}
@@ -214,12 +215,13 @@ func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comO
 		comData.Id = comID
 
 		dataTotal := comOps(&comData)
-		Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), dataTotal)
+		if err := Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), dataTotal); err != nil {
+			SystemLog("BatchWriteDeviceComDataToRedis err: ", err)
+		}
 	}
 
 	Redis().BatchExec(conn)
 }
-
 
 //批量读设备Token
 func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8 {

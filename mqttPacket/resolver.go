@@ -153,6 +153,7 @@ func binaryConversionToComList(binaryData []byte, behavior uint8) (instance *Com
 			instance.EnableCount += com.Enable
 			break
 		}
+		com.Id = instance.ComID[index]
 		instance.ComPort[index] = com
 	}
 	return

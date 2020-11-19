@@ -54,6 +54,7 @@ type DeviceTransferLog struct {
 	TransferAct  string `gorm:"column:transfer_act;type:varchar(32)" json:"transfer_act"`           // 传输行为
 	ComNum       uint8  `gorm:"column:com_num;type:tinyint(2) unsigned" json:"com_num"`             // 上报数据条数
 	TransferData string `gorm:"column:transfer_data;type:varchar(512)" json:"transfer_data"`        // 传输数据base64
+	PayloadData  string `gorm:"column:payload_data;type:varchar(2048)" json:"payload_data"`         // 对应数据
 	TransferTime int64  `gorm:"column:transfer_time;type:bigint(13) unsigned" json:"transfer_time"` // 传输时间
 	CreateTime   int64  `gorm:"column:create_time;type:bigint(13)" json:"create_time"`              // 建立时间
 }

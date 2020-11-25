@@ -24,7 +24,8 @@ const (
 )
 
 const (
-	shardingSize = 10
+	//批量修改设备状态分片
+	shardingSize = 20
 )
 
 const (
@@ -190,7 +191,6 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 			CurPageNum: request.PageNum,
 		},
 	}
-
 	return
 }
 
@@ -362,15 +362,17 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 	}
 
 	var resultList []ResultDeviceSNList
-	db := ExecSQL().Table("device_info")
+	db := ExecSQL().Debug().Table("device_info")
 	db = db.Select("id,device_sn")
-	db = db.Where("uid = ? AND status = ?", request.UserID, DEVICE_ONLINE)
+	db = db.Where("uid = ? AND status IN (?,?)", request.UserID, DEVICE_OFFLINE, DEVICE_ONLINE)
 	if err := db.Scan(&resultList).Error; err != nil {
 		SystemLog("syncDeviceStatusTaskFunc request: ", request, " Error: ", err)
 		return
 	}
 
 	totalDevices := len(resultList)
+
+	SystemLog("Beging update Device status total:", totalDevices)
 
 	if totalDevices > 1 {
 		var shardingNum int = 1
@@ -395,15 +397,23 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 
 			BatchReadDeviceTokenFromRedis(deviceMap)
 
+			deviceIDList := make([]uint64, 0)
+
 			for deviceID, _ := range deviceMap {
-				var deviceInfo = DeviceInfo{
-					ID: deviceID,
-				}
-				db := ExecSQL().Debug()
-				db.Model(&deviceInfo).Updates(map[string]interface{}{"status": DEVICE_OFFLINE})
+				deviceIDList = append(deviceIDList, deviceID)
 			}
 
-			SystemLog("deviceMap: ", deviceMap)
+			if len(deviceIDList) > 1 {
+				db := ExecSQL().Debug().Table("device_info")
+				db = db.Where("id IN (?)", deviceIDList)
+				db.Updates(map[string]interface{}{"status": DEVICE_OFFLINE})
+				//再次续租锁时间
+				err := task.Lock.Relet(int64(REDIS_LOCK_MINITIMEOUT))
+				if err != nil {
+					SystemLog("redis 锁续期 err: ", err)
+				}
+				SystemLog("redis 锁续期: ", REDIS_LOCK_MINITIMEOUT)
+			}
 		}
 	}
 }

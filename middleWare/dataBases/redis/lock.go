@@ -8,6 +8,7 @@ import (
 
 const (
 	REDIS_LOCK_DEFAULTIMEOUT = 10
+	REDIS_LOCK_MINITIMEOUT   = 5
 )
 
 type RedisLock struct {
@@ -37,6 +38,11 @@ func (lock *RedisLock) key() string {
 	return StringJoin([]interface{}{"redisLock:", lock.resource})
 }
 
+// 锁续期
+func (lock *RedisLock) Relet(expire int64) error {
+	return lock.conn.Expire(lock.token, expire)
+}
+
 func (lock *RedisLock) AddTimeout(ex_time int64) (ok bool, err error) {
 	ttl_time, err := redis.Int64(lock.conn.Do("TTL", lock.key()))
 	if err != nil {
@@ -58,7 +64,7 @@ func TryLock(resource string, token string, defaulTimeout int) (lock *RedisLock,
 	return TryLockWithTimeout(resource, token, defaulTimeout)
 }
 
-func TryLockWithTimeout( resource string, token string, timeout int) (lock *RedisLock, ok bool, err error) {
+func TryLockWithTimeout(resource string, token string, timeout int) (lock *RedisLock, ok bool, err error) {
 	lock = &RedisLock{resource, token, Redis(), timeout}
 
 	ok, err = lock.tryLock()

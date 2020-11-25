@@ -223,12 +223,13 @@ func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comO
 	Redis().BatchExec(conn)
 }
 
-//批量读设备Token
-func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8 {
-
+//批量读Token
+func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) ([]interface{}, []interface{}) {
 	conn := Redis().BatchStart()
 	defer Redis().BatchEnd(conn)
-	deviceList := make(map[uint64]uint8)
+
+	onLine := make([]interface{}, 0)
+	workInLine := make([]interface{}, 0)
 
 	for _, deviceSN := range deviceMap {
 		Redis().BatchGet(conn, GetDeviceTokenKey(deviceSN))
@@ -242,11 +243,17 @@ func BatchReadDeviceTokenFromRedis(deviceMap map[uint64]string) map[uint64]uint8
 		err := json.Unmarshal([]byte(statusValue), &status)
 		if err == nil {
 			if _, ok := deviceMap[status.ID]; ok {
-				deviceList[status.ID] = status.Behavior
+				switch status.Behavior {
+				case mqtt.GISUNLINK_CHARGE_LEISURE:
+					onLine = append(onLine, status)
+					break
+				case mqtt.GISUNLINK_CHARGEING:
+					workInLine = append(workInLine, status)
+					break
+				}
 				delete(deviceMap, status.ID)
 			}
 		}
 	}
-
-	return deviceList
+	return onLine, workInLine
 }

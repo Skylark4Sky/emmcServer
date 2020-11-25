@@ -25,7 +25,7 @@ const (
 
 const (
 	//批量修改设备状态分片
-	shardingSize = 20
+	SHARDING_SIZE = 20
 )
 
 const (
@@ -348,6 +348,37 @@ func (request *RequestListData) GetModuleConnectLogList() (interface{}, interfac
 	return respond, nil
 }
 
+func batchUpdatesDeviceStatus(entity interface{}, status int8) bool {
+	deviceIDList := make([]uint64, 0)
+	switch status {
+	case DEVICE_OFFLINE:
+		deviceMap := entity.(map[uint64]string)
+		for deviceID, _ := range deviceMap {
+			deviceIDList = append(deviceIDList, deviceID)
+		}
+		break
+	case DEVICE_ONLINE, DEVICE_WORKING:
+		deviceList := entity.([]interface{})
+		for _, status := range deviceList {
+			device := status.(DeviceStatus)
+			deviceIDList = append(deviceIDList, device.ID)
+		}
+		break
+	}
+
+	var deviceIDListCount int = len(deviceIDList)
+
+	if deviceIDListCount > 1 {
+		//SystemLog("status ----> ", status, " deviceIDListCount ", deviceIDListCount, " deviceIDList ", deviceIDList)
+		db := ExecSQL().Table("device_info")
+		db = db.Where("id IN (?)", deviceIDList)
+		db.Updates(map[string]interface{}{"status": status})
+		return true
+	}
+
+	return false
+}
+
 func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 	if task.Entity == nil {
 		task.Lock.Unlock()
@@ -362,7 +393,7 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 	}
 
 	var resultList []ResultDeviceSNList
-	db := ExecSQL().Debug().Table("device_info")
+	db := ExecSQL().Table("device_info")
 	db = db.Select("id,device_sn")
 	db = db.Where("uid = ? AND status IN (?,?)", request.UserID, DEVICE_OFFLINE, DEVICE_ONLINE)
 	if err := db.Scan(&resultList).Error; err != nil {
@@ -376,16 +407,16 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 
 	if totalDevices > 1 {
 		var shardingNum int = 1
-		if totalDevices > shardingSize {
-			shardingNum = int(math.Ceil(float64((totalDevices + (shardingSize - 1)) / shardingSize)))
+		if totalDevices > SHARDING_SIZE {
+			shardingNum = int(math.Ceil(float64((totalDevices + (SHARDING_SIZE - 1)) / SHARDING_SIZE)))
 		}
 
 		var i int
 		for i = 0; i < shardingNum; i++ {
-			var start int = i * shardingSize
-			var offset int = shardingSize
+			var start int = i * SHARDING_SIZE
+			var offset int = SHARDING_SIZE
 			if i == (shardingNum - 1) {
-				offset = (totalDevices - (i * shardingSize))
+				offset = (totalDevices - (i * SHARDING_SIZE))
 			}
 
 			var k int
@@ -395,18 +426,23 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 				deviceMap[device.ID] = device.DeviceSN
 			}
 
-			BatchReadDeviceTokenFromRedis(deviceMap)
+			onLine, workInLine := BatchReadDeviceTokenFromRedis(deviceMap)
 
-			deviceIDList := make([]uint64, 0)
+			var needReletTime uint8 = 0
 
-			for deviceID, _ := range deviceMap {
-				deviceIDList = append(deviceIDList, deviceID)
+			if batchUpdatesDeviceStatus(deviceMap, DEVICE_OFFLINE) {
+				needReletTime = (1 << 0)
 			}
 
-			if len(deviceIDList) > 1 {
-				db := ExecSQL().Debug().Table("device_info")
-				db = db.Where("id IN (?)", deviceIDList)
-				db.Updates(map[string]interface{}{"status": DEVICE_OFFLINE})
+			if batchUpdatesDeviceStatus(onLine, DEVICE_ONLINE) {
+				needReletTime = (1 << 1)
+			}
+
+			if batchUpdatesDeviceStatus(workInLine, DEVICE_WORKING) {
+				needReletTime = (1 << 2)
+			}
+
+			if needReletTime > 1 {
 				//再次续租锁时间
 				err := task.Lock.Relet(int64(REDIS_LOCK_MINITIMEOUT))
 				if err != nil {
@@ -414,6 +450,7 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 				}
 				SystemLog("redis 锁续期: ", REDIS_LOCK_MINITIMEOUT)
 			}
+
 		}
 	}
 }

@@ -70,7 +70,7 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 			payloadData = string(jsonString)
 		}
 		break
-	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_STOP_CHARGE,mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN ,mqtt.GISUNLINK_UPDATE_FIRMWARE,mqtt.GISUNLINK_COM_UPDATE,mqtt.GISUNLINK_COM_NO_UPDATE: //开始,停止,完成,空载,故障,升级,参数刷新,没有刷新参数
+	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_STOP_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN, mqtt.GISUNLINK_UPDATE_FIRMWARE, mqtt.GISUNLINK_COM_UPDATE, mqtt.GISUNLINK_COM_NO_UPDATE: //开始,停止,完成,空载,故障,升级,参数刷新,没有刷新参数
 		comList := packet.Data.(*mqtt.ComList)
 		comNum = comList.ComNum
 		comPort := comList.ComPort
@@ -163,8 +163,10 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 			if (comData.CurElectricity >= 50) && (comData.CurElectricity != cacherData.CurElectricity) {
 				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
 			}
+			if comData.Token != cacherData.Token {
+				SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacherData.Token)
+			}
 		} else {
-
 			//comData.MaxPower
 		}
 	}

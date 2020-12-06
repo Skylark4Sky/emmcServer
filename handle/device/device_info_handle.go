@@ -250,7 +250,7 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 	default:
 		if keyValue, ok := condMap[key]; ok {
 			switch key {
-			case ACCESS_WAY_KEY:
+			case ACCESS_WAY_KEY, BEHAVIOR_KEY:
 				if keyValue != "0" && keyValue != "" {
 					cond := StringJoin([]interface{}{" ", key, " = ?"})
 					dbEntity = dbEntity.Where(cond, keyValue)
@@ -390,12 +390,14 @@ func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
 	type ResultDeviceSNList struct {
 		ID       uint64
 		DeviceSN string
+		Status   int8
 	}
 
 	var resultList []ResultDeviceSNList
 	db := ExecSQL().Table("device_info")
-	db = db.Select("id,device_sn")
+	db = db.Select("id,device_sn,status")
 	db = db.Where("uid = ? AND status IN (?,?)", request.UserID, DEVICE_OFFLINE, DEVICE_ONLINE)
+	//db = db.Where("uid = ?", request.UserID)
 	if err := db.Scan(&resultList).Error; err != nil {
 		SystemLog("syncDeviceStatusTaskFunc request: ", request, " Error: ", err)
 		return

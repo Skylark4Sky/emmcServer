@@ -163,11 +163,11 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 			if (comData.CurElectricity >= 50) && (comData.CurElectricity != cacherData.CurElectricity) {
 				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
 			}
-			if comData.Token != cacherData.Token {
-				SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacherData.Token)
-			}
 		} else {
 			//comData.MaxPower
+		}
+		if comData.Token != cacherData.Token {
+			SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacherData.Token)
 		}
 	}
 }
@@ -185,6 +185,7 @@ func calculateComData(comData *mqtt.ComData) *ComDataTotal {
 
 }
 
+//上报数据处理
 func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
 	switch packet.Json.Behavior {
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
@@ -201,7 +202,8 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 					dataTotal := calculateComData(comData)
 					cacherData := cacherComData[comData.Id]
 					dataTotal.MaxPower = cacherData.MaxPower
-					if CmpPower(dataTotal.CurPower, cacherData.MaxPower) == 1 {
+					if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
+						SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
 						dataTotal.MaxPower = dataTotal.CurPower
 					}
 					return dataTotal

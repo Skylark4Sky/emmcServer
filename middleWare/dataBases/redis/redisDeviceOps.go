@@ -154,7 +154,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]ComDa
 			deviceInfo.UseEnergy += uint64(comData.UseEnergy)
 			deviceInfo.UseTime += uint64(comData.UseTime)
 			deviceInfo.CurElectricity += uint64(comData.CurElectricity)
-			//maxPower += comData.MaxPower
+			maxPower += comData.MaxPower
 			deviceInfo.EnableCount += 1
 		}
 	}

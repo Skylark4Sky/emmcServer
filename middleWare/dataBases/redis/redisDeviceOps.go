@@ -105,12 +105,12 @@ func (c *Cacher) GetDeviceStatusFromRedis(deviceSN string) int {
 
 //设置设备状态
 func (c *Cacher) SetDeviceStatusToRedis(deviceSN string, status int) {
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD, status)
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, status)
 }
 
 //设置设备同步时间
 func (c *Cacher) SetDeviceSyncTimeToRedis(deviceSN string, syncTime int64) {
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, syncTime)
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD , syncTime)
 }
 
 //取设备同步时间

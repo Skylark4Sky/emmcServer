@@ -21,6 +21,7 @@ const (
 	REDIS_INFO_DEVICE_DATA_TOTAL_FIELD = "total"
 	REDIS_INFO_DEVICE_STATUS_FIELD     = "status"
 	REDIS_INFO_DEVICE_WORKER_FIELD     = "worker"
+	REDIS_INFO_SYNC_UPDATE_FIELD 	   = "syncTime" //同步数据到Mysql
 	REDIS_INFO_RAW_DATA_FIELD          = "rawData"
 	REDIS_INFO_USER_ID_FIELD           = "userID"
 )
@@ -104,7 +105,21 @@ func (c *Cacher) GetDeviceStatusFromRedis(deviceSN string) int {
 
 //设置设备状态
 func (c *Cacher) SetDeviceStatusToRedis(deviceSN string, status int) {
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, status)
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD, status)
+}
+
+//设置设备同步时间
+func (c *Cacher) SetDeviceSyncTimeToRedis(deviceSN string, syncTime int64) {
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, syncTime)
+}
+
+//取设备同步时间
+func (c *Cacher) GetDeviceSyncTimeFromRedis(deviceSN string) int64 {
+	time, err := c.HGetInt64(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD)
+	if err != nil {
+		return 0
+	}
+	return time
 }
 
 //取设备ID

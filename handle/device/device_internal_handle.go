@@ -15,6 +15,10 @@ import (
 )
 
 const (
+	SYNC_UPDATE_TIME 				= 300000 //5*60*1000 5分钟同步一次
+)
+
+const (
 	UPDATE_DEVICE_STATUS            = 0x02
 	UPDATE_DEVICE_WORKER            = 0x04
 	UPDATE_DEVICE_STATUS_AND_WORKER = 0x06
@@ -23,7 +27,7 @@ const (
 func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, status int8, worker int8) {
 	if deviceID != 0 {
 		device := &DeviceInfo{}
-		device.ID = Redis().GetDeviceIDFromRedis(device_sn)
+		device.ID = deviceID
 
 		var deviceUpdateMap = make(map[string]interface{})
 
@@ -131,7 +135,6 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 		case GetDeviceTokenKey(deviceSN): //这里处理过期key
 			{
 				SystemLog("deviceExpiredMsgOps: ", deviceSN, " DEVICE_OFFLINE")
-				deviceID := Redis().GetDeviceIDFromRedis(deviceSN)
 				changeDeviceStatus(deviceSN, deviceID, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
 			}
 		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
@@ -185,6 +188,51 @@ func calculateComData(comData *mqtt.ComData) *ComDataTotal {
 
 }
 
+func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceStatus) {
+	var timeout int64 = CHARGEING_TIME
+	if deviceStatus.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
+		timeout = LEISURE_TIME
+	}
+
+	status := Redis().GetDeviceStatusFromRedis(deviceSN)
+	worker := Redis().GetDeviceWorkerFormRedis(deviceSN)
+	syncTime := Redis().GetDeviceSyncTimeFromRedis(deviceSN)
+
+	var updateFlags uint8 = 0
+	var workerStatus int8 = DEVICE_WORKING
+
+	switch deviceStatus.Behavior {
+	case mqtt.GISUNLINK_CHARGEING:
+		{
+			if status != int(DEVICE_WORKING) {
+				updateFlags |= UPDATE_DEVICE_STATUS
+				workerStatus = DEVICE_WORKING
+			}
+		}
+	case mqtt.GISUNLINK_CHARGE_LEISURE:
+		{
+			if status != int(DEVICE_ONLINE) {
+				updateFlags |= UPDATE_DEVICE_STATUS
+				workerStatus = DEVICE_ONLINE
+			}
+		}
+	}
+
+	if uint8(worker) != deviceStatus.Worker {
+		updateFlags |= UPDATE_DEVICE_WORKER
+	}
+
+	curTimeMS := GetTimestampMs()
+	if (syncTime <= 0 || (curTimeMS - syncTime) >= SYNC_UPDATE_TIME) {
+		Redis().SetDeviceSyncTimeToRedis(deviceSN,curTimeMS)
+	}
+
+	//更新状态
+	changeDeviceStatus(deviceSN, deviceID, updateFlags, workerStatus, int8(deviceStatus.Worker))
+	//更新令牌时间
+	Redis().UpdateDeviceTokenExpiredTime(deviceSN, deviceStatus, timeout)
+}
+
 //上报数据处理
 func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
 	switch packet.Json.Behavior {
@@ -215,7 +263,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 				})
 			}
 
-			deviceStatus := &DeviceStatus{
+			deviceStatus := &DeviceStatus {
 				Behavior:     comList.ComBehavior,
 				Signal:       int8(comList.Signal),
 				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
@@ -223,43 +271,8 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 				ProtoVersion: comList.ComProtoVer,
 			}
 
-			var timeout int64 = CHARGEING_TIME
-			if packet.Json.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
-				timeout = LEISURE_TIME
-			}
-
-			status := Redis().GetDeviceStatusFromRedis(cacheKey)
-			worker := Redis().GetDeviceWorkerFormRedis(cacheKey)
-
-			var updateFlags uint8 = 0
-			var workerStatus int8 = DEVICE_WORKING
-
-			switch deviceStatus.Behavior {
-			case mqtt.GISUNLINK_CHARGEING:
-				{
-					if status != int(DEVICE_WORKING) {
-						updateFlags |= UPDATE_DEVICE_STATUS
-						workerStatus = DEVICE_WORKING
-					}
-				}
-			case mqtt.GISUNLINK_CHARGE_LEISURE:
-				{
-					if status != int(DEVICE_ONLINE) {
-						updateFlags |= UPDATE_DEVICE_STATUS
-						workerStatus = DEVICE_ONLINE
-					}
-				}
-			}
-
-			if uint8(worker) != deviceStatus.Worker {
-				updateFlags |= UPDATE_DEVICE_WORKER
-			}
-
-			//更新状态
-			changeDeviceStatus(cacheKey, deviceID, updateFlags, workerStatus, int8(deviceStatus.Worker))
-
-			//更新令牌时间
-			Redis().UpdateDeviceTokenExpiredTime(cacheKey, deviceStatus, timeout)
+			//刷新设备状态
+			refreshDeviceStatus(cacheKey,deviceID,deviceStatus)
 		}
 	}
 }

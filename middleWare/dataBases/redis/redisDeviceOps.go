@@ -44,11 +44,13 @@ type DeviceStatus struct {
 	ProtoVersion uint16 `json:"protoVersion"`
 }
 
+//端口数据缓存统计
 type ComDataTotal struct {
 	mqtt.ComData
-	CurPower     float64 `json:"c_power"` //当前端口使用功率
-	AveragePower float64 `json:"a_power"` //当前端口平均功率
-	MaxPower     float64 `json:"m_power"` //当前端口最高使用功率
+	MaxChargeElectricity uint32 `json:"maxChargeElectricity"` //最大电流
+	CurPower     		 float64 `json:"c_power"` //当前端口使用功率
+	AveragePower         float64 `json:"a_power"` //当前端口平均功率
+	MaxPower     		 float64 `json:"m_power"` //当前端口最高使用功率
 }
 
 func GetDeviceTokenKey(deviceSN string) string {

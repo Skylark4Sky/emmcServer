@@ -177,10 +177,11 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 
 func calculateComData(comData *mqtt.ComData) *ComDataTotal {
 	dataTotal := &ComDataTotal{
-		ComData:      *comData,
-		CurPower:     0,
-		AveragePower: 0,
-		MaxPower:     0,
+		ComData:      			*comData,
+		MaxChargeElectricity: 	comData.CurElectricity,
+		CurPower:     			0,
+		AveragePower: 			0,
+		MaxPower:     			0,
 	}
 	dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
 	dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)
@@ -239,8 +240,9 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		{
 			comList := packet.Data.(*mqtt.ComList)
-			//批量读当前所有接口
+			//批量读当前设备所有接口
 			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
+
 			//对比新旧数据
 			analyseComData(cacheKey, comList, cacherComData)
 
@@ -254,8 +256,11 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 						SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
 						dataTotal.MaxPower = dataTotal.CurPower
 					}
-					return dataTotal
 
+					if (comData.CurElectricity > cacherData.MaxChargeElectricity) {
+						dataTotal.MaxChargeElectricity = comData.CurElectricity
+					}
+					return dataTotal
 				})
 			} else {
 				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {

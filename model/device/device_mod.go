@@ -44,6 +44,23 @@ type DeviceInfo struct {
 	UpdateTime    int64  `gorm:"column:update_time;type:bigint(13) unsigned" json:"update_time"`    // 更新时间
 }
 
+type DeviceCom struct {
+	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned zerofill;not null" json:"-"`
+	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned zerofill;not null" json:"device_id"`               // 设备ID
+	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned zerofill;not null" json:"charge_id"`               // 充电ID
+	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned zerofill;not null" json:"com_id"`                     // 端口
+	MaxEnergy            int     `gorm:"column:max_energy;type:int(10) unsigned zerofill" json:"max_energy"`                         // 最大使用电量
+	MaxTime              int     `gorm:"column:max_time;type:int(10)" json:"max_time"`                                               // 最大使用时间
+	MaxElectricity       uint32  `gorm:"column:max_electricity;type:int(10) unsigned zerofill" json:"max_electricity"`               // 最大使用电流
+	UseEnergy            uint32  `gorm:"column:use_energy;type:int(10) unsigned zerofill" json:"use_energy"`                         // 已冲电量
+	UseTime              int     `gorm:"column:use_time;type:int(10) unsigned zerofill" json:"use_time"`                             // 已冲时间
+	MaxChargeElectricity int     `gorm:"column:max_charge_electricity;type:int(10) unsigned zerofill" json:"max_charge_electricity"` // 最大充电电流
+	AveragePower         float64 `gorm:"column:average_power;type:decimal(10,0) unsigned zerofill" json:"average_power"`             // 平均功率
+	MaxPower             float64 `gorm:"column:max_power;type:decimal(10,0) unsigned zerofill" json:"max_power"`                     // 最大功率
+	CreateTime           uint64  `gorm:"column:create_time;type:bigint(13) unsigned zerofill" json:"create_time"`                    // 创建时间
+	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned zerofill" json:"end_time"`                          // 结束时间
+}
+
 type DeviceTransferLog struct {
 	ID           uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"module_id`
 	DeviceID     uint64 `gorm:"column:device_id;type:bigint(20) unsigned" json:"device_id"`         // 设备ID

@@ -145,6 +145,18 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 	}
 }
 
+//构建缓存数据实体
+func calculateComData(comData *mqtt.ComData) *ComDataTotal {
+	dataTotal := &ComDataTotal{
+		ComData:      			*comData,
+		MaxChargeElectricity: 	comData.CurElectricity,
+		CurPower:     			0,
+		AveragePower: 			0,
+		MaxPower:     			0,
+	}
+	return dataTotal
+}
+
 //比较数据
 func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]ComDataTotal) {
 	//不存在缓存数据直接返回
@@ -161,7 +173,7 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 		comData.Id = comID
 		cacherData := cacheData[comData.Id]
 		//未开启时，检测值是否有变化
-		if comData.Enable == 0 {
+		if comData.Enable == COM_DISENABLE {
 			//大于50ma保存异常数值
 			if (comData.CurElectricity >= 50) && (comData.CurElectricity != cacherData.CurElectricity) {
 				SystemLog(" Time:", TimeFormat(time.Now()), " ", tokenKey, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacherData.CurElectricity)
@@ -175,20 +187,7 @@ func analyseComData(tokenKey string, newData *mqtt.ComList, cacheData map[uint8]
 	}
 }
 
-func calculateComData(comData *mqtt.ComData) *ComDataTotal {
-	dataTotal := &ComDataTotal{
-		ComData:      			*comData,
-		MaxChargeElectricity: 	comData.CurElectricity,
-		CurPower:     			0,
-		AveragePower: 			0,
-		MaxPower:     			0,
-	}
-	dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)
-	dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2)
-	return dataTotal
-
-}
-
+//状态刷新
 func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceStatus) {
 	var timeout int64 = CHARGEING_TIME
 	if deviceStatus.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
@@ -237,7 +236,7 @@ func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceS
 //上报数据处理
 func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
 	switch packet.Json.Behavior {
-	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
+	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行状态 以及 空闲状态值运算
 		{
 			comList := packet.Data.(*mqtt.ComList)
 			//批量读当前设备所有接口
@@ -251,14 +250,20 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
 					dataTotal := calculateComData(comData)
 					cacherData := cacherComData[comData.Id]
-					dataTotal.MaxPower = cacherData.MaxPower
-					if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
-						SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
-						dataTotal.MaxPower = dataTotal.CurPower
-					}
-
-					if (comData.CurElectricity > cacherData.MaxChargeElectricity) {
-						dataTotal.MaxChargeElectricity = comData.CurElectricity
+					//端口启用状态
+					if (comData.Enable == COM_ENABLE) {
+						// 数值计算
+						dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2) //当前功率
+						dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2) //平均功率
+						dataTotal.MaxPower = cacherData.MaxPower //最大功率
+						if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
+							SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
+							dataTotal.MaxPower = dataTotal.CurPower
+						}
+						// 最大电流记录
+						if (comData.CurElectricity > cacherData.MaxChargeElectricity) {
+							dataTotal.MaxChargeElectricity = comData.CurElectricity
+						}
 					}
 					return dataTotal
 				})
@@ -268,16 +273,14 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 				})
 			}
 
-			deviceStatus := &DeviceStatus {
+			//刷新设备状态
+			refreshDeviceStatus(cacheKey,deviceID,&DeviceStatus {
 				Behavior:     comList.ComBehavior,
 				Signal:       int8(comList.Signal),
 				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
 				ID:           deviceID,
 				ProtoVersion: comList.ComProtoVer,
-			}
-
-			//刷新设备状态
-			refreshDeviceStatus(cacheKey,deviceID,deviceStatus)
+			})
 		}
 	}
 }

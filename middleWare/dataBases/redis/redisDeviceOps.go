@@ -15,6 +15,11 @@ const (
 	REDIS_DEVICE_INFO_KEY  = "info:"
 )
 
+const (
+	COM_ENABLE uint8 = 1
+	COM_DISENABLE uint8 = 0
+)
+
 //info
 const (
 	REDIS_INFO_DEVICE_ID_FIELD         = "id"
@@ -167,7 +172,7 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]ComDa
 
 	var maxPower float64 = 0
 	for _, comData := range comDataMap {
-		if comData.Enable == 1 {
+		if comData.Enable == COM_ENABLE {
 			deviceInfo.UseEnergy += uint64(comData.UseEnergy)
 			deviceInfo.UseTime += uint64(comData.UseTime)
 			deviceInfo.CurElectricity += uint64(comData.CurElectricity)

@@ -255,7 +255,8 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uin
 						// 数值计算
 						dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2) //当前功率
 						dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2) //平均功率
-						dataTotal.MaxPower = cacherData.MaxPower //最大功率
+						//dataTotal.MaxPower = cacherData.MaxPower
+						//最大功率
 						if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
 							SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
 							dataTotal.MaxPower = dataTotal.CurPower

@@ -11,6 +11,12 @@ const (
 	BLUETOOTH
 )
 
+const (
+	COM_CHARGE_START_BIT = 0 // 0 下发 1 设备已执行
+	COM_CHARGE_STOP_BIT  = 1 // 0 下发 1 设备已执行
+	COM_CHARGE_ERROR_BIT = 2 // 0 正常 1 充电出错
+)
+
 type ModuleConnectLog struct {
 	ID         uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"`
 	ModuleID   uint64 `gorm:"column:module_id;type:bigint(20) unsigned" json:"module_id"`     // 模组id
@@ -49,15 +55,16 @@ type DeviceCom struct {
 	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned zerofill;not null" json:"device_id"`               // 设备ID
 	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned zerofill;not null" json:"charge_id"`               // 充电ID
 	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned zerofill;not null" json:"com_id"`                     // 端口
-	MaxEnergy            int     `gorm:"column:max_energy;type:int(10) unsigned zerofill" json:"max_energy"`                         // 最大使用电量
-	MaxTime              int     `gorm:"column:max_time;type:int(10)" json:"max_time"`                                               // 最大使用时间
+	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned zerofill" json:"max_energy"`                         // 最大使用电量
+	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                               // 最大使用时间
 	MaxElectricity       uint32  `gorm:"column:max_electricity;type:int(10) unsigned zerofill" json:"max_electricity"`               // 最大使用电流
 	UseEnergy            uint32  `gorm:"column:use_energy;type:int(10) unsigned zerofill" json:"use_energy"`                         // 已冲电量
-	UseTime              int     `gorm:"column:use_time;type:int(10) unsigned zerofill" json:"use_time"`                             // 已冲时间
-	MaxChargeElectricity int     `gorm:"column:max_charge_electricity;type:int(10) unsigned zerofill" json:"max_charge_electricity"` // 最大充电电流
+	UseTime              uint32  `gorm:"column:use_time;type:int(10) unsigned zerofill" json:"use_time"`                             // 已冲时间
+	MaxChargeElectricity uint32  `gorm:"column:max_charge_electricity;type:int(10) unsigned zerofill" json:"max_charge_electricity"` // 最大充电电流
 	AveragePower         float64 `gorm:"column:average_power;type:decimal(10,0) unsigned zerofill" json:"average_power"`             // 平均功率
 	MaxPower             float64 `gorm:"column:max_power;type:decimal(10,0) unsigned zerofill" json:"max_power"`                     // 最大功率
-	CreateTime           uint64  `gorm:"column:create_time;type:bigint(13) unsigned zerofill" json:"create_time"`                    // 创建时间
+	State                uint32  `gorm:"column:state;type:int(10) unsigned zerofill;not null" json:"state"`                          // 状态
+	CreateTime           int64   `gorm:"column:create_time;type:bigint(13) unsigned zerofill" json:"create_time"`                    // 创建时间
 	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned zerofill" json:"end_time"`                          // 结束时间
 }
 
@@ -128,3 +135,24 @@ func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_
 	transfer.TransferTime = transferTime
 	transfer.CreateTime = GetTimestampMs()
 }
+
+func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8, maxEnergy, maxTime, maxElectricity uint32) {
+	com.DeviceID = deviceID
+	com.ChargeID = chargeID
+	com.ComID = comID
+	com.MaxEnergy = maxEnergy
+	com.MaxTime = maxTime
+	com.MaxElectricity = maxElectricity
+	com.State = (0 << COM_CHARGE_START_BIT);
+	com.CreateTime = GetTimestampMs()
+}
+
+func (com *DeviceCom) ChangeValue(useEnergy, useTime, maxChargeElectricity uint32, averagePower, maxPower float64) {
+	com.UseEnergy = useEnergy
+	com.UseTime = useTime
+	com.MaxChargeElectricity = maxChargeElectricity
+	com.AveragePower = averagePower
+	com.MaxPower = maxPower
+}
+
+

@@ -31,6 +31,7 @@ const (
 	REDIS_INFO_USER_ID_FIELD           = "userID"
 )
 
+//整机数据统计
 type DeviceTatolInfo struct {
 	UseEnergy      uint64 `json:"energy"`
 	UseTime        uint64 `json:"time"`
@@ -157,7 +158,7 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_DATA_TOTAL_FIELD, infoData)
 }
 
-//统计当前工作端口数量
+//统计整机数据
 func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]CacheComData) uint8 {
 
 	deviceInfo := &DeviceTatolInfo{

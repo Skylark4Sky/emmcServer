@@ -55,10 +55,8 @@ func analyseComListData(deviceSN string, comList *mqtt.ComList, cacheComList map
 func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
 	//批量读当前设备所有接口
 	cacheComList := BatchReadDeviceComDataiFromRedis(deviceSN)
-
 	//数据分析
 	analyseComListData(deviceSN, comList, cacheComList)
-
 	//批量写入数据到缓存 并 统计 功率
 	if len(cacheComList) > 1 {
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
@@ -104,12 +102,20 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uin
 		{
 			deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
 		}
-	//开始记录该项订单记录
+	case mqtt.GISUNLINK_CHARGE_TASK: //建立订单记录
+		{
+			createComChargeTask(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
+		}
+	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
+		{
+			exitComChargeTask(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID)
+		}
+	//设备上报状态 开始记录该项订单记录
 	case mqtt.GISUNLINK_START_CHARGE:
 		{
 			SystemLog("CMD: GISUNLINK_START_CHARGE ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
 		}
-	//以下值均会触发停止订单行为
+	//设备上报状态 以下值均会触发停止订单行为
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD,mqtt.GISUNLINK_CHARGE_FINISH,mqtt.GISUNLINK_STOP_CHARGE,mqtt.GISUNLINK_CHARGE_BREAKDOWN:
 		{
 			SystemLog("CMD: GISUNLINK_CHARGE_FINISH ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)

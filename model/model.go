@@ -31,6 +31,7 @@ const (
 	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录 14
 	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录 15
 	ASYNC_UPDATE_DEVICE_STATUS                      //更新设备状态 16
+	ASYNC_CREATE_COM_CHARGE_TASK					//建立充电记录
 )
 
 type TaskFunc func(task  *AsyncSQLTask)
@@ -254,11 +255,9 @@ func (task *AsyncSQLTask) ExecTask() error {
 	case ASYNC_CREATE_THIRD_USER:
 		entity := task.Entity.(user.CreateUserInfo)
 		transactionCreateUserInfo(&entity, true)
-		break
 	case ASYNC_CREATE_NORMAL_USER:
 		entity := task.Entity.(user.CreateUserInfo)
 		transactionCreateUserInfo(&entity, false)
-		break
 	case ASYNC_UP_USER_AUTH_TIME, ASYNC_UP_DEVICE_INFO, ASYNC_UP_MODULE_INFO:
 		if err := ExecSQL().Model(task.Entity).Updates(task.MapParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
@@ -267,29 +266,29 @@ func (task *AsyncSQLTask) ExecTask() error {
 			entity := task.Entity.(*device.DeviceInfo)
 			updateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
 		}
-		break
 	case ASYNC_DEV_AND_MODULE_CREATE:
 		entity := task.Entity.(device.CreateDeviceInfo)
 		transactionCreateDevInfo(&entity)
-		break
 	case ASYNC_UPDATA_WEUSER_LOCAL, ASYNC_UPDATA_WEUSER_INFO, ASYNC_UPDATA_USER_EXTRA:
 		if err := ExecSQL().Model(task.Entity).Where(task.WhereSQL, task.RecordID).Updates(task.Entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 			SystemLog("Update ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
-		break
 	case ASYNC_USER_LOGIN_LOG, ASYNC_CREATE_USER_REGISTER_LOG, ASYNC_MODULE_CONNECT_LOG,
 		ASYNC_CREATE_USER_AUTH, ASYNC_CREATE_USER_EXTRA, ASYNC_CREATE_USER_LOCATION:
 		if err := ExecSQL().Create(task.Entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
-		break
 	case ASYNC_UPDATE_DEVICE_STATUS:
 		if(task.Func != nil) {
 			task.Func(task)
 		}
-		break
+	case ASYNC_CREATE_COM_CHARGE_TASK:
+		if err := ExecSQL().Create(task.Entity).Error; err != nil {
+			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
+			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
+		}
 	}
 	return nil
 }

@@ -265,14 +265,27 @@ func findComChargeTaskRecord(entity *device.DeviceCom) (bool,error) {
 }
 
 func createComChargeTaskRecord(entity *device.DeviceCom) error {
-	hasRecord,err := findComChargeTaskRecord(entity)
+
+	taskRecord := &device.DeviceCom {
+		DeviceID: entity.DeviceID,
+		ChargeID: entity.ChargeID,
+		ComID: entity.ComID,
+	}
+
+	hasRecord,err := findComChargeTaskRecord(taskRecord)
 	if (err != nil) {
 		return err
 	}
 
 	//存在记录
 	if hasRecord {
-		SystemLog("存在记录:", entity)
+		taskRecord.MaxEnergy = entity.MaxEnergy
+		taskRecord.MaxTime = entity.MaxTime
+		taskRecord.MaxElectricity = entity.MaxElectricity
+		if err := ExecSQL().Update(taskRecord).Error; err != nil {
+			structTpey := reflect.Indirect(reflect.ValueOf(taskRecord)).Type()
+			SystemLog("Updatte ", structTpey, " Error ", zap.Any("SQL", taskRecord), zap.Error(err))
+		}
 	} else { //不存在记录
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()

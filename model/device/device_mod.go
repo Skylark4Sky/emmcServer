@@ -51,21 +51,21 @@ type DeviceInfo struct {
 }
 
 type DeviceCom struct {
-	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned zerofill;not null" json:"-"`
-	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned zerofill;not null" json:"device_id"`               // 设备ID
-	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned zerofill;not null" json:"charge_id"`               // 充电ID
-	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned zerofill;not null" json:"com_id"`                     // 端口
-	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned zerofill" json:"max_energy"`                         // 最大使用电量
+	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned ;not null" json:"-"`
+	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned ;not null" json:"device_id"`               // 设备ID
+	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned ;not null" json:"charge_id"`               // 充电ID
+	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned ;not null" json:"com_id"`                     // 端口
+	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned " json:"max_energy"`                         // 最大使用电量
 	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                               // 最大使用时间
-	MaxElectricity       uint32  `gorm:"column:max_electricity;type:int(10) unsigned zerofill" json:"max_electricity"`               // 最大使用电流
-	UseEnergy            uint32  `gorm:"column:use_energy;type:int(10) unsigned zerofill" json:"use_energy"`                         // 已冲电量
-	UseTime              uint32  `gorm:"column:use_time;type:int(10) unsigned zerofill" json:"use_time"`                             // 已冲时间
-	MaxChargeElectricity uint32  `gorm:"column:max_charge_electricity;type:int(10) unsigned zerofill" json:"max_charge_electricity"` // 最大充电电流
-	AveragePower         float64 `gorm:"column:average_power;type:decimal(10,0) unsigned zerofill" json:"average_power"`             // 平均功率
-	MaxPower             float64 `gorm:"column:max_power;type:decimal(10,0) unsigned zerofill" json:"max_power"`                     // 最大功率
-	State                uint32  `gorm:"column:state;type:int(10) unsigned zerofill;not null" json:"state"`                          // 状态
-	CreateTime           int64   `gorm:"column:create_time;type:bigint(13) unsigned zerofill" json:"create_time"`                    // 创建时间
-	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned zerofill" json:"end_time"`                          // 结束时间
+	MaxElectricity       uint32  `gorm:"column:max_electricity;type:int(10) unsigned " json:"max_electricity"`               // 最大使用电流
+	UseEnergy            uint32  `gorm:"column:use_energy;type:int(10) unsigned " json:"use_energy"`                         // 已冲电量
+	UseTime              uint32  `gorm:"column:use_time;type:int(10) unsigned " json:"use_time"`                             // 已冲时间
+	MaxChargeElectricity uint32  `gorm:"column:max_charge_electricity;type:int(10) unsigned " json:"max_charge_electricity"` // 最大充电电流
+	AveragePower         float64 `gorm:"column:average_power;type:decimal(10,0) unsigned " json:"average_power"`             // 平均功率
+	MaxPower             float64 `gorm:"column:max_power;type:decimal(10,0) unsigned " json:"max_power"`                     // 最大功率
+	State                uint32  `gorm:"column:state;type:int(10) unsigned ;not null" json:"state"`                          // 状态
+	CreateTime           int64   `gorm:"column:create_time;type:bigint(13) unsigned " json:"create_time"`                    // 创建时间
+	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned " json:"end_time"`                          // 结束时间
 }
 
 type DeviceTransferLog struct {

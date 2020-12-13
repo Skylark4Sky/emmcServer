@@ -45,6 +45,24 @@ func SetMqttClient(brokerHost string, handle interface{}) {
 	}
 }
 
+
+func deviceExpiredMsgOps(pattern, channel, message string) {
+	deviceSN := GetDeviceSN(message, ":")
+	if deviceID := Redis().GetDeviceIDFromRedis(deviceSN); deviceID != 0 {
+		switch message {
+		case GetDeviceTokenKey(deviceSN): //这里处理过期key
+			{
+				SystemLog("deviceExpiredMsgOps: ", deviceSN, " DEVICE_OFFLINE")
+				changeDeviceStatus(deviceSN, deviceID, UPDATE_DEVICE_STATUS, DEVICE_OFFLINE, 0)
+			}
+		case GetComdDataKey(deviceSN), GetDeviceInfoKey(deviceSN):
+			{
+				SystemLog("deviceExpiredMsgOps: ", message)
+			}
+		}
+	}
+}
+
 func (expired *ExpiredMsg) ExecTask() error {
 	deviceExpiredMsgOps(expired.Pattern, expired.Chann, expired.Message)
 	return nil

@@ -32,6 +32,7 @@ const (
 	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录 15
 	ASYNC_UPDATE_DEVICE_STATUS                      //更新设备状态 16
 	ASYNC_CREATE_COM_CHARGE_TASK					//建立充电记录
+	ASYNC_CREATE_COM_CHARGE_TASK_ACK				//设备上报开始充电
 )
 
 type TaskFunc func(task  *AsyncSQLTask)
@@ -264,7 +265,7 @@ func findComChargeTaskRecord(entity *device.DeviceCom) (bool,error) {
 	return hasRecord,nil
 }
 
-func createComChargeTaskRecord(entity *device.DeviceCom) error {
+func createComChargeTaskRecord(entity *device.DeviceCom, isAck bool) error {
 
 	taskRecord := &device.DeviceCom {
 		DeviceID: entity.DeviceID,
@@ -279,11 +280,17 @@ func createComChargeTaskRecord(entity *device.DeviceCom) error {
 
 	//存在记录
 	if hasRecord {
-		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy,"max_time":entity.MaxTime,"max_electricity": entity.MaxElectricity}
+		if (isAck) {
+			entity.State |= (1 << 0)
+		}
+		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy,"max_time":entity.MaxTime,"max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
+		if (isAck) {
+			entity.State |= (1 << 0)
+		}
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))
@@ -293,6 +300,11 @@ func createComChargeTaskRecord(entity *device.DeviceCom) error {
 }
 
 func (task *AsyncSQLTask) ExecTask() error {
+	if(task != nil && task.Func != nil) {
+		task.Func(task)
+		return nil
+	}
+
 	switch task.Type {
 
 	case ASYNC_CREATE_THIRD_USER:
@@ -329,7 +341,11 @@ func (task *AsyncSQLTask) ExecTask() error {
 		}
 	case ASYNC_CREATE_COM_CHARGE_TASK:
 		entity := task.Entity.(*device.DeviceCom)
-		createComChargeTaskRecord(entity)
+		createComChargeTaskRecord(entity,false)
+	case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
+		entity := task.Entity.(*device.DeviceCom)
+		createComChargeTaskRecord(entity,true)
 	}
+
 	return nil
 }

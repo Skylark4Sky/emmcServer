@@ -6,6 +6,7 @@ import (
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
+	. "GoServer/model"
 	"time"
 )
 
@@ -104,7 +105,7 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uin
 		}
 	case mqtt.GISUNLINK_CHARGE_TASK: //建立订单记录
 		{
-			createComChargeTask(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
+			createComChargeTask(ASYNC_CREATE_COM_CHARGE_TASK,packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
 		}
 	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
 		{
@@ -113,7 +114,18 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uin
 	//设备上报状态 开始记录该项订单记录
 	case mqtt.GISUNLINK_START_CHARGE:
 		{
-			SystemLog("CMD: GISUNLINK_START_CHARGE ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
+			comList := packet.Data.(*mqtt.ComList)
+			if len(comList.ComPort) >= 1 {
+				comData := (comList.ComPort[0]).(mqtt.ComData)
+				taskStart := &mqtt.ComTaskStartTransfer {
+					ComID: comData.Id,
+					Token: comData.Token,
+					MaxEnergy: comData.MaxEnergy,
+					MaxElectricity: uint32(comData.MaxElectricity),
+					MaxTime: comData.MaxTime,
+				}
+				createComChargeTask(ASYNC_CREATE_COM_CHARGE_TASK_ACK,taskStart, deviceSN, deviceID)
+			}
 		}
 	//设备上报状态 以下值均会触发停止订单行为
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD,mqtt.GISUNLINK_CHARGE_FINISH,mqtt.GISUNLINK_STOP_CHARGE,mqtt.GISUNLINK_CHARGE_BREAKDOWN:

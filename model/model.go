@@ -14,37 +14,37 @@ import (
 type AsyncSQLTaskType uint64
 
 const (
-	UNKNOWN_ASYNC_SQL_TASK         AsyncSQLTaskType = iota
-	ASYNC_CREATE_THIRD_USER                         //建立第三方用户数据 1
-	ASYNC_CREATE_NORMAL_USER                        //建立用户数据 2
-	ASYNC_USER_LOGIN_LOG                            //用户登录日志 3
-	ASYNC_UP_USER_AUTH_TIME                         //更新用户授权时间 4
-	ASYNC_MODULE_CONNECT_LOG                        //模组连接日志 5
-	ASYNC_UP_MODULE_INFO                            //更新模组版本 6
-	ASYNC_UP_DEVICE_INFO                            //更新设备版本 7
-	ASYNC_DEV_AND_MODULE_CREATE                     //建立设备与模组关系 8
-	ASYNC_UPDATA_WEUSER_LOCAL                       //更新用户地址 9
-	ASYNC_UPDATA_WEUSER_INFO                        //更新用户资料 10
-	ASYNC_UPDATA_USER_EXTRA                         //更新用户扩展资料 11
-	ASYNC_CREATE_USER_AUTH                          //建立授权记录 12
-	ASYNC_CREATE_USER_REGISTER_LOG                  //建立用户注册日志 13
-	ASYNC_CREATE_USER_EXTRA                         //建立用户信息扩展记录 14
-	ASYNC_CREATE_USER_LOCATION                      //建立用户地址记录 15
-	ASYNC_UPDATE_DEVICE_STATUS                      //更新设备状态 16
-	ASYNC_CREATE_COM_CHARGE_TASK					//建立充电记录
-	ASYNC_CREATE_COM_CHARGE_TASK_ACK				//设备上报开始充电
+	UNKNOWN_ASYNC_SQL_TASK           AsyncSQLTaskType = iota
+	ASYNC_CREATE_THIRD_USER                           //建立第三方用户数据 1
+	ASYNC_CREATE_NORMAL_USER                          //建立用户数据 2
+	ASYNC_USER_LOGIN_LOG                              //用户登录日志 3
+	ASYNC_UP_USER_AUTH_TIME                           //更新用户授权时间 4
+	ASYNC_MODULE_CONNECT_LOG                          //模组连接日志 5
+	ASYNC_UP_MODULE_INFO                              //更新模组版本 6
+	ASYNC_UP_DEVICE_INFO                              //更新设备版本 7
+	ASYNC_DEV_AND_MODULE_CREATE                       //建立设备与模组关系 8
+	ASYNC_UPDATA_WEUSER_LOCAL                         //更新用户地址 9
+	ASYNC_UPDATA_WEUSER_INFO                          //更新用户资料 10
+	ASYNC_UPDATA_USER_EXTRA                           //更新用户扩展资料 11
+	ASYNC_CREATE_USER_AUTH                            //建立授权记录 12
+	ASYNC_CREATE_USER_REGISTER_LOG                    //建立用户注册日志 13
+	ASYNC_CREATE_USER_EXTRA                           //建立用户信息扩展记录 14
+	ASYNC_CREATE_USER_LOCATION                        //建立用户地址记录 15
+	ASYNC_UPDATE_DEVICE_STATUS                        //更新设备状态 16
+	ASYNC_CREATE_COM_CHARGE_TASK                      //建立充电记录
+	ASYNC_CREATE_COM_CHARGE_TASK_ACK                  //设备上报开始充电
 )
 
-type TaskFunc func(task  *AsyncSQLTask)
+type TaskFunc func(task *AsyncSQLTask)
 
 type AsyncSQLTask struct {
-	Type      AsyncSQLTaskType
-	WhereSQL  string
-	RecordID  int64
-	Lock	  *RedisLock
-	Func 	  TaskFunc
+	Type     AsyncSQLTaskType
+	WhereSQL string
+	RecordID int64
+	Lock     *RedisLock
+	Func     TaskFunc
 	MapParam map[string]interface{}
-	Entity    interface{}
+	Entity   interface{}
 }
 
 func CreateSQLAndRetLastID(entity interface{}) (uint64, error) {
@@ -83,7 +83,7 @@ func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interfac
 	InsertAsyncTask(work)
 }
 
-func CreateAsyncSQLTaskWithCallback(asyncType AsyncSQLTaskType, entity interface{},lock *RedisLock, taskFunc TaskFunc) {
+func CreateAsyncSQLTaskWithCallback(asyncType AsyncSQLTaskType, entity interface{}, lock *RedisLock, taskFunc TaskFunc) {
 	var task AsyncSQLTask
 	task.Entity = entity
 	task.Type = asyncType
@@ -250,8 +250,8 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 	return nil
 }
 
-func findComChargeTaskRecord(entity *device.DeviceCom) (bool,error) {
-	err := ExecSQL().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID,entity.ChargeID, entity.ComID).Order("create_time desc").First(&entity).Error
+func findComChargeTaskRecord(entity *device.DeviceCom) (bool, error) {
+	err := ExecSQL().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID, entity.ChargeID, entity.ComID).Order("create_time desc").First(&entity).Error
 	var hasRecord = true
 
 	if err != nil {
@@ -259,36 +259,36 @@ func findComChargeTaskRecord(entity *device.DeviceCom) (bool,error) {
 			hasRecord = false
 		} else {
 			SystemLog("createComChargeTaskRecord select Error", zap.Error(err))
-			return true,err
+			return true, err
 		}
 	}
-	return hasRecord,nil
+	return hasRecord, nil
 }
 
 func createComChargeTaskRecord(entity *device.DeviceCom, isAck bool) error {
 
-	taskRecord := &device.DeviceCom {
+	taskRecord := &device.DeviceCom{
 		DeviceID: entity.DeviceID,
 		ChargeID: entity.ChargeID,
-		ComID: entity.ComID,
+		ComID:    entity.ComID,
 	}
 
-	hasRecord,err := findComChargeTaskRecord(taskRecord)
-	if (err != nil) {
+	hasRecord, err := findComChargeTaskRecord(taskRecord)
+	if err != nil {
 		return err
 	}
 
 	//存在记录
 	if hasRecord {
-		if (isAck) {
+		if isAck {
 			entity.State |= device.COM_CHARGE_START_ACK_BIT
 		}
-		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy,"max_time":entity.MaxTime,"max_electricity": entity.MaxElectricity, "state": entity.State}
+		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
-		if (isAck) {
+		if isAck {
 			entity.State |= device.COM_CHARGE_START_ACK_BIT
 		}
 		if err := ExecSQL().Create(entity).Error; err != nil {
@@ -300,7 +300,7 @@ func createComChargeTaskRecord(entity *device.DeviceCom, isAck bool) error {
 }
 
 func (task *AsyncSQLTask) ExecTask() error {
-	if(task != nil && task.Func != nil) {
+	if task != nil && task.Func != nil {
 		task.Func(task)
 		return nil
 	}
@@ -336,15 +336,15 @@ func (task *AsyncSQLTask) ExecTask() error {
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
 	case ASYNC_UPDATE_DEVICE_STATUS:
-		if(task.Func != nil) {
+		if task.Func != nil {
 			task.Func(task)
 		}
 	case ASYNC_CREATE_COM_CHARGE_TASK:
 		entity := task.Entity.(*device.DeviceCom)
-		createComChargeTaskRecord(entity,false)
+		createComChargeTaskRecord(entity, false)
 	case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
 		entity := task.Entity.(*device.DeviceCom)
-		createComChargeTaskRecord(entity,true)
+		createComChargeTaskRecord(entity, true)
 	}
 
 	return nil

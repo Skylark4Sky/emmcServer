@@ -12,11 +12,11 @@ const (
 )
 
 const (
-	COM_CHARGE_START_BIT 		= 0x01 //下发
-	COM_CHARGE_START_ACK_BIT 	= 0x02 //设备已执行
-	COM_CHARGE_STOP_BIT  		= 0x04 //下发
-	COM_CHARGE_STOP_ACK_BIT 	= 0x08 //设备已执行
-	COM_CHARGE_ERROR_BIT 		= 0x10 //0 正常 1 充电出错
+	COM_CHARGE_START_BIT     = 0x01 //下发
+	COM_CHARGE_START_ACK_BIT = 0x02 //设备已执行
+	COM_CHARGE_STOP_BIT      = 0x04 //下发
+	COM_CHARGE_STOP_ACK_BIT  = 0x08 //设备已执行
+	COM_CHARGE_ERROR_BIT     = 0x10 //0 正常 1 充电出错
 )
 
 type ModuleConnectLog struct {
@@ -58,7 +58,7 @@ type DeviceCom struct {
 	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned ;not null" json:"charge_id"`               // 充电ID
 	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned ;not null" json:"com_id"`                     // 端口
 	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned " json:"max_energy"`                         // 最大使用电量
-	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                               // 最大使用时间
+	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                       // 最大使用时间
 	MaxElectricity       uint32  `gorm:"column:max_electricity;type:int(10) unsigned " json:"max_electricity"`               // 最大使用电流
 	UseEnergy            uint32  `gorm:"column:use_energy;type:int(10) unsigned " json:"use_energy"`                         // 已冲电量
 	UseTime              uint32  `gorm:"column:use_time;type:int(10) unsigned " json:"use_time"`                             // 已冲时间
@@ -145,7 +145,7 @@ func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8, maxEnergy, 
 	com.MaxEnergy = maxEnergy
 	com.MaxTime = maxTime
 	com.MaxElectricity = maxElectricity
-	com.State = (0 << COM_CHARGE_START_BIT);
+	com.State = (0 << COM_CHARGE_START_BIT)
 	com.CreateTime = GetTimestampMs()
 }
 
@@ -156,5 +156,3 @@ func (com *DeviceCom) ChangeValue(useEnergy, useTime, maxChargeElectricity uint3
 	com.AveragePower = averagePower
 	com.MaxPower = maxPower
 }
-
-

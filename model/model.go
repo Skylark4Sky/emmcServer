@@ -249,6 +249,39 @@ func transactionCreateDevInfo(entity *device.CreateDeviceInfo) error {
 	return nil
 }
 
+func findComChargeTaskRecord(entity *device.DeviceCom) (bool,error) {
+	err := ExecSQL().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID,entity.ChargeID, entity.ComID).Order("create_time desc").First(&entity).Error
+	var hasRecord = true
+
+	if err != nil {
+		if IsRecordNotFound(err) {
+			hasRecord = false
+		} else {
+			SystemLog("createComChargeTaskRecord select Error", zap.Error(err))
+			return true,err
+		}
+	}
+	return hasRecord,nil
+}
+
+func createComChargeTaskRecord(entity *device.DeviceCom) error {
+	hasRecord,err := findComChargeTaskRecord(entity)
+	if (err != nil) {
+		return err
+	}
+
+	//存在记录
+	if hasRecord {
+		SystemLog("存在记录:", zap.Any("SQL", entity))
+	} else { //不存在记录
+		if err := ExecSQL().Create(entity).Error; err != nil {
+			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
+			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))
+		}
+	}
+	return nil
+}
+
 func (task *AsyncSQLTask) ExecTask() error {
 	switch task.Type {
 
@@ -285,10 +318,8 @@ func (task *AsyncSQLTask) ExecTask() error {
 			task.Func(task)
 		}
 	case ASYNC_CREATE_COM_CHARGE_TASK:
-		if err := ExecSQL().Create(task.Entity).Error; err != nil {
-			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
-			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
-		}
+		entity := task.Entity.(device.DeviceCom)
+		createComChargeTaskRecord(&entity)
 	}
 	return nil
 }

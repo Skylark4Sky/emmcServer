@@ -119,9 +119,12 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 	case mqtt.GISUNLINK_START_CHARGE, mqtt.GISUNLINK_STOP_CHARGE, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_BREAKDOWN, mqtt.GISUNLINK_UPDATE_FIRMWARE, mqtt.GISUNLINK_COM_UPDATE, mqtt.GISUNLINK_COM_NO_UPDATE: //开始,停止,完成,空载,故障,升级,参数刷新,没有刷新参数
 		comList := packet.Data.(*mqtt.ComList)
 		comNum = comList.ComNum
-		comPort := comList.ComPort
-		if jsonString, err := json.Marshal(comPort); err == nil {
-			payloadData = string(jsonString)
+		if (len(comList.ComPort) > 1) {
+			comData := (comList.ComPort[0]).(mqtt.ComData)
+			comNum = comData.Id
+			if jsonString, err := json.Marshal(comData); err == nil {
+				payloadData = string(jsonString)
+			}
 		}
 		break
 	case mqtt.GISUNLINK_CHARGE_TASK:

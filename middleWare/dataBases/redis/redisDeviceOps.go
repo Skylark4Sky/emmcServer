@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	COM_ENABLE uint8 = 1
+	COM_ENABLE    uint8 = 1
 	COM_DISENABLE uint8 = 0
 )
 
@@ -26,7 +26,7 @@ const (
 	REDIS_INFO_DEVICE_DATA_TOTAL_FIELD = "total"
 	REDIS_INFO_DEVICE_STATUS_FIELD     = "status"
 	REDIS_INFO_DEVICE_WORKER_FIELD     = "worker"
-	REDIS_INFO_SYNC_UPDATE_FIELD 	   = "syncTime" //同步数据到Mysql
+	REDIS_INFO_SYNC_UPDATE_FIELD       = "syncTime" //同步数据到Mysql
 	REDIS_INFO_RAW_DATA_FIELD          = "rawData"
 	REDIS_INFO_USER_ID_FIELD           = "userID"
 )
@@ -52,10 +52,10 @@ type DeviceStatus struct {
 //端口数据缓存统计
 type ComDataTotal struct {
 	mqtt.ComData
-	MaxChargeElectricity uint32 `json:"maxChargeElectricity"` //最大电流
-	CurPower     		 float64 `json:"c_power"` //当前端口使用功率
-	AveragePower         float64 `json:"a_power"` //当前端口平均功率
-	MaxPower     		 float64 `json:"m_power"` //当前端口最高使用功率
+	MaxChargeElectricity uint32  `json:"maxChargeElectricity"` //最大电流
+	CurPower             float64 `json:"c_power"`              //当前端口使用功率
+	AveragePower         float64 `json:"a_power"`              //当前端口平均功率
+	MaxPower             float64 `json:"m_power"`              //当前端口最高使用功率
 }
 
 func GetDeviceTokenKey(deviceSN string) string {
@@ -117,7 +117,7 @@ func (c *Cacher) SetDeviceStatusToRedis(deviceSN string, status int) {
 
 //设置设备同步时间
 func (c *Cacher) SetDeviceSyncTimeToRedis(deviceSN string, syncTime int64) {
-	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD , syncTime)
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_SYNC_UPDATE_FIELD, syncTime)
 }
 
 //取设备同步时间

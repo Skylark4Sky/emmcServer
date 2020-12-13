@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	SYNC_UPDATE_TIME 				= 300000 //5*60*1000 5分钟同步一次
+	SYNC_UPDATE_TIME = 300000 //5*60*1000 5分钟同步一次
 )
 
 const (
@@ -44,7 +44,6 @@ func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, st
 		}
 
 		if updateFlags != 0 {
-			SystemLog("deviceID: ", deviceID, " deviceUpdateMap: ", deviceUpdateMap)
 			CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
 		}
 	}
@@ -148,11 +147,11 @@ func deviceExpiredMsgOps(pattern, channel, message string) {
 //构建缓存数据实体
 func calculateComData(comData *mqtt.ComData) *ComDataTotal {
 	dataTotal := &ComDataTotal{
-		ComData:      			*comData,
-		MaxChargeElectricity: 	comData.CurElectricity,
-		CurPower:     			0,
-		AveragePower: 			0,
-		MaxPower:     			0,
+		ComData:              *comData,
+		MaxChargeElectricity: comData.CurElectricity,
+		CurPower:             0,
+		AveragePower:         0,
+		MaxPower:             0,
 	}
 	return dataTotal
 }
@@ -223,8 +222,8 @@ func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceS
 	}
 
 	curTimeMS := GetTimestampMs()
-	if (syncTime <= 0 || (curTimeMS - syncTime) >= SYNC_UPDATE_TIME) {
-		Redis().SetDeviceSyncTimeToRedis(deviceSN,curTimeMS)
+	if syncTime <= 0 || (curTimeMS-syncTime) >= SYNC_UPDATE_TIME {
+		Redis().SetDeviceSyncTimeToRedis(deviceSN, curTimeMS)
 	}
 
 	//更新状态
@@ -233,55 +232,81 @@ func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceS
 	Redis().UpdateDeviceTokenExpiredTime(deviceSN, deviceStatus, timeout)
 }
 
-//上报数据处理
-func deviceActBehaviorDataOps(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
-	switch packet.Json.Behavior {
-	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE: //运行状态 以及 空闲状态值运算
-		{
-			comList := packet.Data.(*mqtt.ComList)
-			//批量读当前设备所有接口
-			cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
+// 运行状态 处理
+func deviceRunStateHandle(packet *mqtt.Packet, cacheKey string, deviceID uint64, playload string) {
+	comList := packet.Data.(*mqtt.ComList)
+	//批量读当前设备所有接口
+	cacherComData := BatchReadDeviceComDataiFromRedis(cacheKey)
 
-			//对比新旧数据
-			analyseComData(cacheKey, comList, cacherComData)
+	//对比新旧数据
+	analyseComData(cacheKey, comList, cacherComData)
 
-			//批量写入数据
-			if len(cacherComData) > 1 {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
-					dataTotal := calculateComData(comData)
-					cacherData := cacherComData[comData.Id]
-					//端口启用状态
-					if (comData.Enable == COM_ENABLE) {
-						// 数值计算
-						dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2) //当前功率
-						dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2) //平均功率
-						//dataTotal.MaxPower = cacherData.MaxPower
-						//最大功率
-						if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
-							SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
-							dataTotal.MaxPower = dataTotal.CurPower
-						}
-						// 最大电流记录
-						if (comData.CurElectricity > cacherData.MaxChargeElectricity) {
-							dataTotal.MaxChargeElectricity = comData.CurElectricity
-						}
-					}
-					return dataTotal
-				})
-			} else {
-				BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
-					return calculateComData(comData)
-				})
+	//批量写入数据
+	if len(cacherComData) > 1 {
+		BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
+			dataTotal := calculateComData(comData)
+			cacherData := cacherComData[comData.Id]
+			//端口启用状态
+			if comData.Enable == COM_ENABLE {
+				// 数值计算
+				dataTotal.CurPower = CalculateCurComPower(CUR_VOLTAGE, dataTotal.CurElectricity, 2)             //当前功率
+				dataTotal.AveragePower = CalculateCurAverageComPower(dataTotal.UseEnergy, dataTotal.UseTime, 2) //平均功率
+				//最大功率
+				if CmpPower(dataTotal.CurPower, cacherData.MaxPower) >= 1 {
+					//SystemLog("CurPower: ", dataTotal.CurPower, " cacherData.MaxPower: ", cacherData.MaxPower)
+					dataTotal.MaxPower = dataTotal.CurPower
+				}
+				// 最大电流记录
+				if comData.CurElectricity > cacherData.MaxChargeElectricity {
+					dataTotal.MaxChargeElectricity = comData.CurElectricity
+				}
 			}
+			return dataTotal
+		})
+	} else {
+		BatchWriteDeviceComDataToRedis(cacheKey, comList, func(comData *mqtt.ComData) *ComDataTotal {
+			return calculateComData(comData)
+		})
+	}
 
-			//刷新设备状态
-			refreshDeviceStatus(cacheKey,deviceID,&DeviceStatus {
-				Behavior:     comList.ComBehavior,
-				Signal:       int8(comList.Signal),
-				Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
-				ID:           deviceID,
-				ProtoVersion: comList.ComProtoVer,
-			})
+	//刷新设备状态
+	refreshDeviceStatus(cacheKey, deviceID, &DeviceStatus{
+		Behavior:     comList.ComBehavior,
+		Signal:       int8(comList.Signal),
+		Worker:       Redis().TatolWorkerByDevice(cacheKey, BatchReadDeviceComDataiFromRedis(cacheKey)),
+		ID:           deviceID,
+		ProtoVersion: comList.ComProtoVer,
+	})
+
+}
+
+//上报数据处理
+func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uint64, playload string) {
+	switch packet.Json.Behavior {
+	//运行状态 以及 空闲状态值运算
+	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
+		{
+			deviceRunStateHandle(packet, deviceSN, deviceID, playload)
+		}
+	case mqtt.GISUNLINK_START_CHARGE:
+		{
+			SystemLog("CMD: GISUNLINK_START_CHARGE ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
+		}
+	case mqtt.GISUNLINK_CHARGE_FINISH:
+		{
+			SystemLog("CMD: GISUNLINK_CHARGE_FINISH ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
+		}
+	case mqtt.GISUNLINK_CHARGE_BREAKDOWN:
+		{
+			SystemLog("CMD: GISUNLINK_CHARGE_BREAKDOWN ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
+		}
+	case mqtt.GISUNLINK_STOP_CHARGE:
+		{
+			SystemLog("CMD: GISUNLINK_STOP_CHARGE ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
+		}
+	case mqtt.GISUNLINK_CHARGE_NO_LOAD:
+		{
+			SystemLog("CMD: GISUNLINK_CHARGE_NO_LOAD ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
 		}
 	}
 }

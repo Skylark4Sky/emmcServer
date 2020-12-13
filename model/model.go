@@ -318,8 +318,8 @@ func (task *AsyncSQLTask) ExecTask() error {
 			task.Func(task)
 		}
 	case ASYNC_CREATE_COM_CHARGE_TASK:
-		entity := task.Entity.(device.DeviceCom)
-		createComChargeTaskRecord(&entity)
+		entity := task.Entity.(*device.DeviceCom)
+		createComChargeTaskRecord(entity)
 	}
 	return nil
 }

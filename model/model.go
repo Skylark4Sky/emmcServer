@@ -281,7 +281,7 @@ func createComChargeTaskRecord(entity *device.DeviceCom, isAck bool) error {
 	//存在记录
 	if hasRecord {
 		if (isAck) {
-			entity.State |= (1 << 0)
+			entity.State |= device.COM_CHARGE_START_ACK_BIT
 		}
 		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy,"max_time":entity.MaxTime,"max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
@@ -289,7 +289,7 @@ func createComChargeTaskRecord(entity *device.DeviceCom, isAck bool) error {
 		}
 	} else { //不存在记录
 		if (isAck) {
-			entity.State |= (1 << 0)
+			entity.State |= device.COM_CHARGE_START_ACK_BIT
 		}
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()

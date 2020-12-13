@@ -12,9 +12,11 @@ const (
 )
 
 const (
-	COM_CHARGE_START_BIT = 0 // 0 下发 1 设备已执行
-	COM_CHARGE_STOP_BIT  = 1 // 0 下发 1 设备已执行
-	COM_CHARGE_ERROR_BIT = 2 // 0 正常 1 充电出错
+	COM_CHARGE_START_BIT 		= 0x01 //下发
+	COM_CHARGE_START_ACK_BIT 	= 0x02 //设备已执行
+	COM_CHARGE_STOP_BIT  		= 0x04 //下发
+	COM_CHARGE_STOP_ACK_BIT 	= 0x08 //设备已执行
+	COM_CHARGE_ERROR_BIT 		= 0x10 //0 正常 1 充电出错
 )
 
 type ModuleConnectLog struct {

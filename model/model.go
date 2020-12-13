@@ -272,7 +272,7 @@ func createComChargeTaskRecord(entity *device.DeviceCom) error {
 
 	//存在记录
 	if hasRecord {
-		SystemLog("存在记录:", zap.Any("SQL", entity))
+		SystemLog("存在记录:", entity)
 	} else { //不存在记录
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()

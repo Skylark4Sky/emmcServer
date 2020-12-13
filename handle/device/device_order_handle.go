@@ -16,6 +16,11 @@ func createComChargeTask(asyncType AsyncSQLTaskType,task *mqtt.ComTaskStartTrans
 
 func exitComChargeTask(task *mqtt.ComTaskStopTransfer,deviceSN string, deviceID uint64) {
 	if (task != nil && deviceID > 0 && len(deviceSN) > 1) {
-
+		deviceCom := &DeviceCom{
+			DeviceID: deviceID,
+			ChargeID: uint64(task.Token),
+			ComID: task.ComID,
+		}
+		CreateAsyncSQLTask(asyncType, deviceCom)
 	}
 }

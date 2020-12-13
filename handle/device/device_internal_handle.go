@@ -47,6 +47,52 @@ func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, st
 	}
 }
 
+//状态刷新
+func refreshDeviceStatus(deviceSN string, deviceID uint64, deviceStatus *DeviceStatus) {
+	var timeout int64 = CHARGEING_TIME
+	if deviceStatus.Behavior == mqtt.GISUNLINK_CHARGE_LEISURE {
+		timeout = LEISURE_TIME
+	}
+
+	status := Redis().GetDeviceStatusFromRedis(deviceSN)
+	worker := Redis().GetDeviceWorkerFormRedis(deviceSN)
+	syncTime := Redis().GetDeviceSyncTimeFromRedis(deviceSN)
+
+	var updateFlags uint8 = 0
+	var workerStatus int8 = DEVICE_WORKING
+
+	switch deviceStatus.Behavior {
+	case mqtt.GISUNLINK_CHARGEING:
+		{
+			if status != int(DEVICE_WORKING) {
+				updateFlags |= UPDATE_DEVICE_STATUS
+				workerStatus = DEVICE_WORKING
+			}
+		}
+	case mqtt.GISUNLINK_CHARGE_LEISURE:
+		{
+			if status != int(DEVICE_ONLINE) {
+				updateFlags |= UPDATE_DEVICE_STATUS
+				workerStatus = DEVICE_ONLINE
+			}
+		}
+	}
+
+	if uint8(worker) != deviceStatus.Worker {
+		updateFlags |= UPDATE_DEVICE_WORKER
+	}
+
+	curTimeMS := GetTimestampMs()
+	if syncTime <= 0 || (curTimeMS-syncTime) >= SYNC_UPDATE_TIME {
+		Redis().SetDeviceSyncTimeToRedis(deviceSN, curTimeMS)
+	}
+
+	//更新状态
+	changeDeviceStatus(deviceSN, deviceID, updateFlags, workerStatus, int8(deviceStatus.Worker))
+	//更新令牌时间
+	Redis().UpdateDeviceTokenExpiredTime(deviceSN, deviceStatus, timeout)
+}
+
 //保存设备上报状态
 func createDeviceTransferLog(transfer *DeviceTransferLog) {
 	if transfer == nil {

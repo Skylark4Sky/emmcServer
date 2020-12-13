@@ -50,7 +50,7 @@ type DeviceStatus struct {
 }
 
 //端口数据缓存统计
-type ComDataTotal struct {
+type CacheComData struct {
 	mqtt.ComData
 	MaxChargeElectricity uint32  `json:"maxChargeElectricity"` //最大电流
 	CurPower             float64 `json:"c_power"`              //当前端口使用功率
@@ -158,7 +158,7 @@ func (c *Cacher) updateDeviceTatolInfoToRedis(deviceSN string, infoData interfac
 }
 
 //统计当前工作端口数量
-func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]ComDataTotal) uint8 {
+func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]CacheComData) uint8 {
 
 	deviceInfo := &DeviceTatolInfo{
 		UseEnergy:      0,
@@ -196,12 +196,12 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]ComDa
 }
 
 //批量读端口数据
-func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]ComDataTotal {
+func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]CacheComData {
 	var maxCom int = 10
 
 	conn := Redis().BatchStart()
 	defer Redis().BatchEnd(conn)
-	comList := make(map[uint8]ComDataTotal)
+	comList := make(map[uint8]CacheComData)
 	for i := 0; i < maxCom; i++ {
 		Redis().BatchHGet(conn, GetComdDataKey(deviceSN), strconv.Itoa(i))
 	}
@@ -209,7 +209,7 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]ComDataTotal {
 	pipe_list, _ := RedisValues(Redis().BatchExec(conn))
 	for _, v := range pipe_list {
 		comDataString, _ := RedisString(v, nil)
-		comData := ComDataTotal{}
+		comData := CacheComData{}
 		err := json.Unmarshal([]byte(comDataString), &comData)
 		if err == nil {
 			comList[comData.Id] = comData
@@ -220,7 +220,7 @@ func BatchReadDeviceComDataiFromRedis(deviceSN string) map[uint8]ComDataTotal {
 }
 
 //批量写端口数据
-func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData) *ComDataTotal) {
+func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comOps func(comData *mqtt.ComData) *CacheComData) {
 	if comList == nil {
 		return
 	}
@@ -236,8 +236,8 @@ func BatchWriteDeviceComDataToRedis(deviceSN string, comList *mqtt.ComList, comO
 		comData := (comList.ComPort[int(index)]).(mqtt.ComData)
 		comData.Id = comID
 
-		dataTotal := comOps(&comData)
-		if err := Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), dataTotal); err != nil {
+		cacheComData := comOps(&comData)
+		if err := Redis().BatchHSet(conn, GetComdDataKey(deviceSN), strconv.Itoa(int(comID)), cacheComData); err != nil {
 			SystemLog("BatchWriteDeviceComDataToRedis err: ", err)
 		}
 	}

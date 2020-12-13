@@ -279,12 +279,9 @@ func createComChargeTaskRecord(entity *device.DeviceCom) error {
 
 	//存在记录
 	if hasRecord {
-		taskRecord.MaxEnergy = entity.MaxEnergy
-		taskRecord.MaxTime = entity.MaxTime
-		taskRecord.MaxElectricity = entity.MaxElectricity
-		if err := ExecSQL().Update(taskRecord).Error; err != nil {
-			structTpey := reflect.Indirect(reflect.ValueOf(taskRecord)).Type()
-			SystemLog("Updatte ", structTpey, " Error ", zap.Any("SQL", taskRecord), zap.Error(err))
+		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy,"max_time":entity.MaxTime,"max_electricity": entity.MaxElectricity}
+		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
+			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
 		if err := ExecSQL().Create(entity).Error; err != nil {

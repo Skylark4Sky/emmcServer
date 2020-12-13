@@ -145,7 +145,7 @@ func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8, maxEnergy, 
 	com.MaxEnergy = maxEnergy
 	com.MaxTime = maxTime
 	com.MaxElectricity = maxElectricity
-	com.State = (0 << COM_CHARGE_START_BIT)
+	com.State = COM_CHARGE_START_BIT
 	com.CreateTime = GetTimestampMs()
 }
 

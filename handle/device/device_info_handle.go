@@ -4,8 +4,8 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
-	. "GoServer/model"
 	. "GoServer/model/device"
+	. "GoServer/model/asyncTask"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
@@ -379,7 +379,7 @@ func batchUpdatesDeviceStatus(entity interface{}, status int8) bool {
 	return false
 }
 
-func syncDeviceStatusTaskFunc(task *AsyncSQLTask) {
+func asyncDeviceStatusTaskFunc(task *AsyncTaskEntity) {
 	if task.Entity == nil {
 		task.Lock.Unlock()
 		return
@@ -467,6 +467,10 @@ func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 		return nil, CreateErrorMessage(RESPOND_RESUBMIT, nil)
 	}
 
-	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS, request, lock, syncDeviceStatusTaskFunc)
+	task := NewTask()
+	task.Lock = lock
+	task.Func = asyncDeviceStatusTaskFunc
+	task.RunTaskWithTypeAndEntity(ASYNC_UPDATE_DEVICE_STATUS, request)
+
 	return nil, CreateMessage(SUCCESS, "提交成功")
 }

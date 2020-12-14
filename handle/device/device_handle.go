@@ -2,7 +2,7 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
-	. "GoServer/model"
+	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
@@ -37,7 +37,7 @@ type FirmwareInfo struct {
 func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, moduleSN string) {
 	log := &ModuleConnectLog{}
 	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
-	CreateAsyncSQLTask(ASYNC_MODULE_CONNECT_LOG, log)
+	NewAsyncTaskWithParam(ASYNC_MODULE_CONNECT_LOG,log)
 }
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {
@@ -64,16 +64,22 @@ func (data *RequestData) Connect(ctx *gin.Context) interface{} {
 		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
 		info.Module.CreateTime = curTimestampMs
 		info.Device.CreateTime = curTimestampMs
-		CreateAsyncSQLTask(ASYNC_DEV_AND_MODULE_CREATE, info)
+		NewAsyncTaskWithParam(ASYNC_DEV_AND_MODULE_CREATE,info)
 	} else {
 		module.Update(data.ModuleVersion)
 		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_MODULE_INFO, module, moduleUpdateMap)
+		moduleTask := NewTask()
+		moduleTask.Param = moduleUpdateMap
+		moduleTask.RunTaskWithTypeAndEntity(ASYNC_UP_MODULE_INFO,module)
+
 		device := &DeviceInfo{}
 		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime, DEVICE_ONLINE)
 		device.DeviceSn = data.DeviceSN
 		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime, "status": device.Status}
-		CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+		deviceTask := NewTask()
+		deviceTask.Param = deviceUpdateMap
+		deviceTask.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO,device)
+
 		// 检测并返回固件版本
 		// 返回版本升级格式
 		//	data := &FirmwareInfo{

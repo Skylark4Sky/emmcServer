@@ -3,9 +3,9 @@ package device
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
-	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
+	. "GoServer/model/asyncTask"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
 	"encoding/json"
@@ -41,7 +41,9 @@ func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, st
 		}
 
 		if updateFlags != 0 {
-			CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_DEVICE_INFO, device, deviceUpdateMap)
+			task := NewTask()
+			task.Param = deviceUpdateMap
+			task.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO,device)
 		}
 	}
 }

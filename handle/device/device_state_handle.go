@@ -2,7 +2,7 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/redis"
-	. "GoServer/model"
+	//. "GoServer/model"
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"

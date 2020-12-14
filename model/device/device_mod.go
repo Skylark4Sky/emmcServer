@@ -138,15 +138,21 @@ func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_
 	transfer.CreateTime = GetTimestampMs()
 }
 
-func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8, maxEnergy, maxTime, maxElectricity uint32) {
+func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8) {
 	com.DeviceID = deviceID
 	com.ChargeID = chargeID
 	com.ComID = comID
+	com.CreateTime = GetTimestampMs()
+}
+
+func (com *DeviceCom) Init(maxEnergy, maxTime, maxElectricity uint32) {
 	com.MaxEnergy = maxEnergy
 	com.MaxTime = maxTime
 	com.MaxElectricity = maxElectricity
-	com.State = COM_CHARGE_START_BIT
-	com.CreateTime = GetTimestampMs()
+}
+
+func (com *DeviceCom) SetState(state uint32) {
+	com.State = state//COM_CHARGE_START_BIT
 }
 
 func (com *DeviceCom) ChangeValue(useEnergy, useTime, maxChargeElectricity uint32, averagePower, maxPower float64) {

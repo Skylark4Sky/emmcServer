@@ -3,10 +3,11 @@ package user
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/extension"
-	. "GoServer/model"
 	. "GoServer/model/user"
+	. "GoServer/model/asyncTask"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
+	. "GoServer/utils/string"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,22 +40,20 @@ func createUserExtraInfo(ip string, user *UserBase) {
 		RegisterIP:     ip,
 	}
 
-	CreateAsyncSQLTask(ASYNC_CREATE_USER_REGISTER_LOG, log)
-
 	// 拓展字段
 	extra := &UserExtra{
 		UID:        user.UID,
 		CreateTime: user.CreateTime,
 	}
 
-	CreateAsyncSQLTask(ASYNC_CREATE_USER_EXTRA, extra)
-
 	// 地址
 	location := &UserLocation{
 		UID: user.UID,
 	}
 
-	CreateAsyncSQLTask(ASYNC_CREATE_USER_LOCATION, location)
+	NewAsyncTaskWithParam(ASYNC_CREATE_USER_REGISTER_LOG,log)
+	NewAsyncTaskWithParam(ASYNC_CREATE_USER_EXTRA,extra)
+	NewAsyncTaskWithParam(ASYNC_CREATE_USER_LOCATION,location)
 }
 
 func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
@@ -67,7 +66,7 @@ func createNewWechatUser(ip string, user *UserBase, M *WeAppLogin) {
 		CreateTime:   user.CreateTime,
 	}
 
-	CreateAsyncSQLTask(ASYNC_CREATE_USER_AUTH, auth)
+	NewAsyncTaskWithParam(ASYNC_CREATE_USER_AUTH,auth)
 	createUserExtraInfo(ip, user)
 }
 
@@ -137,7 +136,10 @@ func (weApp *WeAppUptdae) Save() {
 		Face200:    weApp.Face200,
 		UpdateTime: curTimestam,
 	}
-	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_INFO, weApp.UserID, userBase)
+
+	baseTask := NewTask()
+	baseTask.Param = map[string]interface{}{"WhereSQL":StringJoin([]interface{}{" uid = ", weApp.UserID, " "})}
+	baseTask.RunTaskWithTypeAndEntity(ASYNC_UPDATA_WEUSER_INFO,userBase)
 
 	userLocation := &UserLocation{
 		CurrNation:   weApp.Country,
@@ -145,11 +147,17 @@ func (weApp *WeAppUptdae) Save() {
 		CurrCity:     weApp.City,
 		UpdateTime:   curTimestam,
 	}
-	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_WEUSER_LOCAL, weApp.UserID, userLocation)
+
+	locationTask := NewTask()
+	locationTask.Param = map[string]interface{}{"WhereSQL":StringJoin([]interface{}{" uid = ", weApp.UserID, " "})}
+	locationTask.RunTaskWithTypeAndEntity(ASYNC_UPDATA_WEUSER_LOCAL,userLocation)
 
 	userExtra := &UserExtra{
 		Language:   weApp.Language,
 		UpdateTime: curTimestam,
 	}
-	CreateAsyncSQLTaskWithRecordID(ASYNC_UPDATA_USER_EXTRA, weApp.UserID, userExtra)
+
+	extraTask := NewTask()
+	extraTask.Param = map[string]interface{}{"WhereSQL":StringJoin([]interface{}{" uid = ", weApp.UserID, " "})}
+	extraTask.RunTaskWithTypeAndEntity(ASYNC_UPDATA_USER_EXTRA,userExtra)
 }

@@ -45,6 +45,23 @@ func ExecSQL() *gorm.DB {
 	return _db
 }
 
+func CreateSQLAndRetLastID(entity interface{}) (uint64, error) {
+	var id []uint64
+	tx := _db.Begin()
+	if err := tx.Create(entity).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	tx.Commit()
+	return id[0], nil
+}
+
 func SQLClose() {
 	fmt.Println("Close Mysql")
 	if _db != nil {

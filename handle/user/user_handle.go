@@ -2,8 +2,8 @@ package user
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
-	. "GoServer/model"
 	. "GoServer/model/user"
+	. "GoServer/model/asyncTask"
 	. "GoServer/utils/string"
 	"github.com/gin-gonic/gin"
 )
@@ -45,11 +45,13 @@ func createLoginRespond(entity *UserBase) *UserData {
 func createLoginLog(ctx *gin.Context, Command uint8, loginType uint8, userID uint64) {
 	log := &UserLoginLog{}
 	log.Create(ctx.ClientIP(), Command, loginType, userID)
-	CreateAsyncSQLTask(ASYNC_USER_LOGIN_LOG, log)
+	NewAsyncTaskWithParam(ASYNC_USER_LOGIN_LOG,log)
 }
 
 func updateAuthTime(entity *UserAuth) {
-	CreateAsyncSQLTaskWithUpdateMap(ASYNC_UP_USER_AUTH_TIME, entity, map[string]interface{}{"update_time": entity.UpdateTime})
+	task := NewTask()
+	task.Param = map[string]interface{}{"update_time": entity.UpdateTime}
+	task.RunTaskWithTypeAndEntity(ASYNC_UP_USER_AUTH_TIME,entity)
 }
 
 func CheckUserIsExist(user *UserRegister) (bool, error) {

@@ -102,6 +102,12 @@ func (c *Cacher) SetDeviceWorkerToRedis(deviceSN string, worker int) {
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_WORKER_FIELD, worker)
 }
 
+func (c *Cacher) UpdateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID uint64) {
+	if deviceSN != "" && deviceID != 0 {
+		Redis().InitWithInsertDeviceIDToken(deviceSN, deviceID)
+	}
+}
+
 //取设备状态
 func (c *Cacher) GetDeviceStatusFromRedis(deviceSN string) int {
 	status, err := c.HGetInt(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD)

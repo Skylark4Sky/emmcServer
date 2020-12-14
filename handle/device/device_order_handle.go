@@ -1,50 +1,60 @@
 package device
 
 import (
-	. "GoServer/model"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
+	. "GoServer/model/asyncTask"
 )
 
-func taskHandle(task *AsyncSQLTask) {
-
+func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
+	switch task.Type {
+	case ASYNC_CREATE_COM_CHARGE_TASK:
+	case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
+	case ASYNC_STOP_COM_CHARGE_TASK:
+	case ASYNC_STOP_COM_CHARGE_TASK_ACK:
+	}
 }
 
 func createComChargeTask(task *mqtt.ComTaskStartTransfer, deviceSN string, deviceID uint64) {
-
-	CreateAsyncSQLTaskWithCallback(ASYNC_UPDATE_DEVICE_STATUS, request, lock, syncDeviceStatusTaskFunc)
 	if task != nil && deviceID > 0 && len(deviceSN) > 1 {
 		deviceCom := &DeviceCom{}
-		deviceCom.Create(deviceID, uint64(task.Token), task.ComID, task.MaxEnergy, task.MaxTime, task.MaxElectricity)
-		CreateAsyncSQLTask(asyncType, deviceCom)
+		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
+		deviceCom.Init(task.MaxEnergy, task.MaxTime, task.MaxElectricity)
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
 	}
 }
 
 func deviceAckCreateComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
-	if len(comList.ComPort) >= 1 {
+	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
 		comData := (comList.ComPort[0]).(mqtt.ComData)
-		taskStart := &mqtt.ComTaskStartTransfer{
-			ComID:          comData.Id,
-			Token:          comData.Token,
-			MaxEnergy:      comData.MaxEnergy,
-			MaxElectricity: uint32(comData.MaxElectricity),
-			MaxTime:        comData.MaxTime,
-		}
-		createComChargeTask(ASYNC_CREATE_COM_CHARGE_TASK_ACK, taskStart, deviceSN, deviceID)
+		deviceCom := &DeviceCom{}
+		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
+		deviceCom.Init(comData.MaxEnergy, comData.MaxTime,uint32(comData.MaxElectricity))
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
 	}
 }
 
 func exitComChargeTask(task *mqtt.ComTaskStopTransfer, deviceSN string, deviceID uint64) {
 	if task != nil && deviceID > 0 && len(deviceSN) > 1 {
-		deviceCom := &DeviceCom{
-			DeviceID: deviceID,
-			ChargeID: uint64(task.Token),
-			ComID:    task.ComID,
-		}
-		CreateAsyncSQLTask(asyncType, deviceCom)
+		deviceCom := &DeviceCom{}
+		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
 	}
 }
 
 func deviceAckExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
-
+	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
+		comData := (comList.ComPort[0]).(mqtt.ComData)
+		deviceCom := &DeviceCom{}
+		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
+	}
 }

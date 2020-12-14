@@ -3,8 +3,8 @@ package user
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/extension"
-	. "GoServer/model"
 	. "GoServer/model/user"
+	. "GoServer/model/asyncTask"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/security"
 	. "GoServer/utils/time"
@@ -221,7 +221,7 @@ func (M *UserRegister) Build(ctx *gin.Context) interface{} {
 
 	user.Location = UserLocation{}
 
-	CreateAsyncSQLTask(ASYNC_CREATE_NORMAL_USER, user)
+	NewAsyncTaskWithParam(ASYNC_CREATE_NORMAL_USER,user)
 
 	return CreateMessage(SUCCESS, nil)
 }

@@ -2,11 +2,11 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/redis"
+	. "GoServer/model"
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
-	. "GoServer/model"
 	"time"
 )
 
@@ -66,7 +66,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 			//端口启用状态
 			if comData.Enable == COM_ENABLE {
 				// 数值计算
-				cacheComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, cacheComData.CurElectricity, 2)             //当前功率
+				cacheComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, cacheComData.CurElectricity, 2)                //当前功率
 				cacheComData.AveragePower = CalculateCurAverageComPower(cacheComData.UseEnergy, cacheComData.UseTime, 2) //平均功率
 				//最大功率
 				if CmpPower(cacheComData.CurPower, cacheCom.MaxPower) >= 1 {
@@ -99,38 +99,15 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uint64) {
 	switch packet.Json.Behavior {
 	//运行状态值运算
-	case mqtt.GISUNLINK_CHARGEING,mqtt.GISUNLINK_CHARGE_LEISURE:
-		{
-			deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
-		}
-	case mqtt.GISUNLINK_CHARGE_TASK: //建立订单记录
-		{
-			createComChargeTask(ASYNC_CREATE_COM_CHARGE_TASK,packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
-		}
-	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
-		{
-			exitComChargeTask(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID)
-		}
-	//设备上报状态 开始记录该项订单记录
+	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
+		deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
+	case mqtt.GISUNLINK_CHARGE_TASK:
+		createComChargeTask(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
 	case mqtt.GISUNLINK_START_CHARGE:
-		{
-			comList := packet.Data.(*mqtt.ComList)
-			if len(comList.ComPort) >= 1 {
-				comData := (comList.ComPort[0]).(mqtt.ComData)
-				taskStart := &mqtt.ComTaskStartTransfer {
-					ComID: comData.Id,
-					Token: comData.Token,
-					MaxEnergy: comData.MaxEnergy,
-					MaxElectricity: uint32(comData.MaxElectricity),
-					MaxTime: comData.MaxTime,
-				}
-				createComChargeTask(ASYNC_CREATE_COM_CHARGE_TASK_ACK,taskStart, deviceSN, deviceID)
-			}
-		}
-	//设备上报状态 以下值均会触发停止订单行为
-	case mqtt.GISUNLINK_CHARGE_NO_LOAD,mqtt.GISUNLINK_CHARGE_FINISH,mqtt.GISUNLINK_STOP_CHARGE,mqtt.GISUNLINK_CHARGE_BREAKDOWN:
-		{
-			SystemLog("CMD: GISUNLINK_CHARGE_FINISH ", " deviceSN: ", deviceSN, " deviceID: ", deviceID)
-		}
+		deviceAckCreateComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
+	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
+		exitComChargeTask(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID)
+	case mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_STOP_CHARGE, mqtt.GISUNLINK_CHARGE_BREAKDOWN:
+		deviceAckExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
 	}
 }

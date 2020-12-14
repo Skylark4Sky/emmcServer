@@ -33,6 +33,8 @@ const (
 	ASYNC_UPDATE_DEVICE_STATUS                        //更新设备状态 16
 	ASYNC_CREATE_COM_CHARGE_TASK                      //建立充电记录
 	ASYNC_CREATE_COM_CHARGE_TASK_ACK                  //设备上报开始充电
+	ASYNC_STOP_COM_CHARGE_TASK                        //建立充电记录
+	ASYNC_STOP_COM_CHARGE_TASK_ACK                    //设备上报开始充电
 )
 
 type TaskFunc func(task *AsyncSQLTask)
@@ -81,6 +83,10 @@ func CreateAsyncSQLTaskWithUpdateMap(asyncType AsyncSQLTaskType, entity interfac
 	task.MapParam = mapParam
 	var work Job = &task
 	InsertAsyncTask(work)
+}
+
+func CreateAsyncTask() AsyncSQLTask {
+
 }
 
 func CreateAsyncSQLTaskWithCallback(asyncType AsyncSQLTaskType, entity interface{}, lock *RedisLock, taskFunc TaskFunc) {
@@ -335,10 +341,10 @@ func (task *AsyncSQLTask) ExecTask() error {
 			structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 		}
-	case ASYNC_UPDATE_DEVICE_STATUS:
-		if task.Func != nil {
-			task.Func(task)
-		}
+		//	case ASYNC_UPDATE_DEVICE_STATUS:
+		//		if task.Func != nil {
+		//			task.Func(task)
+		//		}
 	case ASYNC_CREATE_COM_CHARGE_TASK:
 		entity := task.Entity.(*device.DeviceCom)
 		createComChargeTaskRecord(entity, false)

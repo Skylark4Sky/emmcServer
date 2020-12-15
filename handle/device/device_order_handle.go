@@ -9,7 +9,11 @@ import (
 func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 	switch task.Type {
 	case ASYNC_CREATE_COM_CHARGE_TASK:
+		entity := task.Entity.(*DeviceCom)
+		DeviceComChargeTaskOps(entity, false)
 	case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
+		entity := task.Entity.(*DeviceCom)
+		DeviceComChargeTaskOps(entity, true)
 	case ASYNC_STOP_COM_CHARGE_TASK:
 	case ASYNC_STOP_COM_CHARGE_TASK_ACK:
 	}
@@ -21,7 +25,7 @@ func createComChargeTask(task *mqtt.ComTaskStartTransfer, deviceSN string, devic
 		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
 		deviceCom.Init(task.MaxEnergy, task.MaxTime, task.MaxElectricity)
 		task := NewTask()
-		task.Func = asyncDeviceChargeTaskFunc
+		//task.Func = asyncDeviceChargeTaskFunc
 		task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
 	}
 }

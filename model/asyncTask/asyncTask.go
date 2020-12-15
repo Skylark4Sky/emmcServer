@@ -33,8 +33,9 @@ const (
 	ASYNC_UPDATE_DEVICE_STATUS                        //更新设备状态 16
 	ASYNC_CREATE_COM_CHARGE_TASK                      //建立充电记录
 	ASYNC_CREATE_COM_CHARGE_TASK_ACK                  //设备上报开始充电
-	ASYNC_STOP_COM_CHARGE_TASK                        //建立充电记录
-	ASYNC_STOP_COM_CHARGE_TASK_ACK                    //设备上报开始充电
+	ASYNC_STOP_COM_CHARGE_TASK                        //退出充电
+	ASYNC_STOP_COM_CHARGE_TASK_ACK                    //设备响应上报退出充电
+	ASYNC_INITIATIVE_EXIT_COM_CHARGE_TASK			  //主动退出充电
 )
 
 type AsyncTaskFunc func(task *AsyncTaskEntity)
@@ -141,12 +142,12 @@ func (task *AsyncTaskEntity) ExecTask() error {
 					structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 					SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 				}
-			case ASYNC_CREATE_COM_CHARGE_TASK:
-				entity := task.Entity.(*device.DeviceCom)
-				device.DeviceComChargeTaskOps(entity, false)
-			case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
-				entity := task.Entity.(*device.DeviceCom)
-				device.DeviceComChargeTaskOps(entity, true)
+			//case ASYNC_CREATE_COM_CHARGE_TASK:
+			//	entity := task.Entity.(*device.DeviceCharge)
+			//	device.DeviceComChargeTaskOps(entity, false)
+			//case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
+			//	entity := task.Entity.(*device.DeviceCharge)
+			//	device.DeviceComChargeTaskOps(entity, true)
 			}
 		}
 	}

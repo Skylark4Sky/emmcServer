@@ -16,7 +16,9 @@ const (
 	COM_CHARGE_START_ACK_BIT = 0x02 //设备已执行
 	COM_CHARGE_STOP_BIT      = 0x04 //下发
 	COM_CHARGE_STOP_ACK_BIT  = 0x08 //设备已执行
-	COM_CHARGE_ERROR_BIT     = 0x10 //0 正常 1 充电出错
+	COM_CHARGE_FINISH_BIT    = 0x10 //充电完成
+	COM_CHARGE_NO_LOAD_BIT   = 0x20 //空载
+	COM_CHARGE_BREAKDOWN_BIT = 0x40 //充电异常
 )
 
 type ModuleConnectLog struct {
@@ -52,10 +54,10 @@ type DeviceInfo struct {
 	UpdateTime    int64  `gorm:"column:update_time;type:bigint(13) unsigned" json:"update_time"`    // 更新时间
 }
 
-type DeviceCom struct {
+type DeviceCharge struct {
 	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned ;not null" json:"-"`
 	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned ;not null" json:"device_id"`               // 设备ID
-	ChargeID             uint64  `gorm:"column:charge_id;type:bigint(20) unsigned ;not null" json:"charge_id"`               // 充电ID
+	Token             	 uint64  `gorm:"column:token;type:bigint(20) unsigned ;not null" json:"token"`               		 // 充电token
 	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned ;not null" json:"com_id"`                     // 端口
 	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned " json:"max_energy"`                         // 最大使用电量
 	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                       // 最大使用时间
@@ -138,24 +140,24 @@ func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_
 	transfer.CreateTime = GetTimestampMs()
 }
 
-func (com *DeviceCom) Create(deviceID, chargeID uint64, comID uint8) {
+func (com *DeviceCharge) Create(deviceID, token uint64, comID uint8) {
 	com.DeviceID = deviceID
-	com.ChargeID = chargeID
+	com.Token = token
 	com.ComID = comID
 	com.CreateTime = GetTimestampMs()
 }
 
-func (com *DeviceCom) Init(maxEnergy, maxTime, maxElectricity uint32) {
+func (com *DeviceCharge) Init(maxEnergy, maxTime, maxElectricity uint32) {
 	com.MaxEnergy = maxEnergy
 	com.MaxTime = maxTime
 	com.MaxElectricity = maxElectricity
 }
 
-func (com *DeviceCom) SetState(state uint32) {
+func (com *DeviceCharge) SetState(state uint32) {
 	com.State = state//COM_CHARGE_START_BIT
 }
 
-func (com *DeviceCom) ChangeValue(useEnergy, useTime, maxChargeElectricity uint32, averagePower, maxPower float64) {
+func (com *DeviceCharge) ChangeValue(useEnergy, useTime, maxChargeElectricity uint32, averagePower, maxPower float64) {
 	com.UseEnergy = useEnergy
 	com.UseTime = useTime
 	com.MaxChargeElectricity = maxChargeElectricity

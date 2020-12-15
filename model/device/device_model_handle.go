@@ -94,8 +94,8 @@ func CreateDevInfo(entity *CreateDeviceInfo) error {
 	return nil
 }
 
-func findComChargeTaskRecord(entity *DeviceCom) (bool, error) {
-	err := ExecSQL().Debug().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID, entity.ChargeID, entity.ComID).Order("create_time desc").First(&entity).Error
+func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
+	err := ExecSQL().Debug().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID, entity.Token, entity.ComID).Order("create_time desc").First(&entity).Error
 	var hasRecord = true
 
 	if err != nil {
@@ -109,10 +109,10 @@ func findComChargeTaskRecord(entity *DeviceCom) (bool, error) {
 	return hasRecord, nil
 }
 
-func DeviceComChargeTaskOps(entity *DeviceCom, isAck bool) error {
-	taskRecord := &DeviceCom{
+func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
+	taskRecord := &DeviceCharge{
 		DeviceID: entity.DeviceID,
-		ChargeID: entity.ChargeID,
+		Token: entity.Token,
 		ComID:    entity.ComID,
 	}
 
@@ -121,19 +121,15 @@ func DeviceComChargeTaskOps(entity *DeviceCom, isAck bool) error {
 		return err
 	}
 
+	entity.State |= state
+
 	//存在记录
 	if hasRecord {
-		if isAck {
-			entity.State = (taskRecord.State | COM_CHARGE_START_ACK_BIT)
-		}
 		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
-		if isAck {
-			entity.State |= COM_CHARGE_START_ACK_BIT
-		}
 		if err := ExecSQL().Debug().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))

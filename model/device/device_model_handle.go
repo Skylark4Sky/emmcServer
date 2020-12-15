@@ -124,8 +124,12 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	//存在记录
 	if hasRecord {
 		entity.State = (taskRecord.State | state)
-		//"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity,
-		updateParam := map[string]interface{}{"state": entity.State}
+		var updateParam interface{}
+		if (state == COM_CHARGE_STOP_BIT) {
+			updateParam = map[string]interface{}{"state": entity.State}
+		} else {
+			updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity,"state": entity.State}
+		}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}

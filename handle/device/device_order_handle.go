@@ -82,9 +82,9 @@ func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, d
 		case mqtt.GISUNLINK_CHARGE_FINISH:
 			task.Param = map[string]interface{}{"initiative_type": COM_CHARGE_FINISH_BIT}
 		case mqtt.GISUNLINK_CHARGE_BREAKDOWN:
-			task.Param = map[string]interface{}{"initiative_type": COM_CHARGE_NO_LOAD_BIT}
-		case mqtt.GISUNLINK_CHARGE_NO_LOAD:
 			task.Param = map[string]interface{}{"initiative_type": COM_CHARGE_BREAKDOWN_BIT}
+		case mqtt.GISUNLINK_CHARGE_NO_LOAD:
+			task.Param = map[string]interface{}{"initiative_type": COM_CHARGE_NO_LOAD_BIT}
 		}
 		task.Func = asyncDeviceChargeTaskFunc
 		task.RunTaskWithTypeAndEntity(ASYNC_INITIATIVE_EXIT_COM_CHARGE_TASK, deviceCom)

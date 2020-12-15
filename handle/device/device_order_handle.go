@@ -66,6 +66,7 @@ func deviceAckExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID
 		comData := (comList.ComPort[0]).(mqtt.ComData)
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
+		deviceCom.Init(comData.MaxEnergy, comData.MaxTime,uint32(comData.MaxElectricity))
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
 		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
@@ -77,6 +78,7 @@ func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, d
 		comData := (comList.ComPort[0]).(mqtt.ComData)
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
+		deviceCom.Init(comData.MaxEnergy, comData.MaxTime,uint32(comData.MaxElectricity))
 		task := NewTask()
 		switch behavior {
 		case mqtt.GISUNLINK_CHARGE_FINISH:

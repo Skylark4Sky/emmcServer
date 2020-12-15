@@ -95,7 +95,7 @@ func CreateDevInfo(entity *CreateDeviceInfo) error {
 }
 
 func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
-	err := ExecSQL().Debug().Where("device_id = ? AND charge_id = ? AND com_id = ?", entity.DeviceID, entity.Token, entity.ComID).Order("create_time desc").First(&entity).Error
+	err := ExecSQL().Debug().Where("device_id = ? AND token = ? AND com_id = ?", entity.DeviceID, entity.Token, entity.ComID).Order("create_time desc").First(&entity).Error
 	var hasRecord = true
 
 	if err != nil {

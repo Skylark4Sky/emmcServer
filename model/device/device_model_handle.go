@@ -123,6 +123,9 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 
 	//存在记录
 	if hasRecord {
+
+		SystemLog("select ",taskRecord, " entity ", entity)
+
 		entity.State = (entity.State | state)
 		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {

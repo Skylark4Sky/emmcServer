@@ -121,15 +121,15 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		return err
 	}
 
-	entity.State = (entity.State | state)
-
 	//存在记录
 	if hasRecord {
+		entity.State = (entity.State | state)
 		updateParam := map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
+		entity.State = state
 		if err := ExecSQL().Debug().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))

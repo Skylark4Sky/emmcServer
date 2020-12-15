@@ -121,7 +121,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		return err
 	}
 
-	entity.State |= state
+	entity.State = (entity.State | state)
 
 	//存在记录
 	if hasRecord {

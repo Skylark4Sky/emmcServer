@@ -3,9 +3,9 @@ package device
 import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
+	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
-	. "GoServer/model/asyncTask"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
 	"encoding/json"
@@ -43,7 +43,7 @@ func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, st
 		if updateFlags != 0 {
 			task := NewTask()
 			task.Param = deviceUpdateMap
-			task.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO,device)
+			task.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO, device)
 		}
 	}
 }
@@ -124,7 +124,8 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 		if len(comList.ComPort) >= 1 {
 			comData := (comList.ComPort[0]).(mqtt.ComData)
 			comNum = comData.Id
-			if jsonString, err := json.Marshal(comData); err == nil {
+			comPort := comList.ComPort
+			if jsonString, err := json.Marshal(comPort); err == nil {
 				payloadData = string(jsonString)
 			}
 		}

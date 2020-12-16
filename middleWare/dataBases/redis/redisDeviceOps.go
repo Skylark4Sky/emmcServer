@@ -104,7 +104,7 @@ func (c *Cacher) SetDeviceWorkerToRedis(deviceSN string, worker int) {
 
 func (c *Cacher) UpdateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID uint64) {
 	if deviceSN != "" && deviceID != 0 {
-		Redis().InitWithInsertDeviceIDToken(deviceSN, deviceID)
+		c.InitWithInsertDeviceIDToken(deviceSN, deviceID)
 	}
 }
 

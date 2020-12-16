@@ -57,7 +57,7 @@ type DeviceInfo struct {
 type DeviceCharge struct {
 	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned ;not null" json:"-"`
 	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned ;not null" json:"device_id"`               // 设备ID
-	Token             	 uint64  `gorm:"column:token;type:bigint(20) unsigned ;not null" json:"token"`               		 // 充电token
+	Token                uint64  `gorm:"column:token;type:bigint(20) unsigned ;not null" json:"token"`                       // 充电token
 	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned ;not null" json:"com_id"`                     // 端口
 	MaxEnergy            uint32  `gorm:"column:max_energy;type:int(10) unsigned " json:"max_energy"`                         // 最大使用电量
 	MaxTime              uint32  `gorm:"column:max_time;type:int(10)" json:"max_time"`                                       // 最大使用时间
@@ -70,6 +70,16 @@ type DeviceCharge struct {
 	State                uint32  `gorm:"column:state;type:int(10) unsigned ;not null" json:"state"`                          // 状态
 	CreateTime           int64   `gorm:"column:create_time;type:bigint(13) unsigned " json:"create_time"`                    // 创建时间
 	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned " json:"end_time"`                          // 结束时间
+}
+
+type DeviceComInfo struct {
+	ID          uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"`
+	DeviceID    uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 设备ID
+	ComID       uint8  `gorm:"column:com_id;type:tinyint(2) unsigned;not null" json:"com_id"`       // 端口ID
+	TotalEnergy int64  `gorm:"column:total_energy;type:bigint(20) unsigned" json:"total_energy"`    // 总计使用度数
+	TotalTime   int64  `gorm:"column:total_time;type:bigint(20) unsigned" json:"total_time"`        // 总计使用时间
+	BillType    uint32 `gorm:"column:bill_type;type:int(10) unsigned" json:"bill_type"`             // 计费类型-按时间，按功率
+	BillRule    string `gorm:"column:bill_rule;type:varchar(1024)" json:"bill_rule"`                // 计费规则
 }
 
 type DeviceTransferLog struct {
@@ -154,7 +164,7 @@ func (com *DeviceCharge) Init(maxEnergy, maxTime, maxElectricity uint32) {
 }
 
 func (com *DeviceCharge) SetState(state uint32) {
-	com.State = state//COM_CHARGE_START_BIT
+	com.State = state //COM_CHARGE_START_BIT
 }
 
 func (com *DeviceCharge) ChangeValue(useEnergy, useTime, maxChargeElectricity uint32, averagePower, maxPower float64) {

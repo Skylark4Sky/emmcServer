@@ -1,6 +1,7 @@
 package device
 
 import (
+	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
@@ -53,8 +54,13 @@ func deviceAckCreateComChargeTask(comList *mqtt.ComList, deviceSN string, device
 
 func exitComChargeTask(task *mqtt.ComTaskStopTransfer, deviceSN string, deviceID uint64) {
 	if task != nil && deviceID > 0 && len(deviceSN) > 1 {
+		cacheData := &CacheComData{}
+		Redis().GetDeviceComDataFormRedis(deviceSN, task.ComID, cacheData)
+
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
+		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
 		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
@@ -64,9 +70,15 @@ func exitComChargeTask(task *mqtt.ComTaskStopTransfer, deviceSN string, deviceID
 func deviceAckExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
 	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
 		comData := (comList.ComPort[0]).(mqtt.ComData)
+
+		cacheData := &CacheComData{}
+		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, cacheData)
+
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
 		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
+		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
 		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
@@ -76,9 +88,15 @@ func deviceAckExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID
 func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64, behavior uint8) {
 	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
 		comData := (comList.ComPort[0]).(mqtt.ComData)
+
+		cacheData := &CacheComData{}
+		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, cacheData)
+
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
 		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
+		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+
 		task := NewTask()
 		switch behavior {
 		case mqtt.GISUNLINK_CHARGE_FINISH:

@@ -113,8 +113,7 @@ func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
 func isChaegeEnding(state uint32) (ret bool) {
 	ret = true
 	switch state {
-	case COM_CHARGE_START_BIT:
-	case COM_CHARGE_START_ACK_BIT:
+	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT:
 		ret = false
 	}
 	return ret
@@ -137,11 +136,10 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		entity.State = (taskRecord.State | state)
 		var updateParam interface{}
 		if state == COM_CHARGE_STOP_BIT {
-			updateParam = map[string]interface{}{"state": entity.State}
+			updateParam = map[string]interface{}{"state": entity.State, "end_time": GetTimestampMs()}
 		} else {
 			if isChaegeEnding(state) {
-				entity.EndTime = GetTimestampMs()
-				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State, "end_time": entity.EndTime}
+				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State, "end_time": GetTimestampMs()}
 			} else {
 				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
 			}

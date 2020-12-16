@@ -4,6 +4,7 @@ import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/utils/log"
+	. "GoServer/utils/time"
 	"go.uber.org/zap"
 	"reflect"
 )
@@ -109,6 +110,16 @@ func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
 	return hasRecord, nil
 }
 
+func isChaegeEnding(state uint32) (ret bool) {
+	ret = true
+	switch state {
+	case COM_CHARGE_START_BIT:
+	case COM_CHARGE_START_ACK_BIT:
+		ret = false
+	}
+	return ret
+}
+
 func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	taskRecord := &DeviceCharge{
 		DeviceID: entity.DeviceID,
@@ -125,16 +136,24 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	if hasRecord {
 		entity.State = (taskRecord.State | state)
 		var updateParam interface{}
-		if (state == COM_CHARGE_STOP_BIT) {
+		if state == COM_CHARGE_STOP_BIT {
 			updateParam = map[string]interface{}{"state": entity.State}
 		} else {
-			updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity,"state": entity.State}
+			if isChaegeEnding(state) {
+				entity.EndTime = GetTimestampMs()
+				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State, "end_time": entity.EndTime}
+			} else {
+				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
+			}
 		}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
 	} else { //不存在记录
 		entity.State = state
+		if isChaegeEnding(state) {
+			entity.EndTime = GetTimestampMs()
+		}
 		if err := ExecSQL().Debug().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))

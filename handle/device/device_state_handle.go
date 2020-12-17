@@ -18,6 +18,7 @@ func calculateComData(comData *mqtt.ComData) *CacheComData {
 		CurPower:             0,
 		AveragePower:         0,
 		MaxPower:             0,
+		SyncTime: 			  0,
 	}
 	return cacheComData
 }
@@ -76,7 +77,10 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 				if comData.CurElectricity > cacheCom.MaxChargeElectricity {
 					cacheComData.MaxChargeElectricity = comData.CurElectricity
 				}
+
+				// 检测同步时间是否可以同步当前端口数据入库
 			}
+
 			cacheComList[comData.Id] = *cacheComData
 			return cacheComData
 		})

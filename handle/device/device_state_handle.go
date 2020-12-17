@@ -41,12 +41,12 @@ func analyseComListData(deviceSN string, comList *mqtt.ComList, cacheComList map
 		if comData.Enable == COM_DISENABLE {
 			//大于50ma保存异常数值
 			if (comData.CurElectricity != cacheComData.CurElectricity) && (math.Abs(float64(comData.CurElectricity)-float64(cacheComData.CurElectricity)) >= 50) {
-				SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceSN, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacheComData.CurElectricity)
+				SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceSN, " 端口:", comData.Id," - ",cacheComData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacheComData.CurElectricity)
 			}
 		}
-		if comData.Token != cacheComData.Token {
+		//if comData.Token != cacheComData.Token {
 			//		SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacheComData.Token)
-		}
+		//}
 	}
 }
 

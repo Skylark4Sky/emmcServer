@@ -5,6 +5,7 @@ import (
 	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
+	. "GoServer/utils/log"
 )
 
 func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
@@ -29,59 +30,54 @@ func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 	}
 }
 
-func createComChargeTask(task *mqtt.ComTaskStartTransfer, deviceSN string, deviceID uint64) {
-	if task != nil && deviceID > 0 && len(deviceSN) > 1 {
+func comChargeTaskStart(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
+	if iface != nil && deviceID > 0 && len(deviceSN) > 1 {
 		deviceCom := &DeviceCharge{}
-		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
-		deviceCom.Init(task.MaxEnergy, task.MaxTime, task.MaxElectricity)
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
-		task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
+		if !ack {
+			entity := iface.(*mqtt.ComTaskStartTransfer)
+			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
+			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, entity.MaxElectricity)
+			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
+		} else {
+			comList := iface.(*mqtt.ComList)
+			entity := (comList.ComPort[0]).(mqtt.ComData)
+			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
+			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
+		}
 	}
 }
 
-func deviceAckCreateComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
-	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
-		comData := (comList.ComPort[0]).(mqtt.ComData)
-		deviceCom := &DeviceCharge{}
-		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
-		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
-		task := NewTask()
-		task.Func = asyncDeviceChargeTaskFunc
-		task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
-	}
-}
-
-func exitComChargeTask(task *mqtt.ComTaskStopTransfer, deviceSN string, deviceID uint64) {
-	if task != nil && deviceID > 0 && len(deviceSN) > 1 {
+func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
+	if iface != nil && deviceID > 0 && len(deviceSN) > 1 {
 		cacheData := &CacheComData{}
-		Redis().GetDeviceComDataFormRedis(deviceSN, task.ComID, cacheData)
-
 		deviceCom := &DeviceCharge{}
-		deviceCom.Create(deviceID, uint64(task.Token), task.ComID)
-		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
 
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
-		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
-	}
-}
 
-func deviceAckExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
-	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
-		comData := (comList.ComPort[0]).(mqtt.ComData)
+		if !ack {
+			entity := iface.(*mqtt.ComTaskStopTransfer)
+			Redis().GetDeviceComDataFormRedis(deviceSN, entity.ComID, cacheData)
 
-		cacheData := &CacheComData{}
-		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, cacheData)
+			SystemLog("comChargeTaskStop: ", cacheData)
 
-		deviceCom := &DeviceCharge{}
-		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
-		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
-		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
+			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
+		} else {
+			comList := iface.(*mqtt.ComList)
+			entity := (comList.ComPort[0]).(mqtt.ComData)
+			Redis().GetDeviceComDataFormRedis(deviceSN, entity.Id, cacheData)
 
-		task := NewTask()
-		task.Func = asyncDeviceChargeTaskFunc
-		task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
+			SystemLog("comChargeTaskStop ack: ", cacheData)
+
+			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
+		}
 	}
 }
 

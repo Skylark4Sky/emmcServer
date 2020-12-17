@@ -52,18 +52,18 @@ func writeBytes(byteBuf io.Writer, data interface{}) bool {
 	return true
 }
 
-func setUint8(byteBuf io.Writer,value uint8) bool {
-	return writeBytes(byteBuf,value)
+func setUint8(byteBuf io.Writer, value uint8) bool {
+	return writeBytes(byteBuf, value)
 }
 
-func setUint16(byteBuf io.Writer,value uint16) bool {
-	return writeBytes(byteBuf,value)
+func setUint16(byteBuf io.Writer, value uint16) bool {
+	return writeBytes(byteBuf, value)
 }
 
-func setUint32(byteBuf io.Writer,value uint32) bool {
-	return writeBytes(byteBuf,value)
+func setUint32(byteBuf io.Writer, value uint32) bool {
+	return writeBytes(byteBuf, value)
 }
 
-func setBtyes(byteBuf io.Writer,value []byte) bool {
-	return writeBytes(byteBuf,value)
+func setBtyes(byteBuf io.Writer, value []byte) bool {
+	return writeBytes(byteBuf, value)
 }

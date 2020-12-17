@@ -54,10 +54,10 @@ func analyseComListData(deviceSN string, comList *mqtt.ComList, cacheComList map
 
 // 运行状态 & 空闲状态 处理
 func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
-	//批量读当前设备所有接口
 	cacheComList := BatchReadDeviceComDataiFromRedis(deviceSN)
 	//数据分析
 	analyseComListData(deviceSN, comList, cacheComList)
+
 	//批量写入数据到缓存 并 统计 功率
 	if len(cacheComList) > 1 {
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
@@ -69,19 +69,26 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 				cacheComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, cacheComData.CurElectricity, 2)                //当前功率
 				cacheComData.AveragePower = CalculateCurAverageComPower(cacheComData.UseEnergy, cacheComData.UseTime, 2) //平均功率
 				//最大功率
-				if CmpPower(cacheComData.CurPower, cacheCom.MaxPower) >= 1 {
+				cacheComData.MaxPower = cacheCom.MaxPower
+				if CmpPower(cacheComData.CurPower, cacheCom.MaxPower) > 0 {
 					cacheComData.MaxPower = cacheComData.CurPower
 				}
-				// 最大电流记录
+				// 最大记录
 				if comData.CurElectricity > cacheCom.MaxChargeElectricity {
 					cacheComData.MaxChargeElectricity = comData.CurElectricity
 				}
 			}
+			if cacheCom.Token == 37937 {
+				SystemLog(" deviceStateHandle-redis-MaxPower: ", cacheCom.MaxPower, " cacheComData:", cacheComData)
+			}
+			cacheComList[comData.Id] = *cacheComData
 			return cacheComData
 		})
 	} else {
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
-			return calculateComData(comData)
+			cacheComData := calculateComData(comData)
+			cacheComList[comData.Id] = *cacheComData
+			return cacheComData
 		})
 	}
 
@@ -89,7 +96,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 	refreshDeviceStatus(deviceSN, deviceID, &DeviceStatus{
 		Behavior:     comList.ComBehavior,
 		Signal:       int8(comList.Signal),
-		Worker:       Redis().TatolWorkerByDevice(deviceSN, BatchReadDeviceComDataiFromRedis(deviceSN)),
+		Worker:       Redis().TatolWorkerByDevice(deviceSN, cacheComList),
 		ID:           deviceID,
 		ProtoVersion: comList.ComProtoVer,
 	})
@@ -102,13 +109,13 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uin
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
 		deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
 	case mqtt.GISUNLINK_CHARGE_TASK:
-		createComChargeTask(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID)
+		comChargeTaskStart(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID, false)
 	case mqtt.GISUNLINK_START_CHARGE:
-		deviceAckCreateComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
+		comChargeTaskStart(packet.Data.(*mqtt.ComList), deviceSN, deviceID, true)
 	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
-		exitComChargeTask(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID)
+		comChargeTaskStop(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID, false)
 	case mqtt.GISUNLINK_STOP_CHARGE:
-		deviceAckExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
+		comChargeTaskStop(packet.Data.(*mqtt.ComList), deviceSN, deviceID, true)
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_BREAKDOWN:
 		deviceInitiativeExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID, packet.Json.Behavior)
 	}

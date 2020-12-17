@@ -133,25 +133,44 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 
 	//存在记录
 	if hasRecord {
+		if (taskRecord.State & state) == state {
+			return nil
+		}
+
 		entity.State = (taskRecord.State | state)
-		var updateParam interface{}
+		updateParam := make(map[string]interface{})
+
 		if state == COM_CHARGE_STOP_BIT {
-			updateParam = map[string]interface{}{"state": entity.State, "end_time": GetTimestampMs()}
+			updateParam["state"] = entity.State
+			updateParam["end_time"] = GetTimestampMs()
 		} else {
+			updateParam["max_energy"] = entity.State
+			updateParam["max_time"] = entity.State
+			updateParam["max_electricity"] = entity.State
+
+			updateParam["state"] = entity.State
 			if isChaegeEnding(state) {
-				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State, "end_time": GetTimestampMs()}
-			} else {
-				updateParam = map[string]interface{}{"max_energy": entity.MaxEnergy, "max_time": entity.MaxTime, "max_electricity": entity.MaxElectricity, "state": entity.State}
+				updateParam["use_energy"] = entity.UseEnergy
+				updateParam["use_time"] = entity.UseTime
+				updateParam["max_charge_electricity"] = entity.MaxChargeElectricity
+				updateParam["average_power"] = entity.AveragePower
+				updateParam["max_power"] = entity.MaxPower
+				updateParam["end_time"] = GetTimestampMs()
 			}
+
 		}
 		if err := ExecSQL().Debug().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
+
+		SystemLog("update: ", taskRecord, "entity: ", updateParam)
 	} else { //不存在记录
 		entity.State = state
 		if isChaegeEnding(state) {
 			entity.EndTime = GetTimestampMs()
 		}
+
+		SystemLog("insert: ", entity)
 		if err := ExecSQL().Debug().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))

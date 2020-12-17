@@ -2,11 +2,11 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/redis"
-	//. "GoServer/model"
 	mqtt "GoServer/mqttPacket"
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
+	"math"
 	"time"
 )
 
@@ -40,14 +40,12 @@ func analyseComListData(deviceSN string, comList *mqtt.ComList, cacheComList map
 		//未开启时，检测值是否有变化
 		if comData.Enable == COM_DISENABLE {
 			//大于50ma保存异常数值
-			if (comData.CurElectricity >= 50) && (comData.CurElectricity != cacheComData.CurElectricity) {
+			if (comData.CurElectricity != cacheComData.CurElectricity) && (math.Abs(float64(comData.CurElectricity)-float64(cacheComData.CurElectricity)) >= 50) {
 				SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceSN, " 端口:", comData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", cacheComData.CurElectricity)
 			}
-		} else {
-			//comData.MaxPower
 		}
 		if comData.Token != cacheComData.Token {
-			SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacheComData.Token)
+			//		SystemLog(" NewToKen:", comData.Token, " OldToKen:", cacheComData.Token)
 		}
 	}
 }
@@ -66,20 +64,18 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 			//端口启用状态
 			if comData.Enable == COM_ENABLE {
 				// 数值计算
-				cacheComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, cacheComData.CurElectricity, 2)                //当前功率
-				cacheComData.AveragePower = CalculateCurAverageComPower(cacheComData.UseEnergy, cacheComData.UseTime, 2) //平均功率
+				cacheComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, cacheComData.CurElectricity, 5)                //当前功率
+				cacheComData.AveragePower = CalculateCurAverageComPower(cacheComData.UseEnergy, cacheComData.UseTime, 5) //平均功率
 				//最大功率
 				cacheComData.MaxPower = cacheCom.MaxPower
 				if CmpPower(cacheComData.CurPower, cacheCom.MaxPower) > 0 {
 					cacheComData.MaxPower = cacheComData.CurPower
 				}
 				// 最大记录
+				cacheComData.MaxChargeElectricity = cacheCom.MaxChargeElectricity
 				if comData.CurElectricity > cacheCom.MaxChargeElectricity {
 					cacheComData.MaxChargeElectricity = comData.CurElectricity
 				}
-			}
-			if cacheCom.Token == 37937 {
-				SystemLog(" deviceStateHandle-redis-MaxPower: ", cacheCom.MaxPower, " cacheComData:", cacheComData)
 			}
 			cacheComList[comData.Id] = *cacheComData
 			return cacheComData

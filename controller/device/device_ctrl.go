@@ -16,8 +16,8 @@ func StartCharge(ctx *gin.Context) {
 	//	}
 
 	var postData mqtt.ComTaskStartTransfer
-	postData.ComID = 1
-	postData.Token = 56789
+	postData.ComID = 6
+	postData.Token = 567890
 	postData.MaxEnergy = 19000
 	postData.MaxElectricity = 2272 //uint32(CalculateMaxComElectricity(500))
 	postData.MaxTime = 6000
@@ -39,8 +39,8 @@ func StopCharge(ctx *gin.Context) {
 	//	}
 
 	var postData mqtt.ComTaskStopTransfer
-	postData.ComID = 1
-	postData.Token = 56789
+	postData.ComID = 6
+	postData.Token = 567890
 	postData.ForceStop = 1
 
 	payload, _ := mqtt.MessagePack(postData)

@@ -65,16 +65,16 @@ func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack 
 		if !ack {
 			entity := iface.(*mqtt.ComTaskStopTransfer)
 			Redis().GetDeviceComDataFormRedis(deviceSN, entity.ComID, cacheData)
-
 			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
+			deviceCom.Init(cacheData.MaxEnergy, cacheData.MaxTime, uint32(cacheData.MaxElectricity))
 			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
 		} else {
 			comList := iface.(*mqtt.ComList)
 			entity := (comList.ComPort[0]).(mqtt.ComData)
 			Redis().GetDeviceComDataFormRedis(deviceSN, entity.Id, cacheData)
-
 			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+			deviceCom.Init(cacheData.MaxEnergy, cacheData.MaxTime, uint32(cacheData.MaxElectricity))
 			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
 		}

@@ -96,7 +96,7 @@ func CreateDevInfo(entity *CreateDeviceInfo) error {
 }
 
 func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
-	err := ExecSQL().Debug().Where("device_id = ? AND token = ? AND com_id = ?", entity.DeviceID, entity.Token, entity.ComID).Order("create_time desc").First(&entity).Error
+	err := ExecSQL().Where("device_id = ? AND token = ? AND com_id = ?", entity.DeviceID, entity.Token, entity.ComID).Order("create_time desc").First(&entity).Error
 	var hasRecord = true
 
 	if err != nil {
@@ -113,7 +113,7 @@ func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
 func isChaegeEnding(state uint32) (ret bool) {
 	ret = true
 	switch state {
-	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT:
+	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT, COM_CHARGE_RUNING_BIT:
 		ret = false
 	}
 	return ret
@@ -133,7 +133,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 
 	//存在记录
 	if hasRecord {
-		if (taskRecord.State & state) == state {
+		if (taskRecord.State&state) == state && state != COM_CHARGE_RUNING_BIT {
 			return nil
 		}
 
@@ -157,6 +157,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 				updateParam["end_time"] = GetTimestampMs()
 			}
 		}
+
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}

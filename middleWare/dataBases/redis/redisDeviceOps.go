@@ -191,9 +191,9 @@ func (c *Cacher) TatolWorkerByDevice(deviceSN string, comDataMap map[uint8]Cache
 	}
 
 	if deviceInfo.EnableCount >= 1 {
-		curPower := CalculateCurComPowerToString(CUR_VOLTAGE, uint32(deviceInfo.CurElectricity), 2)
-		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 2)
-		MaxPower := GetPowerValue(maxPower, 2)
+		curPower := CalculateCurComPowerToString(CUR_VOLTAGE, uint32(deviceInfo.CurElectricity), 5)
+		AveragePower := CalculateCurAverageComPowerToString(uint32(deviceInfo.UseEnergy), uint32(deviceInfo.UseTime), 5)
+		MaxPower := GetPowerValue(maxPower, 5)
 		deviceInfo.CurPower = StringJoin([]interface{}{curPower, "w"})
 		deviceInfo.AveragePower = StringJoin([]interface{}{AveragePower, "w"})
 		deviceInfo.MaxPower = StringJoin([]interface{}{MaxPower, "w"})

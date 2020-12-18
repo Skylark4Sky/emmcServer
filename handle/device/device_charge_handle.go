@@ -5,6 +5,7 @@ import (
 	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
+	//	. "GoServer/utils/log"
 )
 
 func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {

@@ -57,7 +57,8 @@ type CacheComData struct {
 	CurPower             float64 `json:"c_power"`              //当前端口使用功率
 	AveragePower         float64 `json:"a_power"`              //当前端口平均功率
 	MaxPower             float64 `json:"m_power"`              //当前端口最高使用功率
-	SyncTime			 int64 	  `json:"sync_time"`           //当前端口同步数据到数据库
+	SyncTime             int64   `json:"sync_time"`            //当前端口同步数据到数据库
+	WriteFlags           uint8   `write_flags`                 //写数据标志位
 }
 
 func GetDeviceTokenKey(deviceSN string) string {

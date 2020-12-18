@@ -147,28 +147,24 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 			updateParam["max_energy"] = entity.MaxEnergy
 			updateParam["max_time"] = entity.MaxTime
 			updateParam["max_electricity"] = entity.MaxElectricity
-
 			updateParam["state"] = entity.State
+			updateParam["use_energy"] = entity.UseEnergy
+			updateParam["use_time"] = entity.UseTime
+			updateParam["max_charge_electricity"] = entity.MaxChargeElectricity
+			updateParam["average_power"] = entity.AveragePower
+			updateParam["max_power"] = entity.MaxPower
 			if isChaegeEnding(state) {
-				updateParam["use_energy"] = entity.UseEnergy
-				updateParam["use_time"] = entity.UseTime
-				updateParam["max_charge_electricity"] = entity.MaxChargeElectricity
-				updateParam["average_power"] = entity.AveragePower
-				updateParam["max_power"] = entity.MaxPower
 				updateParam["end_time"] = GetTimestampMs()
 			}
-
 		}
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
-		//		SystemLog("update: ", taskRecord, "entity: ", updateParam)
 	} else { //不存在记录
 		entity.State = state
 		if isChaegeEnding(state) {
 			entity.EndTime = GetTimestampMs()
 		}
-		//		SystemLog("insert: ", entity)
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))

@@ -1,41 +1,42 @@
 package asyncTask
 
 import (
-	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/middleWare/dataBases/mysql"
+	. "GoServer/middleWare/dataBases/redis"
 	"GoServer/model/device"
 	"GoServer/model/user"
+	. "GoServer/utils/log"
 	. "GoServer/utils/threadWorker"
 	"go.uber.org/zap"
-	. "GoServer/utils/log"
 	"reflect"
 )
 
 type AsyncTaskType uint64
 
 const (
-	UNKNOWN_ASYNC_TASK AsyncTaskType = iota
-	ASYNC_CREATE_THIRD_USER                           //建立第三方用户数据 1
-	ASYNC_CREATE_NORMAL_USER                          //建立用户数据 2
-	ASYNC_USER_LOGIN_LOG                              //用户登录日志 3
-	ASYNC_UP_USER_AUTH_TIME                           //更新用户授权时间 4
-	ASYNC_MODULE_CONNECT_LOG                          //模组连接日志 5
-	ASYNC_UP_MODULE_INFO                              //更新模组版本 6
-	ASYNC_UP_DEVICE_INFO                              //更新设备版本 7
-	ASYNC_DEV_AND_MODULE_CREATE                       //建立设备与模组关系 8
-	ASYNC_UPDATA_WEUSER_LOCAL                         //更新用户地址 9
-	ASYNC_UPDATA_WEUSER_INFO                          //更新用户资料 10
-	ASYNC_UPDATA_USER_EXTRA                           //更新用户扩展资料 11
-	ASYNC_CREATE_USER_AUTH                            //建立授权记录 12
-	ASYNC_CREATE_USER_REGISTER_LOG                    //建立用户注册日志 13
-	ASYNC_CREATE_USER_EXTRA                           //建立用户信息扩展记录 14
-	ASYNC_CREATE_USER_LOCATION                        //建立用户地址记录 15
-	ASYNC_UPDATE_DEVICE_STATUS                        //更新设备状态 16
-	ASYNC_CREATE_COM_CHARGE_TASK                      //建立充电记录
-	ASYNC_CREATE_COM_CHARGE_TASK_ACK                  //设备上报开始充电
-	ASYNC_STOP_COM_CHARGE_TASK                        //退出充电
-	ASYNC_STOP_COM_CHARGE_TASK_ACK                    //设备响应上报退出充电
-	ASYNC_INITIATIVE_EXIT_COM_CHARGE_TASK			  //主动退出充电
+	UNKNOWN_ASYNC_TASK                    AsyncTaskType = iota
+	ASYNC_CREATE_THIRD_USER                             //建立第三方用户数据 1
+	ASYNC_CREATE_NORMAL_USER                            //建立用户数据 2
+	ASYNC_USER_LOGIN_LOG                                //用户登录日志 3
+	ASYNC_UP_USER_AUTH_TIME                             //更新用户授权时间 4
+	ASYNC_MODULE_CONNECT_LOG                            //模组连接日志 5
+	ASYNC_UP_MODULE_INFO                                //更新模组版本 6
+	ASYNC_UP_DEVICE_INFO                                //更新设备版本 7
+	ASYNC_DEV_AND_MODULE_CREATE                         //建立设备与模组关系 8
+	ASYNC_UPDATA_WEUSER_LOCAL                           //更新用户地址 9
+	ASYNC_UPDATA_WEUSER_INFO                            //更新用户资料 10
+	ASYNC_UPDATA_USER_EXTRA                             //更新用户扩展资料 11
+	ASYNC_CREATE_USER_AUTH                              //建立授权记录 12
+	ASYNC_CREATE_USER_REGISTER_LOG                      //建立用户注册日志 13
+	ASYNC_CREATE_USER_EXTRA                             //建立用户信息扩展记录 14
+	ASYNC_CREATE_USER_LOCATION                          //建立用户地址记录 15
+	ASYNC_UPDATE_DEVICE_STATUS                          //更新设备状态 16
+	ASYNC_CREATE_COM_CHARGE_TASK                        //建立充电记录
+	ASYNC_CREATE_COM_CHARGE_TASK_ACK                    //设备上报开始充电
+	ASYNC_STOP_COM_CHARGE_TASK                          //退出充电
+	ASYNC_STOP_COM_CHARGE_TASK_ACK                      //设备响应上报退出充电
+	ASYNC_INITIATIVE_EXIT_COM_CHARGE_TASK               //主动退出充电
+	ASYNC_UPDATE_CHARGE_TASK_DATA                       //定时同步数据
 )
 
 type AsyncTaskFunc func(task *AsyncTaskEntity)
@@ -58,9 +59,9 @@ func NewTask() *AsyncTaskEntity {
 	}
 }
 
-func NewAsyncTaskWithParam(typeVal AsyncTaskType, entity interface{})  {
+func NewAsyncTaskWithParam(typeVal AsyncTaskType, entity interface{}) {
 	task := NewTask()
-	task.RunTaskWithTypeAndEntity(typeVal,entity)
+	task.RunTaskWithTypeAndEntity(typeVal, entity)
 }
 
 func (task *AsyncTaskEntity) RunTaskWithTypeAndEntity(typeVal AsyncTaskType, entity interface{}) {
@@ -111,7 +112,7 @@ func (task *AsyncTaskEntity) ExecTask() error {
 			return nil
 		} else {
 			switch task.Type {
-			case ASYNC_CREATE_THIRD_USER,ASYNC_CREATE_NORMAL_USER:
+			case ASYNC_CREATE_THIRD_USER, ASYNC_CREATE_NORMAL_USER:
 				entity := task.Entity.(user.CreateUserInfo)
 				if task.Type == ASYNC_CREATE_NORMAL_USER {
 					user.CreateNewUser(&entity, false)
@@ -142,12 +143,8 @@ func (task *AsyncTaskEntity) ExecTask() error {
 					structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 					SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 				}
-			//case ASYNC_CREATE_COM_CHARGE_TASK:
-			//	entity := task.Entity.(*device.DeviceCharge)
-			//	device.DeviceComChargeTaskOps(entity, false)
-			//case ASYNC_CREATE_COM_CHARGE_TASK_ACK:
-			//	entity := task.Entity.(*device.DeviceCharge)
-			//	device.DeviceComChargeTaskOps(entity, true)
+			case ASYNC_UPDATE_CHARGE_TASK_DATA:
+
 			}
 		}
 	}

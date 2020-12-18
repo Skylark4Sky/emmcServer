@@ -16,9 +16,10 @@ const (
 	COM_CHARGE_START_ACK_BIT uint32 = 0x02 //设备已执行
 	COM_CHARGE_STOP_BIT      uint32 = 0x04 //下发
 	COM_CHARGE_STOP_ACK_BIT  uint32 = 0x08 //设备已执行
-	COM_CHARGE_FINISH_BIT    uint32 = 0x10 //充电完成
-	COM_CHARGE_NO_LOAD_BIT   uint32 = 0x20 //空载
-	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x40 //充电异常
+	COM_CHARGE_RUNING_BIT    uint32 = 0x10 //运行
+	COM_CHARGE_FINISH_BIT    uint32 = 0x20 //完成
+	COM_CHARGE_NO_LOAD_BIT   uint32 = 0x40 //空载
+	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x80 //异常
 )
 
 type ModuleConnectLog struct {

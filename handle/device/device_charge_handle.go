@@ -22,6 +22,8 @@ func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 		if initiative_type, ok := task.Param["initiative_type"]; ok {
 			state = initiative_type.(uint32)
 		}
+	case ASYNC_UPDATE_CHARGE_TASK_DATA:
+		state = COM_CHARGE_RUNING_BIT
 	}
 	entity := task.Entity.(*DeviceCharge)
 	if state >= COM_CHARGE_START_BIT {
@@ -32,6 +34,19 @@ func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 //结算
 func settlementChargeTaskData() {
 
+}
+
+// 刷新数据
+func comChargeTaskDataUpdate(entity *CacheComData, deviceID uint64) {
+	if entity != nil {
+		deviceCom := &DeviceCharge{}
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+		deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
+		deviceCom.ChangeValue(entity.UseEnergy, entity.UseTime, entity.MaxChargeElectricity, entity.AveragePower, entity.MaxPower)
+		task.RunTaskWithTypeAndEntity(ASYNC_UPDATE_CHARGE_TASK_DATA, deviceCom)
+	}
 }
 
 func comChargeTaskStart(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
@@ -56,7 +71,7 @@ func comChargeTaskStart(iface interface{}, deviceSN string, deviceID uint64, ack
 
 func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
 	if iface != nil && deviceID > 0 && len(deviceSN) > 1 {
-		cacheData := &CacheComData{}
+		redisData := &CacheComData{}
 		deviceCom := &DeviceCharge{}
 
 		task := NewTask()
@@ -64,18 +79,18 @@ func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack 
 
 		if !ack {
 			entity := iface.(*mqtt.ComTaskStopTransfer)
-			Redis().GetDeviceComDataFormRedis(deviceSN, entity.ComID, cacheData)
+			Redis().GetDeviceComDataFormRedis(deviceSN, entity.ComID, redisData)
 			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
-			deviceCom.Init(cacheData.MaxEnergy, cacheData.MaxTime, uint32(cacheData.MaxElectricity))
-			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+			deviceCom.Init(redisData.MaxEnergy, redisData.MaxTime, uint32(redisData.MaxElectricity))
+			deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
 		} else {
 			comList := iface.(*mqtt.ComList)
 			entity := (comList.ComPort[0]).(mqtt.ComData)
-			Redis().GetDeviceComDataFormRedis(deviceSN, entity.Id, cacheData)
+			Redis().GetDeviceComDataFormRedis(deviceSN, entity.Id, redisData)
 			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
-			deviceCom.Init(cacheData.MaxEnergy, cacheData.MaxTime, uint32(cacheData.MaxElectricity))
-			deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+			deviceCom.Init(redisData.MaxEnergy, redisData.MaxTime, uint32(redisData.MaxElectricity))
+			deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
 		}
 	}
@@ -85,13 +100,13 @@ func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, d
 	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
 		comData := (comList.ComPort[0]).(mqtt.ComData)
 
-		cacheData := &CacheComData{}
-		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, cacheData)
+		redisData := &CacheComData{}
+		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, redisData)
 
 		deviceCom := &DeviceCharge{}
 		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
 		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
-		deviceCom.ChangeValue(cacheData.UseEnergy, cacheData.UseTime, cacheData.MaxChargeElectricity, cacheData.AveragePower, cacheData.MaxPower)
+		deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 
 		task := NewTask()
 		switch behavior {

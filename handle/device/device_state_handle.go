@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-const (
-	COM_DATA_SYNC_TIME = 3000000
-)
-
 //构建缓存数据实体
 func calculateComData(comData *mqtt.ComData) *CacheComData {
 	cacheComData := &CacheComData{

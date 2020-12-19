@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	COM_DATA_SYNC_TIME = 6000000
+	COM_DATA_SYNC_TIME = 3000000
 )
 
 //构建缓存数据实体
@@ -81,27 +81,13 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 				}
 				// 检测同步时间是否可以同步当前端口数据入库
 				curTime := GetTimestampMs()
-
-				if deviceID == 10000014 {
-					SystemLog(" comID: ", redisCacheData.Id, " SyncTime: ", newComData.SyncTime, " curTime: ", curTime, " redis: ", redisCacheData.SyncTime)
-				}
-
+				newComData.SyncTime = redisCacheData.SyncTime
 				if (redisCacheData.SyncTime == 0) || (curTime-redisCacheData.SyncTime) >= COM_DATA_SYNC_TIME {
-
 					newComData.SyncTime = curTime
-					if deviceID == 10000014 {
-						SystemLog(" ------------------- curTime: ", curTime, " redis: ", redisCacheData.SyncTime)
-					}
-
 					comChargeTaskDataUpdate(newComData, deviceID)
 				}
 
 				redisComList[comData.Id] = *newComData
-
-				if deviceID == 10000014 {
-					SystemLog("deviceID: ", deviceID, " comID: ", comData.Id, " newComData: ", *newComData)
-					SystemLog("deviceID: ", deviceID, " comID: ", comData.Id, " redisComData: ", redisComList[comData.Id])
-				}
 			}
 			return newComData
 		})

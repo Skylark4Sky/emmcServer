@@ -71,7 +71,7 @@ func CreateDevInfo(entity *CreateDeviceInfo) error {
 		var DeviceID uint64 = id[0]
 		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",DeviceID,",9)"})
 		if err := tx.Exec(loopInsertComList).Error; err != nil {
-			SystemLog(loopInsertComList,"Error")
+			SystemLog(loopInsertComList," Error")
 			tx.Rollback()
 			return err
 		}

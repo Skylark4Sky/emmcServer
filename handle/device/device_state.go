@@ -135,7 +135,6 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uin
 		comChargeTaskStop(packet.Data.(*mqtt.ComList), deviceSN, deviceID, true)
 		updateComTatol()
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_BREAKDOWN:
-
 		deviceInitiativeExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID, packet.Json.Behavior)
 	}
 }

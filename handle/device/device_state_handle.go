@@ -64,29 +64,28 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
 			newComData := calculateComData(comData)
 			redisCacheData := redisComList[comData.Id]
+			newComData.MaxPower = redisCacheData.MaxPower
+			newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
+			newComData.SyncTime = redisCacheData.SyncTime
 			//端口启用状态
 			if comData.Enable == COM_ENABLE {
 				// 数值计算
 				newComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, newComData.CurElectricity, 5)              //当前P值
 				newComData.AveragePower = CalculateCurAverageComPower(newComData.UseEnergy, newComData.UseTime, 5) //平均P值
 				// 最大P值
-				newComData.MaxPower = redisCacheData.MaxPower
 				if CmpPower(newComData.CurPower, redisCacheData.MaxPower) > 0 {
 					newComData.MaxPower = newComData.CurPower
 				}
 				// 最大E记录
-				newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
 				if comData.CurElectricity > redisCacheData.MaxChargeElectricity {
 					newComData.MaxChargeElectricity = comData.CurElectricity
 				}
 				// 检测同步时间是否可以同步当前端口数据入库
 				curTime := GetTimestampMs()
-				newComData.SyncTime = redisCacheData.SyncTime
 				if (redisCacheData.SyncTime == 0) || (curTime-redisCacheData.SyncTime) >= COM_DATA_SYNC_TIME {
 					newComData.SyncTime = curTime
 					comChargeTaskDataUpdate(newComData, deviceID)
 				}
-
 				redisComList[comData.Id] = *newComData
 			}
 			return newComData

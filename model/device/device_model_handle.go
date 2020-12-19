@@ -13,52 +13,54 @@ func CreateDeviceAndModuleInfo(entity *CreateDeviceInfo) error {
 	var err error
 	tx := ExecSQL().Begin()
 	switch entity.Type {
-	case NO_DEVICE_WITH_MODULE:	//建立 模组 和 设备信息
-		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Device)
+	case NO_DEVICE_WITH_MODULE: //建立 模组 和 设备信息
+		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx, &entity.Device)
 		if err != nil {
 			SystemLog("add DeviceInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",entity.Device.ID,",9)"})
+		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(", entity.Device.ID, ",9)"})
 		if err = tx.Exec(loopInsertComList).Error; err != nil {
-			SystemLog(loopInsertComList," Error")
+			SystemLog(loopInsertComList, " Error")
 			tx.Rollback()
 			return err
 		}
 		entity.Module.DeviceID = entity.Device.ID
-		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Module)
+		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx, &entity.Module)
 		if err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
 	case DEVICE_BUILD_BIT: //需单独创建Module
+		SystemLog("需单独创建Module")
 		entity.Module.DeviceID = entity.Device.ID
 		entity.Module.UID = entity.Device.UID
-		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Module)
+		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx, &entity.Module)
 		if err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
 	case MODULE_BUILD_BIT: //需单独创建Device
-		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Device)
+		SystemLog("需单独创建Device")
+		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx, &entity.Device)
 		if err != nil {
 			SystemLog("add DeviceInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",entity.Device.ID,",9)"})
+		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(", entity.Device.ID, ",9)"})
 		if err = tx.Exec(loopInsertComList).Error; err != nil {
-			SystemLog(loopInsertComList," Error")
+			SystemLog(loopInsertComList, " Error")
 			tx.Rollback()
 			return err
 		}
 		entity.Module.DeviceID = entity.Device.ID
-		updateModule := StringJoin([]interface{}{"UPDATE `module_info` SET `uid`=0, `device_id`=",entity.Device.ID," WHERE `id`=",entity.Module.ID})
+		updateModule := StringJoin([]interface{}{"UPDATE `module_info` SET `uid`=0, `device_id`=", entity.Device.ID, " WHERE `id`=", entity.Module.ID})
 		if err = tx.Exec(updateModule).Error; err != nil {
-			SystemLog(loopInsertComList," Error")
+			SystemLog(loopInsertComList, " Error")
 			tx.Rollback()
 			return err
 		}

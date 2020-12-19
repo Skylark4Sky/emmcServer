@@ -4,7 +4,6 @@ import (
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
-	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/time"
 	"github.com/gin-gonic/gin"

@@ -51,7 +51,7 @@ func comListDataChk(deviceSN string, comList *mqtt.ComList, redisCacheComList ma
 }
 
 // 运行状态 & 空闲状态 处理
-func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) {
+func deviceStateHandle(comList *mqtt.ComList, deviceSN string, userID, deviceID uint64) {
 	redisComList := BatchReadDeviceComDataiFromRedis(deviceSN)
 	//数据分析
 	comListDataChk(deviceSN, comList, redisComList)
@@ -68,7 +68,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 				if comData.Enable != redisCacheData.Enable {
 					//如果token一致需检测数据变更
 					if comData.Token == redisCacheData.Token {
-						SystemLog("实时: ", comData.Enable ," 缓存: ",redisCacheData.Enable)
+						SystemLog("实时: ", comData.Enable, " 缓存: ", redisCacheData.Enable)
 					}
 				}
 				//端口启用状态
@@ -88,11 +88,11 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 					curTime := GetTimestampMs()
 					if (redisCacheData.SyncTime == 0) || (curTime-redisCacheData.SyncTime) >= COM_DATA_SYNC_TIME {
 						newComData.SyncTime = curTime
-						comChargeTaskDataUpdate(newComData, deviceID)
+						comChargeTaskDataUpdate(newComData, userID, deviceID)
 					}
 					redisComList[comData.Id] = *newComData
 				} else {
-					delete(redisComList,comData.Id)
+					delete(redisComList, comData.Id)
 				}
 			}
 			return newComData
@@ -100,10 +100,10 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 	} else {
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
 			cacheComData := calculateComData(comData)
-			if (comData.Enable == COM_ENABLE) {
+			if comData.Enable == COM_ENABLE {
 				redisComList[comData.Id] = *cacheComData
 			} else {
-				delete(redisComList,comData.Id)
+				delete(redisComList, comData.Id)
 			}
 			return cacheComData
 		})
@@ -120,21 +120,21 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 }
 
 //上报数据处理
-func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, deviceID uint64) {
+func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, userID, deviceID uint64) {
 	switch packet.Json.Behavior {
 	//运行状态值运算
 	case mqtt.GISUNLINK_CHARGEING, mqtt.GISUNLINK_CHARGE_LEISURE:
-		deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, deviceID)
+		deviceStateHandle(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID)
 	case mqtt.GISUNLINK_CHARGE_TASK:
-		comChargeTaskStart(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, deviceID, false)
+		comChargeTaskStart(packet.Data.(*mqtt.ComTaskStartTransfer), deviceSN, userID, deviceID, false)
 	case mqtt.GISUNLINK_START_CHARGE:
-		comChargeTaskStart(packet.Data.(*mqtt.ComList), deviceSN, deviceID, true)
+		comChargeTaskStart(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID, true)
 	case mqtt.GISUNLINK_EXIT_CHARGE_TASK:
-		comChargeTaskStop(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, deviceID, false)
+		comChargeTaskStop(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, userID, deviceID, false)
 	case mqtt.GISUNLINK_STOP_CHARGE:
-		comChargeTaskStop(packet.Data.(*mqtt.ComList), deviceSN, deviceID, true)
+		comChargeTaskStop(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID, true)
 		updateComTatol()
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_BREAKDOWN:
-		deviceInitiativeExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, deviceID, packet.Json.Behavior)
+		deviceInitiativeExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID, packet.Json.Behavior)
 	}
 }

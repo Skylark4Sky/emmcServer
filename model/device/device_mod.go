@@ -23,10 +23,10 @@ const (
 )
 
 const (
-	NO_DEVICE_WITH_MODULE	 uint8 = 0x00
-	DEVICE_BUILD_BIT 		 uint8 = 0x01
-	MODULE_BUILD_BIT 		 uint8 = 0x02
-	HAS_DEVICE_WITH_MODULE	 uint8 = 0x03
+	NO_DEVICE_WITH_MODULE  uint8 = 0x00
+	DEVICE_BUILD_BIT       uint8 = 0x01
+	MODULE_BUILD_BIT       uint8 = 0x02
+	HAS_DEVICE_WITH_MODULE uint8 = 0x03
 )
 
 type ModuleConnectLog struct {
@@ -41,7 +41,7 @@ type ModuleConnectLog struct {
 
 type ModuleInfo struct {
 	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"`   // 设备ID
-	UID        	  uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        	  // 用户ID
+	UID           uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`             // 用户ID
 	DeviceID      uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 对应设备关系
 	AccessWay     uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`        // 接入方式
 	ModuleSn      string `gorm:"column:module_sn;type:varchar(64)" json:"module_sn"`                  // 模组序列号
@@ -52,7 +52,7 @@ type ModuleInfo struct {
 
 type DeviceInfo struct {
 	ID            uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"` // 设备ID
-	UID        uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        // 用户ID
+	UID           uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`           // 用户ID
 	AccessWay     uint8  `gorm:"column:access_way;type:tinyint(2) unsigned" json:"access_way"`      // 当前接入方式
 	DeviceSn      string `gorm:"column:device_sn;type:varchar(64)" json:"device_sn"`                // 设备序列号
 	DeviceVersion string `gorm:"column:device_version;type:varchar(32)" json:"device_version"`      // 设备固件版本
@@ -67,7 +67,7 @@ type DeviceInfo struct {
 
 type DeviceCharge struct {
 	ID                   uint64  `gorm:"primary_key;column:id;type:bigint(20) unsigned ;not null" json:"-"`
-	UID        uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        // 用户ID
+	UID                  uint64  `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`                            // 用户ID
 	DeviceID             uint64  `gorm:"column:device_id;type:bigint(20) unsigned ;not null" json:"device_id"`               // 设备ID
 	Token                uint64  `gorm:"column:token;type:bigint(20) unsigned ;not null" json:"token"`                       // 充电token
 	ComID                uint8   `gorm:"column:com_id;type:tinyint(2) unsigned ;not null" json:"com_id"`                     // 端口
@@ -87,7 +87,7 @@ type DeviceCharge struct {
 
 type DeviceComInfo struct {
 	ID          uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"-"`
-	UID        uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        // 用户ID
+	UID         uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`             // 用户ID
 	DeviceID    uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 设备ID
 	ComID       uint8  `gorm:"column:com_id;type:tinyint(2) unsigned;not null" json:"com_id"`       // 端口ID
 	TotalEnergy int64  `gorm:"column:total_energy;type:bigint(20) unsigned" json:"total_energy"`    // 总计使用度数
@@ -98,7 +98,7 @@ type DeviceComInfo struct {
 
 type DeviceTransferLog struct {
 	ID           uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"module_id`
-	UID        uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        // 用户ID
+	UID          uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`            // 用户ID
 	DeviceID     uint64 `gorm:"column:device_id;type:bigint(20) unsigned" json:"device_id"`         // 设备ID
 	Behavior     uint8  `gorm:"column:behavior;type:tinyint(2)" json:"behavior"`                    // 传输行为
 	DeviceSn     string `gorm:"column:device_sn;type:varchar(64)" json:"device_sn"`                 // 设备串号
@@ -166,7 +166,8 @@ func (transfer *DeviceTransferLog) Create(transfer_id int64, act string, device_
 	transfer.CreateTime = GetTimestampMs()
 }
 
-func (com *DeviceCharge) Create(deviceID, token uint64, comID uint8) {
+func (com *DeviceCharge) Create(userID, deviceID, token uint64, comID uint8) {
+	com.UID = userID
 	com.DeviceID = deviceID
 	com.Token = token
 	com.ComID = comID

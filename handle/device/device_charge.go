@@ -38,39 +38,39 @@ func settlementChargeTaskData() {
 }
 
 // 刷新数据
-func comChargeTaskDataUpdate(entity *CacheComData, deviceID uint64) {
+func comChargeTaskDataUpdate(entity *CacheComData, userID, deviceID uint64) {
 	if entity != nil {
 		deviceCom := &DeviceCharge{}
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
-		deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+		deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
 		deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
 		deviceCom.ChangeValue(entity.UseEnergy, entity.UseTime, entity.MaxChargeElectricity, entity.AveragePower, entity.MaxPower)
 		task.RunTaskWithTypeAndEntity(ASYNC_UPDATE_CHARGE_TASK_DATA, deviceCom)
 	}
 }
 
-func comChargeTaskStart(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
+func comChargeTaskStart(iface interface{}, deviceSN string, userID, deviceID uint64, ack bool) {
 	if iface != nil && deviceID > 0 && len(deviceSN) > 1 {
 		deviceCom := &DeviceCharge{}
 		task := NewTask()
 		task.Func = asyncDeviceChargeTaskFunc
 		if !ack {
 			entity := iface.(*mqtt.ComTaskStartTransfer)
-			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
+			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.ComID)
 			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, entity.MaxElectricity)
 			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
 		} else {
 			comList := iface.(*mqtt.ComList)
 			entity := (comList.ComPort[0]).(mqtt.ComData)
-			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
 			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
 			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
 		}
 	}
 }
 
-func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack bool) {
+func comChargeTaskStop(iface interface{}, deviceSN string, userID, deviceID uint64, ack bool) {
 	if iface != nil && deviceID > 0 && len(deviceSN) > 1 {
 		redisData := &CacheComData{}
 		deviceCom := &DeviceCharge{}
@@ -81,7 +81,7 @@ func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack 
 		if !ack {
 			entity := iface.(*mqtt.ComTaskStopTransfer)
 			Redis().GetDeviceComDataFormRedis(deviceSN, entity.ComID, redisData)
-			deviceCom.Create(deviceID, uint64(entity.Token), entity.ComID)
+			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.ComID)
 			deviceCom.Init(redisData.MaxEnergy, redisData.MaxTime, uint32(redisData.MaxElectricity))
 			deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK, deviceCom)
@@ -89,7 +89,7 @@ func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack 
 			comList := iface.(*mqtt.ComList)
 			entity := (comList.ComPort[0]).(mqtt.ComData)
 			Redis().GetDeviceComDataFormRedis(deviceSN, entity.Id, redisData)
-			deviceCom.Create(deviceID, uint64(entity.Token), entity.Id)
+			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
 			deviceCom.Init(redisData.MaxEnergy, redisData.MaxTime, uint32(redisData.MaxElectricity))
 			deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 			task.RunTaskWithTypeAndEntity(ASYNC_STOP_COM_CHARGE_TASK_ACK, deviceCom)
@@ -97,7 +97,7 @@ func comChargeTaskStop(iface interface{}, deviceSN string, deviceID uint64, ack 
 	}
 }
 
-func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, deviceID uint64, behavior uint8) {
+func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, userID, deviceID uint64, behavior uint8) {
 	if len(comList.ComPort) >= 1 && len(deviceSN) > 1 && deviceID > 0 {
 		comData := (comList.ComPort[0]).(mqtt.ComData)
 
@@ -105,7 +105,7 @@ func deviceInitiativeExitComChargeTask(comList *mqtt.ComList, deviceSN string, d
 		Redis().GetDeviceComDataFormRedis(deviceSN, comData.Id, redisData)
 
 		deviceCom := &DeviceCharge{}
-		deviceCom.Create(deviceID, uint64(comData.Token), comData.Id)
+		deviceCom.Create(userID, deviceID, uint64(comData.Token), comData.Id)
 		deviceCom.Init(comData.MaxEnergy, comData.MaxTime, uint32(comData.MaxElectricity))
 		deviceCom.ChangeValue(redisData.UseEnergy, redisData.UseTime, redisData.MaxChargeElectricity, redisData.AveragePower, redisData.MaxPower)
 

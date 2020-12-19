@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SYNC_UPDATE_TIME = 300000 //5*60*1000 5分钟同步一次
+	SYNC_UPDATE_TIME   = 300000 //5*60*1000 5分钟同步一次
 	COM_DATA_SYNC_TIME = 300000
 )
 
@@ -24,7 +24,7 @@ const (
 
 func changeDeviceStatus(device_sn string, deviceID uint64, updateFlags uint8, status int8, worker int8) {
 	if deviceID != 0 {
-		device := &DeviceInfo{}
+		device := DeviceInfo{}
 		device.ID = deviceID
 
 		var deviceUpdateMap = make(map[string]interface{})
@@ -107,7 +107,7 @@ func createDeviceTransferLog(transfer *DeviceTransferLog) {
 }
 
 //保存上报数据入库
-func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uint64, packet *mqtt.Packet) {
+func saveDeviceTransferDataOps(serverNode string, device_sn string, userID, deviceID uint64, packet *mqtt.Packet) {
 	var comNum uint8 = 0
 	var payloadData string = ""
 	switch packet.Json.Behavior {
@@ -163,6 +163,7 @@ func saveDeviceTransferDataOps(serverNode string, device_sn string, deviceID uin
 
 	log := &DeviceTransferLog{
 		TransferID:   int64(packet.Json.ID),
+		UID:          userID,
 		DeviceID:     deviceID,
 		TransferAct:  packet.Json.Act,
 		DeviceSn:     device_sn,

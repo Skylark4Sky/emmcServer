@@ -91,6 +91,8 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 						comChargeTaskDataUpdate(newComData, deviceID)
 					}
 					redisComList[comData.Id] = *newComData
+				} else {
+					delete(redisComList,comData.Id)
 				}
 			}
 			return newComData
@@ -98,7 +100,11 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 	} else {
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
 			cacheComData := calculateComData(comData)
-			redisComList[comData.Id] = *cacheComData
+			if (comData.Enable == COM_ENABLE) {
+				redisComList[comData.Id] = *cacheComData
+			} else {
+				delete(redisComList,comData.Id)
+			}
 			return cacheComData
 		})
 	}

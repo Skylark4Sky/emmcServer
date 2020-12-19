@@ -2,105 +2,70 @@ package device
 
 import (
 	. "GoServer/middleWare/dataBases/mysql"
-	. "GoServer/middleWare/dataBases/redis"
 	. "GoServer/utils/log"
-	. "GoServer/utils/time"
 	. "GoServer/utils/string"
+	. "GoServer/utils/time"
 	"go.uber.org/zap"
 	"reflect"
 )
 
-func CreateDevInfo(entity *CreateDeviceInfo) error {
-	device := entity.Device
-	module := entity.Module
-	log := entity.Log
-
-	err := ExecSQL().Where("device_sn = ?", device.DeviceSn).First(&device).Error
-	var hasRecord = true
-
-	if err != nil {
-		if IsRecordNotFound(err) {
-			hasRecord = false
-		} else {
-			SystemLog("transactionCreateDevInfo select Error", zap.Error(err))
-			return err
-		}
-	}
-
-	if hasRecord {
-		//设备已存在，单独建立模组信息
-		tx := ExecSQL().Begin()
-
-		module.DeviceID = device.ID
-		module.UID = device.UID
-		if err := tx.Create(&module).Error; err != nil {
-			SystemLog("add ModuleInfo Error", zap.Error(err))
-			tx.Rollback()
-			return err
-		}
-		var id []uint64
-		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
-			SystemLog("get LastID Error", zap.Error(err))
-			tx.Rollback()
-			return err
-		}
-
-		var ModuleID uint64 = id[0]
-		log.ModuleID = ModuleID
-		if err := tx.Create(&log).Error; err != nil {
-			SystemLog("add module connect log Error", zap.Error(err))
-			tx.Rollback()
-			return err
-		}
-		tx.Commit()
-	} else {
-		//事务建立 模组 和 设备信息
-		var id []uint64
-		tx := ExecSQL().Begin()
-		if err := tx.Create(&device).Error; err != nil {
+func CreateDeviceAndModuleInfo(entity *CreateDeviceInfo) error {
+	var err error
+	tx := ExecSQL().Begin()
+	switch entity.Type {
+	case NO_DEVICE_WITH_MODULE:	//建立 模组 和 设备信息
+		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Device)
+		if err != nil {
 			SystemLog("add DeviceInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-
-		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
-			SystemLog("get LastID Error", zap.Error(err))
-			tx.Rollback()
-			return err
-		}
-
-		var DeviceID uint64 = id[0]
-		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",DeviceID,",9)"})
-		if err := tx.Exec(loopInsertComList).Error; err != nil {
+		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",entity.Device.ID,",9)"})
+		if err = tx.Exec(loopInsertComList).Error; err != nil {
 			SystemLog(loopInsertComList," Error")
 			tx.Rollback()
 			return err
 		}
-
-		device.ID = DeviceID
-		module.DeviceID = DeviceID
-		if err := tx.Create(&module).Error; err != nil {
+		entity.Module.DeviceID = entity.Device.ID
+		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Module)
+		if err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-
-		if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
-			SystemLog("get LastID Error", zap.Error(err))
+	case DEVICE_BUILD_BIT: //需单独创建Module
+		entity.Module.DeviceID = entity.Device.ID
+		entity.Module.UID = entity.Device.UID
+		entity.Module.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Module)
+		if err != nil {
+			SystemLog("add ModuleInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-
-		var ModuleID uint64 = id[0]
-		log.ModuleID = ModuleID
-		if err := tx.Create(&log).Error; err != nil {
-			SystemLog("add module connect log Error", zap.Error(err))
+	case MODULE_BUILD_BIT: //需单独创建Device
+		entity.Device.ID, err = TXCreateSQLAndRetLastID(tx,&entity.Device)
+		if err != nil {
+			SystemLog("add DeviceInfo Error", zap.Error(err))
 			tx.Rollback()
 			return err
 		}
-		tx.Commit()
+		loopInsertComList := StringJoin([]interface{}{"call InsertDeviceComList(",entity.Device.ID,",9)"})
+		if err = tx.Exec(loopInsertComList).Error; err != nil {
+			SystemLog(loopInsertComList," Error")
+			tx.Rollback()
+			return err
+		}
+		entity.Module.DeviceID = entity.Device.ID
+		updateModule := StringJoin([]interface{}{"UPDATE `module_info` SET `uid`=0, `device_id`=",entity.Device.ID," WHERE `id`=",entity.Module.ID})
+		if err = tx.Exec(updateModule).Error; err != nil {
+			SystemLog(loopInsertComList," Error")
+			tx.Rollback()
+			return err
+		}
 	}
-	Redis().UpdateDeviceIDToRedisByDeviceSN(device.DeviceSn, device.ID)
+
+	tx.Commit()
+	entity.Type = HAS_DEVICE_WITH_MODULE
 	return nil
 }
 

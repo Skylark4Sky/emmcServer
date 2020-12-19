@@ -34,59 +34,76 @@ type FirmwareInfo struct {
 	URL  string `json:"url"`
 }
 
-func createConnectLog(ctx *gin.Context, device_id uint64, accessway uint8, moduleSN string) {
+func createConnectLog(ctx *gin.Context, module_id,userID uint64,accessway uint8, moduleSN string) {
 	log := &ModuleConnectLog{}
-	log.Create(device_id, accessway, moduleSN, ctx.ClientIP())
+	log.Create(module_id, accessway, moduleSN, ctx.ClientIP())
+	log.UID = userID
 	NewAsyncTaskWithParam(ASYNC_MODULE_CONNECT_LOG,log)
 }
 
 func (data *RequestData) Connect(ctx *gin.Context) interface{} {
-	module := &ModuleInfo{}
-	err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(module).Error
-	var hasRecord = true
+	var info CreateDeviceInfo
 
-	if err != nil {
+	info.Type = HAS_DEVICE_WITH_MODULE
+
+	if err := ExecSQL().Where("device_sn = ?", data.DeviceSN).First(info.Device).Error; err != nil {
 		if IsRecordNotFound(err) {
-			hasRecord = false
+			info.Type = (info.Type &^ (DEVICE_BUILD_BIT))
+		} else {
+			return CreateMessage(SYSTEM_ERROR, err)
+		}
+	}
+
+	if err := ExecSQL().Where("module_sn = ?", data.ModuleSN).First(info.Module).Error; err != nil {
+		if IsRecordNotFound(err) {
+			info.Type = (info.Type &^ (MODULE_BUILD_BIT))
 		} else {
 			return CreateMessage(SYSTEM_ERROR, err)
 		}
 	}
 
 	var respond interface{} = nil
+	curTimestampMs := GetTimestampMs()
 
-	if !hasRecord {
+	switch info.Type {
+	case NO_DEVICE_WITH_MODULE:
 		//创建对应关系 第一次连接仅建立关系，版本检测下次连接时在进行处理
-		var info CreateDeviceInfo
-		curTimestampMs := GetTimestampMs()
 		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
 		info.Device.Create(data.AccessWay, data.DeviceSN, data.DeviceVersion, DEVICE_ONLINE)
 		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
 		info.Module.CreateTime = curTimestampMs
 		info.Device.CreateTime = curTimestampMs
 		NewAsyncTaskWithParam(ASYNC_DEV_AND_MODULE_CREATE,info)
-	} else {
-		module.Update(data.ModuleVersion)
-		moduleUpdateMap := map[string]interface{}{"module_version": module.ModuleVersion, "update_time": module.UpdateTime}
+	case DEVICE_BUILD_BIT: //需单独创建Module
+		info.Module.Create(data.AccessWay, data.ModuleSN, data.ModuleVersion)
+		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
+		info.Module.CreateTime = curTimestampMs
+		NewAsyncTaskWithParam(ASYNC_DEV_AND_MODULE_CREATE,info)
+	case MODULE_BUILD_BIT: //需单独创建Device
+		info.Device.Create(data.AccessWay, data.DeviceSN, data.DeviceVersion, DEVICE_ONLINE)
+		info.Log.Create(0, data.AccessWay, data.ModuleSN, ctx.ClientIP())
+		info.Device.CreateTime = curTimestampMs
+		NewAsyncTaskWithParam(ASYNC_DEV_AND_MODULE_CREATE,info)
+	case HAS_DEVICE_WITH_MODULE:
+		info.Module.Update(data.ModuleVersion)
+		moduleUpdateMap := map[string]interface{}{"module_version": info.Module.ModuleVersion, "update_time": info.Module.UpdateTime}
 		moduleTask := NewTask()
 		moduleTask.Param = moduleUpdateMap
-		moduleTask.RunTaskWithTypeAndEntity(ASYNC_UP_MODULE_INFO,module)
+		moduleTask.RunTaskWithTypeAndEntity(ASYNC_UP_MODULE_INFO,info.Module)
 
-		device := &DeviceInfo{}
-		device.Update(module.DeviceID, data.AccessWay, data.DeviceVersion, module.UpdateTime, DEVICE_ONLINE)
-		device.DeviceSn = data.DeviceSN
-		deviceUpdateMap := map[string]interface{}{"access_way": device.AccessWay, "device_version": device.DeviceVersion, "update_time": device.UpdateTime, "status": device.Status}
+		info.Device.Update(info.Module.DeviceID, data.AccessWay, data.DeviceVersion, info.Module.UpdateTime, DEVICE_ONLINE)
+		info.Device.DeviceSn = data.DeviceSN
+		deviceUpdateMap := map[string]interface{}{"access_way": info.Device.AccessWay, "device_version": info.Device.DeviceVersion, "update_time": info.Device.UpdateTime, "status": info.Device.Status}
 		deviceTask := NewTask()
 		deviceTask.Param = deviceUpdateMap
-		deviceTask.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO,device)
-
+		deviceTask.RunTaskWithTypeAndEntity(ASYNC_UP_DEVICE_INFO,info.Device)
 		// 检测并返回固件版本
 		// 返回版本升级格式
 		//	data := &FirmwareInfo{
 		//		URL:  "http://www.gisunlink.com/GiSunLink.ota.bin",
 		//		Size: 476448,
 		//	}
-		createConnectLog(ctx, module.ID, data.AccessWay, data.ModuleSN)
+		createConnectLog(ctx, info.Module.ID,info.Module.UID, data.AccessWay, data.ModuleSN)
 	}
 	return CreateMessage(SUCCESS, respond)
 }

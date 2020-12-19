@@ -78,7 +78,7 @@ func (c *Cacher) UpdateDeviceTokenExpiredTime(deviceSN string, status *DeviceSta
 }
 
 //插入对应令牌
-func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
+func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64, userID uint64) {
 	status := DeviceStatus{
 		Behavior:     0,
 		Signal:       0,
@@ -88,6 +88,7 @@ func (c *Cacher) InitWithInsertDeviceIDToken(deviceSN string, deviceID uint64) {
 	}
 	c.Set(GetDeviceTokenKey(deviceSN), status, 900)                          //15分钟过期,正常1-2分钟后续数据就上来了
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_ID_FIELD, deviceID) //插入设备ID
+	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_USER_ID_FIELD, userID) //插入用户ID
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_STATUS_FIELD, 1)    //设备在线状态
 }
 
@@ -103,9 +104,9 @@ func (c *Cacher) SetDeviceWorkerToRedis(deviceSN string, worker int) {
 	c.HSet(GetDeviceInfoKey(deviceSN), REDIS_INFO_DEVICE_WORKER_FIELD, worker)
 }
 
-func (c *Cacher) UpdateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID uint64) {
+func (c *Cacher) UpdateDeviceIDToRedisByDeviceSN(deviceSN string, deviceID uint64, userID uint64) {
 	if deviceSN != "" && deviceID != 0 {
-		c.InitWithInsertDeviceIDToken(deviceSN, deviceID)
+		c.InitWithInsertDeviceIDToken(deviceSN, deviceID,userID)
 	}
 }
 

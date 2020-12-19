@@ -62,6 +62,20 @@ func CreateSQLAndRetLastID(entity interface{}) (uint64, error) {
 	return id[0], nil
 }
 
+func TXCreateSQLAndRetLastID(tx *gorm.DB, entity interface{}) (uint64, error) {
+	var id []uint64
+	if err := tx.Create(entity).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	if err := tx.Raw("select LAST_INSERT_ID() as id").Pluck("id", &id).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	return id[0], nil
+}
+
 func SQLClose() {
 	fmt.Println("Close Mysql")
 	if _db != nil {

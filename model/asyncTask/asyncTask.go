@@ -124,12 +124,20 @@ func (task *AsyncTaskEntity) ExecTask() error {
 					SystemLog("update Data Error:", zap.Any("SQL", task.Entity), zap.Error(err))
 				}
 				if ASYNC_UP_DEVICE_INFO == task.Type {
-					entity := task.Entity.(*device.DeviceInfo)
-					Redis().UpdateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID)
+					entity := task.Entity.(device.DeviceInfo)
+					Redis().UpdateDeviceIDToRedisByDeviceSN(entity.DeviceSn, entity.ID, entity.UID)
 				}
 			case ASYNC_DEV_AND_MODULE_CREATE:
 				entity := task.Entity.(device.CreateDeviceInfo)
-				device.CreateDevInfo(&entity)
+				if err := device.CreateDeviceAndModuleInfo(&entity); err == nil {
+					entity.Log.ModuleID = entity.Module.ID
+					entity.Log.UID = entity.Module.UID
+					if err = ExecSQL().Create(&entity.Log).Error; err != nil {
+						SystemLog("Create Module Connect Error ", zap.Any("SQL", entity.Log), zap.Error(err))
+					}
+					//刷新DeviceRedis
+					Redis().UpdateDeviceIDToRedisByDeviceSN(entity.Device.DeviceSn, entity.Device.ID, entity.Device.UID)
+				}
 			case ASYNC_UPDATA_WEUSER_LOCAL, ASYNC_UPDATA_WEUSER_INFO, ASYNC_UPDATA_USER_EXTRA:
 				if WhereSQL, ok := task.Param["WhereSQL"]; ok {
 					if err := ExecSQL().Model(task.Entity).Where(WhereSQL.(string)).Updates(task.Entity).Error; err != nil {

@@ -22,6 +22,13 @@ const (
 	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x80 //异常
 )
 
+const (
+	NO_DEVICE_WITH_MODULE	 uint8 = 0x00
+	DEVICE_BUILD_BIT 		 uint8 = 0x01
+	MODULE_BUILD_BIT 		 uint8 = 0x02
+	HAS_DEVICE_WITH_MODULE	 uint8 = 0x03
+)
+
 type ModuleConnectLog struct {
 	ID         uint64 `gorm:"primary_key;column:id;type:bigint(20) unsigned;not null" json:"id"`
 	UID        uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`        // 用户ID
@@ -109,6 +116,7 @@ type CreateDeviceInfo struct {
 	Module ModuleInfo
 	Device DeviceInfo
 	Log    ModuleConnectLog
+	Type   uint8
 }
 
 func (log *ModuleConnectLog) Create(deviceID uint64, accessway uint8, moduleSN string, ip string) {

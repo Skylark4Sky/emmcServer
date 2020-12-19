@@ -55,14 +55,24 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 	redisComList := BatchReadDeviceComDataiFromRedis(deviceSN)
 	//数据分析
 	comListDataChk(deviceSN, comList, redisComList)
-	//批量写入数据到缓存 并 统计 功率
+
 	if len(redisComList) > 1 {
+		//批量写入数据到缓存
 		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
 			newComData := calculateComData(comData)
 			redisCacheData := redisComList[comData.Id]
 			newComData.MaxPower = redisCacheData.MaxPower
 			newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
 			newComData.SyncTime = redisCacheData.SyncTime
+
+			//状态不一致时
+			if comData.Enable != redisCacheData.Enable {
+				//如果token一致需检测数据变更
+				if comData.Token == redisCacheData.Token {
+					SystemLog("实时: ", comData.Enable ," 缓存: ",redisCacheData.Enable)
+				}
+			}
+
 			//端口启用状态
 			if comData.Enable == COM_ENABLE {
 				// 数值计算
@@ -84,6 +94,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 				}
 				redisComList[comData.Id] = *newComData
 			}
+
 			return newComData
 		})
 	} else {
@@ -94,7 +105,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, deviceID uint64) 
 		})
 	}
 
-	//刷新设备状态
+	//刷新设备状态 并 统计 数据值
 	refreshDeviceStatus(deviceSN, deviceID, &DeviceStatus{
 		Behavior:     comList.ComBehavior,
 		Signal:       int8(comList.Signal),

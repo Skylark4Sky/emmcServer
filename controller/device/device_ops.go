@@ -64,7 +64,7 @@ func GetDeviceList(ctx *gin.Context) {
 		return
 	}
 
-	data, err := getListData.GetDeviceList()
+	data, err := getListData.GetDeviceList(getListData.UserID)
 
 	if err != nil {
 		RespondMessage(ctx, err)
@@ -87,7 +87,7 @@ func GetDeviceTransferLogList(ctx *gin.Context) {
 		return
 	}
 
-	data, err := getListData.GetDeviceTransferLogList()
+	data, err := getListData.GetDeviceTransferLogList(getListData.UserID)
 
 	if err != nil {
 		RespondMessage(ctx, err)
@@ -109,7 +109,7 @@ func GetModuleList(ctx *gin.Context) {
 		return
 	}
 
-	data, err := getListData.GetModuleList()
+	data, err := getListData.GetModuleList(getListData.UserID)
 
 	if err != nil {
 		RespondMessage(ctx, err)
@@ -131,7 +131,7 @@ func GetModuleConnectLogList(ctx *gin.Context) {
 		return
 	}
 
-	data, err := getListData.GetModuleConnectLogList()
+	data, err := getListData.GetModuleConnectLogList(getListData.UserID)
 
 	if err != nil {
 		RespondMessage(ctx, err)

@@ -32,6 +32,7 @@ func CreateDevInfo(entity *CreateDeviceInfo) error {
 		tx := ExecSQL().Begin()
 
 		module.DeviceID = device.ID
+		module.UID = device.UID
 		if err := tx.Create(&module).Error; err != nil {
 			SystemLog("add ModuleInfo Error", zap.Error(err))
 			tx.Rollback()

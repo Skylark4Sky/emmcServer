@@ -75,6 +75,7 @@ func (msg *MqMsg) ExecTask() error {
 			if ok && packet.Data != nil {
 				deviceSN := GetDeviceSN(msg.Topic, "/")
 				deviceID := Redis().GetDeviceIDFromRedis(deviceSN)
+				//userID := Redis().GetDeviceUserIDFromRedis(deviceSN)
 				saveDeviceTransferDataOps(msg.Broker, deviceSN, deviceID, packet)
 				deviceActBehaviorDataOps(packet, deviceSN, deviceID)
 				MqttLog("[", msg.Broker, "] ===== ", packet.Json.ID, " =====>> ", msg.Topic, " time:", TimeFormat(time.Now()), "=========", GetGoroutineID(), GetWorkerQueueSize())

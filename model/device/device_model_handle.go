@@ -113,7 +113,7 @@ func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
 func isChaegeEnding(state uint32) (ret bool) {
 	ret = true
 	switch state {
-	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT, COM_CHARGE_RUNING_BIT:
+	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT:
 		ret = false
 	}
 	return ret
@@ -153,7 +153,9 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 			updateParam["max_charge_electricity"] = entity.MaxChargeElectricity
 			updateParam["average_power"] = entity.AveragePower
 			updateParam["max_power"] = entity.MaxPower
-			if isChaegeEnding(state) {
+			if state == COM_CHARGE_RUNING_BIT {
+				updateParam["update_time"] = GetTimestampMs()
+			} else if isChaegeEnding(state) {
 				updateParam["end_time"] = GetTimestampMs()
 			}
 		}
@@ -163,7 +165,9 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		}
 	} else { //不存在记录
 		entity.State = state
-		if isChaegeEnding(state) {
+		if state == COM_CHARGE_RUNING_BIT {
+			entity.UpdateTime = GetTimestampMs()
+		} else if isChaegeEnding(state) {
 			entity.EndTime = GetTimestampMs()
 		}
 		if err := ExecSQL().Create(entity).Error; err != nil {

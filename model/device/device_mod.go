@@ -70,6 +70,7 @@ type DeviceCharge struct {
 	MaxPower             float64 `gorm:"column:max_power;type:decimal(10,0) unsigned " json:"max_power"`                     // 最大功率
 	State                uint32  `gorm:"column:state;type:int(10) unsigned ;not null" json:"state"`                          // 状态
 	CreateTime           int64   `gorm:"column:create_time;type:bigint(13) unsigned " json:"create_time"`                    // 创建时间
+	UpdateTime           int64   `gorm:"column:update_time;type:bigint(13) unsigned " json:"update_time"`                    // 更新时间
 	EndTime              int64   `gorm:"column:end_time;type:bigint(13) unsigned " json:"end_time"`                          // 结束时间
 }
 

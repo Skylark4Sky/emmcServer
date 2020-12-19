@@ -45,7 +45,6 @@ func SetMqttClient(brokerHost string, handle interface{}) {
 	}
 }
 
-
 func deviceExpiredMsgOps(pattern, channel, message string) {
 	deviceSN := GetDeviceSN(message, ":")
 	if deviceID := Redis().GetDeviceIDFromRedis(deviceSN); deviceID != 0 {

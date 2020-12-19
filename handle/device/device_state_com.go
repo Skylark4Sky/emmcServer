@@ -1,1 +1,6 @@
 package device
+
+
+func updateComTatol() {
+	
+}

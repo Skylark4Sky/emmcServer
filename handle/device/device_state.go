@@ -6,7 +6,6 @@ import (
 	. "GoServer/utils/float64"
 	. "GoServer/utils/log"
 	. "GoServer/utils/time"
-	"math"
 	"time"
 )
 
@@ -24,98 +23,77 @@ func calculateComData(comData *mqtt.ComData) *CacheComData {
 	return cacheComData
 }
 
-//数据检查
-func comListDataChk(deviceSN string, comList *mqtt.ComList, redisCacheComList map[uint8]CacheComData) {
-	//不存在数据直接返回
-	if comList != nil {
-		return
+func deviceComStateDataCHK(newData,redisData *CacheComData, userID, deviceID uint64) bool {
+	//如果token一致需检测数据变更
+	if newData.Token == redisData.Token && (newData.Enable == COM_DISENABLE && redisData.Enable == COM_ENABLE) {
+		comChargeTaskNeedCheck(redisData,userID,deviceID)
+		SystemLog("实时: ", newData.Enable, " 缓存: ", redisData.Enable)
+		SystemLog("deviceID", deviceID)
+		SystemLog("实时: ---> ", newData)
+		SystemLog("缓存: ---> ", redisData)
+		return true
+	}
+	return false
+}
+
+func deviceComCharge(newComData,redisCacheData *CacheComData, userID, deviceID uint64) bool {
+	//端口启用状态
+	if newComData.Enable == COM_ENABLE {
+		// 拷贝数据
+		newComData.MaxPower = redisCacheData.MaxPower
+		newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
+		newComData.SyncTime = redisCacheData.SyncTime
+		// 数值计算
+		newComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, newComData.CurElectricity, 5)              //当前P值
+		newComData.AveragePower = CalculateCurAverageComPower(newComData.UseEnergy, newComData.UseTime, 5) //平均P值
+		// 最大P值
+		if CmpPower(newComData.CurPower, redisCacheData.MaxPower) > 0 {
+			newComData.MaxPower = newComData.CurPower
+		}
+		// 最大E记录
+		if newComData.CurElectricity > redisCacheData.MaxChargeElectricity {
+			newComData.MaxChargeElectricity = newComData.CurElectricity
+		}
+		// 检测同步时间是否可以同步当前端口数据入库
+		curTime := GetTimestampMs()
+		if (redisCacheData.SyncTime == 0) || (curTime-redisCacheData.SyncTime) >= COM_DATA_SYNC_TIME {
+			newComData.SyncTime = curTime
+			comChargeTaskDataUpdate(newComData, userID, deviceID)
+		}
+		return true
 	}
 
-	for _, comID := range comList.ComID {
-		var index uint8 = comID
-		if comList.ComNum <= 5 {
-			index = (comID % 5)
-		}
-		comData := (comList.ComPort[int(index)]).(mqtt.ComData)
-		comData.Id = comID
-		if redisComData, ok := redisCacheComList[comData.Id]; ok {
-			//未开启时，检测值是否有变化
-			if comData.Enable == COM_DISENABLE {
-				//大于50ma保存异常数值
-				if (comData.CurElectricity != redisComData.CurElectricity) && (math.Abs(float64(comData.CurElectricity)-float64(redisComData.CurElectricity)) >= 50) {
-					SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceSN, " 端口:", comData.Id, " - ", redisComData.Id, " 异常---当前值:", comData.CurElectricity, "上一次值为:", redisComData.CurElectricity)
-				}
-			}
-		}
+	//未开启时，检测值是否有变化 大于50ma保存异常数值
+	if CmpElectricityException(float64(newComData.CurElectricity),float64(redisCacheData.CurElectricity),50) {
+		SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceID, " 端口:", newComData.Id, " 异常---当前值:", newComData.CurElectricity, "上一次值为:", redisCacheData.CurElectricity)
 	}
+
+	return false
 }
 
 // 运行状态 & 空闲状态 处理
 func deviceStateHandle(comList *mqtt.ComList, deviceSN string, userID, deviceID uint64) {
 	redisComList := BatchReadDeviceComDataiFromRedis(deviceSN)
-	//数据分析
-	comListDataChk(deviceSN, comList, redisComList)
-	if len(redisComList) > 1 {
-		//批量写入数据到缓存
-		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
-			newComData := calculateComData(comData)
-			//取缓存数据
-			if redisCacheData, ok := redisComList[comData.Id]; ok {
-				newComData.MaxPower = redisCacheData.MaxPower
-				newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
-				newComData.SyncTime = redisCacheData.SyncTime
-				//状态不一致时
-				if comData.Enable != redisCacheData.Enable {
-					if comData.Token == redisCacheData.Token {
-						//如果token一致需检测数据变更
-						if comData.Enable == COM_DISENABLE && redisCacheData.Enable == COM_ENABLE {
-							comChargeTaskNeedCheck(&redisCacheData,userID,deviceID)
-							SystemLog("实时: ", comData.Enable, " 缓存: ", redisCacheData.Enable)
-							SystemLog("deviceID", deviceID)
-							SystemLog("实时: ---> ", comData)
-							SystemLog("缓存: ---> ", redisCacheData)
-							//刷新redis缓存
-							redisCacheData = *newComData
-						}
-					}
-				}
-				//端口启用状态
-				if comData.Enable == COM_ENABLE {
-					// 数值计算
-					newComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, newComData.CurElectricity, 5)              //当前P值
-					newComData.AveragePower = CalculateCurAverageComPower(newComData.UseEnergy, newComData.UseTime, 5) //平均P值
-					// 最大P值
-					if CmpPower(newComData.CurPower, redisCacheData.MaxPower) > 0 {
-						newComData.MaxPower = newComData.CurPower
-					}
-					// 最大E记录
-					if comData.CurElectricity > redisCacheData.MaxChargeElectricity {
-						newComData.MaxChargeElectricity = comData.CurElectricity
-					}
-					// 检测同步时间是否可以同步当前端口数据入库
-					curTime := GetTimestampMs()
-					if (redisCacheData.SyncTime == 0) || (curTime-redisCacheData.SyncTime) >= COM_DATA_SYNC_TIME {
-						newComData.SyncTime = curTime
-						comChargeTaskDataUpdate(newComData, userID, deviceID)
-					}
-					redisComList[comData.Id] = *newComData
-				} else {
-					delete(redisComList, comData.Id)
-				}
+
+	//批量写入数据到缓存
+	BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
+		copyNewData := true
+		newComData := calculateComData(comData)
+		if redisCacheData, ok := redisComList[comData.Id]; ok {
+			if deviceComStateDataCHK(newComData, &redisCacheData, userID, deviceID) {
+				redisCacheData = *newComData
 			}
-			return newComData
-		})
-	} else {
-		BatchWriteDeviceComDataToRedis(deviceSN, comList, func(comData *mqtt.ComData) *CacheComData {
-			cacheComData := calculateComData(comData)
-			if comData.Enable == COM_ENABLE {
-				redisComList[comData.Id] = *cacheComData
-			} else {
-				delete(redisComList, comData.Id)
+			if !deviceComCharge(newComData, &redisCacheData, userID, deviceID) {
+				copyNewData = false
+				delete(redisComList,comData.Id)
 			}
-			return cacheComData
-		})
-	}
+		}
+
+		if copyNewData {
+			redisComList[comData.Id] = *newComData
+		}
+		return newComData
+	})
 
 	//刷新设备状态 并 统计 数据值
 	refreshDeviceStatus(deviceSN, deviceID, &DeviceStatus{

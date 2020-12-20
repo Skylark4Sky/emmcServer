@@ -2,6 +2,7 @@ package float64
 
 import (
 	"github.com/shopspring/decimal"
+	"math"
 )
 
 const (
@@ -9,6 +10,13 @@ const (
 	BASE_ELECTRICITY_RATIO float64 = 0.001
 	TIMEBYHOUR             float64 = 3600.0
 )
+
+func CmpElectricityException(newElectricity, cacheElectricity, cmpValue float64) bool {
+	if (newElectricity != cacheElectricity) && (math.Abs(cacheElectricity-cacheElectricity)) >= cmpValue {
+		return true
+	}
+	return false
+}
 
 func CmpPower(val1 float64, val2 float64) int {
 	return decimal.NewFromFloat(val1).Cmp(decimal.NewFromFloat(val2))

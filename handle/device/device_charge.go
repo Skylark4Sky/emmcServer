@@ -25,7 +25,10 @@ func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 		}
 	case ASYNC_UPDATE_CHARGE_TASK_DATA:
 		state = COM_CHARGE_RUNING_BIT
+	case ASYNC_CHK_CHARGE_TASK_DATA:
+		state = COM_CHARGE_EXIT_BIT
 	}
+
 	entity := task.Entity.(*DeviceCharge)
 	if state >= COM_CHARGE_START_BIT {
 		DeviceComChargeTaskOps(entity, state)
@@ -35,6 +38,19 @@ func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
 //结算
 func settlementChargeTaskData() {
 
+}
+
+// 需检查数据
+func comChargeTaskNeedCheck(entity *CacheComData, userID, deviceID uint64) {
+	if entity != nil {
+		deviceCom := &DeviceCharge{}
+		task := NewTask()
+		task.Func = asyncDeviceChargeTaskFunc
+		deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
+		deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
+		deviceCom.ChangeValue(entity.UseEnergy, entity.UseTime, entity.MaxChargeElectricity, entity.AveragePower, entity.MaxPower)
+		task.RunTaskWithTypeAndEntity(ASYNC_CHK_CHARGE_TASK_DATA, deviceCom)
+	}
 }
 
 // 刷新数据

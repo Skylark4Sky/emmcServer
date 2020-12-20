@@ -37,6 +37,7 @@ const (
 	ASYNC_STOP_COM_CHARGE_TASK_ACK                      //设备响应上报退出充电
 	ASYNC_INITIATIVE_EXIT_COM_CHARGE_TASK               //主动退出充电
 	ASYNC_UPDATE_CHARGE_TASK_DATA                       //定时同步数据
+	ASYNC_CHK_CHARGE_TASK_DATA                          //检查数据
 )
 
 type AsyncTaskFunc func(task *AsyncTaskEntity)
@@ -151,8 +152,6 @@ func (task *AsyncTaskEntity) ExecTask() error {
 					structTpey := reflect.Indirect(reflect.ValueOf(task.Entity)).Type()
 					SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", task.Entity), zap.Error(err))
 				}
-			case ASYNC_UPDATE_CHARGE_TASK_DATA:
-
 			}
 		}
 	}

@@ -20,6 +20,7 @@ const (
 	COM_CHARGE_FINISH_BIT    uint32 = 0x20 //完成
 	COM_CHARGE_NO_LOAD_BIT   uint32 = 0x40 //空载
 	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x80 //异常
+	COM_CHARGE_EXIT_BIT		 uint32 = 0x100 //不一致退出
 )
 
 const (

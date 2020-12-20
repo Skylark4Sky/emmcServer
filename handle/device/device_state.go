@@ -66,12 +66,17 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, userID, deviceID 
 				newComData.SyncTime = redisCacheData.SyncTime
 				//状态不一致时
 				if comData.Enable != redisCacheData.Enable {
-					//如果token一致需检测数据变更
 					if comData.Token == redisCacheData.Token {
-						SystemLog("实时: ", comData.Enable, " 缓存: ", redisCacheData.Enable)
-						SystemLog("deviceID", deviceID)
-						SystemLog("实时: ---> ", comData)
-						SystemLog("缓存: ---> ", redisCacheData)
+						//如果token一致需检测数据变更
+						if comData.Enable == COM_DISENABLE && redisCacheData.Enable == COM_ENABLE {
+							comChargeTaskNeedCheck(&redisCacheData,userID,deviceID)
+							SystemLog("实时: ", comData.Enable, " 缓存: ", redisCacheData.Enable)
+							SystemLog("deviceID", deviceID)
+							SystemLog("实时: ---> ", comData)
+							SystemLog("缓存: ---> ", redisCacheData)
+							//刷新redis缓存
+							redisCacheData = *newComData
+						}
 					}
 				}
 				//端口启用状态

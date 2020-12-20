@@ -86,7 +86,7 @@ func findComChargeTaskRecord(entity *DeviceCharge) (bool, error) {
 	return hasRecord, nil
 }
 
-func isChaegeEnding(state uint32) (ret bool) {
+func isChargeEnding(state uint32) (ret bool) {
 	ret = true
 	switch state {
 	case COM_CHARGE_START_BIT, COM_CHARGE_START_ACK_BIT:
@@ -131,11 +131,10 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 			updateParam["max_power"] = entity.MaxPower
 			if state == COM_CHARGE_RUNING_BIT {
 				updateParam["update_time"] = GetTimestampMs()
-			} else if isChaegeEnding(state) {
+			} else if isChargeEnding(state) {
 				updateParam["end_time"] = GetTimestampMs()
 			}
 		}
-
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
 			SystemLog("update Data Error:", zap.Any("SQL", taskRecord), zap.Error(err))
 		}
@@ -143,7 +142,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		entity.State = state
 		if state == COM_CHARGE_RUNING_BIT {
 			entity.UpdateTime = GetTimestampMs()
-		} else if isChaegeEnding(state) {
+		} else if isChargeEnding(state) {
 			entity.EndTime = GetTimestampMs()
 		}
 		if err := ExecSQL().Create(entity).Error; err != nil {

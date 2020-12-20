@@ -94,7 +94,32 @@ func isChargeEnding(state uint32) (ret bool) {
 	}
 	return ret
 }
-
+func checkChargeIsExit(state, newStateBit uint32)  bool {
+	switch newStateBit {
+	case COM_CHARGE_RUNING_BIT:
+		return false
+	case COM_CHARGE_EXIT_BIT:
+		if (state & COM_CHARGE_STOP_BIT) == COM_CHARGE_STOP_BIT {
+			return true
+		}
+		if (state & COM_CHARGE_STOP_ACK_BIT) == COM_CHARGE_STOP_ACK_BIT {
+			return true
+		}
+		if (state & COM_CHARGE_FINISH_BIT) == COM_CHARGE_FINISH_BIT {
+			return true
+		}
+		if (state & COM_CHARGE_NO_LOAD_BIT) == COM_CHARGE_NO_LOAD_BIT {
+			return true
+		}
+		if (state & COM_CHARGE_BREAKDOWN_BIT) == COM_CHARGE_BREAKDOWN_BIT {
+			return true
+		}
+	}
+	if (state&newStateBit) == state {
+		return true
+	}
+	return false
+}
 func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	taskRecord := &DeviceCharge{
 		DeviceID: entity.DeviceID,
@@ -109,7 +134,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 
 	//存在记录
 	if hasRecord {
-		if (taskRecord.State&state) == state && state != COM_CHARGE_RUNING_BIT {
+		if checkChargeIsExit(taskRecord.State,state) {
 			return nil
 		}
 

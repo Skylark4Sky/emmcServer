@@ -304,7 +304,8 @@ func (request *RequestListData) GetDeviceCharge(userID uint64) (*RespondListData
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
 		db = addWhereCond(db, condMap, ENDING_TIME_KEY)
-		return db, getOrderCond(condMap)
+		defaultSortMap := map[string]interface{}{SORT_FIELD_KEY: "create_time", SORT_ORDER_KEY: DESCEND_ORDER}
+		return db, getOrderCond(defaultSortMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}

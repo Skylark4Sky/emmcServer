@@ -63,6 +63,7 @@ const (
 	MAX_CHARGE_ELECTRICITY_KEY = "max_charge_electricity"
 	AVERAGE_POWER_KEY          = "average_power"
 	MAX_POWER_KEY              = "max_power"
+	IS_CHARGE_OVER 			   = "charge_over"
 )
 
 type RequestSyncData struct {
@@ -275,6 +276,20 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 				}
 			}
 		}
+	case IS_CHARGE_OVER:
+		{
+			if keyValue, ok := condMap[IS_CHARGE_OVER]; ok {
+				if keyValue == "0" && keyValue != "" {
+					break
+				} else if keyValue == "1" && keyValue != "" {
+					cond := StringJoin([]interface{}{"(", "end_time", " <= ?)"})
+					dbEntity = dbEntity.Where(cond, 0)
+				} else if keyValue != "" {
+					cond := StringJoin([]interface{}{"(", "end_time", " > ?)"})
+					dbEntity = dbEntity.Where(cond, 0)
+				}
+			}
+		}
 	default:
 		if keyValue, ok := condMap[key]; ok {
 			switch key {
@@ -317,6 +332,7 @@ func (request *RequestListData) GetDeviceChargeList(userID uint64) (*RespondList
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
 		db = addWhereCond(db, condMap, ENDING_TIME_KEY)
+		db = addWhereCond(db, condMap, IS_CHARGE_OVER)
 		//defaultSortMap := map[string]interface{}{SORT_FIELD_KEY: "create_time", SORT_ORDER_KEY: DESCEND_ORDER}
 		return db, getOrderCond(condMap)
 	}); errMsg != nil {

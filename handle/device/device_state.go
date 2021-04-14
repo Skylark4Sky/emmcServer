@@ -48,8 +48,8 @@ func deviceComCharge(newComData, redisCacheData *CacheComData, userID, deviceID 
 		newComData.MaxChargeElectricity = redisCacheData.MaxChargeElectricity
 		newComData.SyncTime = redisCacheData.SyncTime
 		// 数值计算
-		newComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, newComData.CurElectricity, 5)              //当前P值
-		newComData.AveragePower = CalculateCurAverageComPower(newComData.UseEnergy, newComData.UseTime, 5) //平均P值
+		newComData.CurPower = CalculateCurComPower(CUR_VOLTAGE, newComData.CurElectricity, 2)              //当前P值
+		newComData.AveragePower = CalculateCurAverageComPower(newComData.UseEnergy, newComData.UseTime, 2) //平均P值
 		// 最大P值
 		if CmpPower(newComData.CurPower, redisCacheData.MaxPower) > 0 {
 			newComData.MaxPower = newComData.CurPower

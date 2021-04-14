@@ -164,7 +164,7 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 	var total int64 = 0
 	var orderCond string = ""
 
-	db := ExecSQL()
+	db := ExecSQL().Debug()
 
 	if request.RequestCond != nil {
 		condMap := request.RequestCond.(map[string]interface{})
@@ -266,7 +266,7 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 		}
 	case STATE_KEY:
 		{
-			if keyValue, ok := condMap[DEVICE_STATUS_KEY]; ok {
+			if keyValue, ok := condMap[STATE_KEY]; ok {
 				if keyValue == "0" && keyValue != "" {
 					break
 				} else if keyValue != "" {

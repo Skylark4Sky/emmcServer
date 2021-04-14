@@ -24,6 +24,8 @@ func registerDeviceRouter(deviceRouter *gin.RouterGroup) {
 			authDevice.POST("reStart", deviceApi.Restart)
 			authDevice.POST("updateFirmware", deviceApi.UpdateFirmware)
 			//常规控制器
+			authDevice.POST("getDeviceCom", deviceApi.GetDeviceCom)
+			authDevice.POST("getDeviceCharge", deviceApi.GetDeviceCharge)
 			authDevice.POST("getDeviceList", deviceApi.GetDeviceList)
 			authDevice.POST("getDeviceTransferLog", deviceApi.GetDeviceTransferLogList)
 			authDevice.POST("getModuleList", deviceApi.GetModuleList)

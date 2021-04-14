@@ -91,7 +91,7 @@ type DeviceComInfo struct {
 	UID         uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`             // 用户ID
 	DeviceID    uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 设备ID
 	ComID       uint8  `gorm:"column:com_id;type:tinyint(2) unsigned;not null" json:"com_id"`       // 端口ID
-	Enable       uint8  `gorm:"column:enable;type:tinyint(2) unsigned;not null" json:"enable"`      // 是否启动 0 空闲 1 启动
+	Enable      uint8  `gorm:"column:enable;type:tinyint(2) unsigned;not null" json:"enable"`       // 是否启动 0 空闲 1 启动
 	TotalEnergy int64  `gorm:"column:total_energy;type:bigint(20) unsigned" json:"total_energy"`    // 总计使用度数
 	TotalTime   int64  `gorm:"column:total_time;type:bigint(20) unsigned" json:"total_time"`        // 总计使用时间
 	BillType    uint32 `gorm:"column:bill_type;type:int(10) unsigned" json:"bill_type"`             // 计费类型-按时间，按功率

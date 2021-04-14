@@ -4,8 +4,8 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
-	. "GoServer/model/device"
 	. "GoServer/model/asyncTask"
+	. "GoServer/model/device"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
@@ -34,24 +34,34 @@ const (
 )
 
 const (
-	DEVICE_UID_KEY	   = "uid"
-	DEVICE_ID_KEY      = "device_id"
-	DEVICE_SN_KEY      = "device_sn"
-	DEVICE_VERSION_KEY = "device_version"
-	TYPE_KEY           = "type"
-	ACCESS_WAY_KEY     = "access_way"
-	TRANSFER_ID_KEY    = "transfer_id"
-	BEHAVIOR_KEY       = "behavior"
-	TIMETYPE_KEY       = "time"
-	MODULE_ID_KEY      = "module_id"
-	MODULE_SN_KEY      = "module_sn"
-	DEVICE_STATUS_KEY  = "status"
-	SORT_FIELD_KEY     = "sortField"
-	SORT_ORDER_KEY     = "sortOrder"
-	STAR_TTIME_KEY     = "startTime"
-	END_TIME_KEY       = "endTime"
-	CREATE_TIME_KEY    = "create_time"
-	UPDATE_TIME_KEY    = "update_time"
+	DEVICE_UID_KEY             = "uid"
+	DEVICE_ID_KEY              = "device_id"
+	DEVICE_SN_KEY              = "device_sn"
+	DEVICE_VERSION_KEY         = "device_version"
+	TYPE_KEY                   = "type"
+	ACCESS_WAY_KEY             = "access_way"
+	TRANSFER_ID_KEY            = "transfer_id"
+	BEHAVIOR_KEY               = "behavior"
+	TIMETYPE_KEY               = "time"
+	MODULE_ID_KEY              = "module_id"
+	MODULE_SN_KEY              = "module_sn"
+	DEVICE_STATUS_KEY          = "status"
+	SORT_FIELD_KEY             = "sortField"
+	SORT_ORDER_KEY             = "sortOrder"
+	STAR_TTIME_KEY             = "startTime"
+	END_TIME_KEY               = "endTime"
+	CREATE_TIME_KEY            = "create_time"
+	UPDATE_TIME_KEY            = "update_time"
+	ENDING_TIME_KEY            = "end_time"
+	COM_ID_KEY                 = "com_id"
+	MAX_ENERGY_KEY             = "max_energy"
+	MAX_TIME_KEY               = "max_time"
+	MAX_ELECTRICITY_KEY        = "max_electricity"
+	USE_ENERGY_KEY             = "use_energy"
+	USE_TIME_KEY               = "use_time"
+	MAX_CHARGE_ELECTRICITY_KEY = "max_charge_electricity"
+	AVERAGE_POWER_KEY          = "average_power"
+	MAX_POWER_KEY              = "max_power"
 )
 
 type RequestSyncData struct {
@@ -75,6 +85,7 @@ type RespondListData struct {
 	Page PageInfo    `json:"page,omitempty"`
 }
 
+// 检查用户权限组
 func CheckUserRulesGroup(UserID uint64, roleValue int) (errMsg interface{}) {
 	errMsg = nil
 	userInfo := &UserInfo{}
@@ -114,6 +125,7 @@ func CheckUserRulesGroup(UserID uint64, roleValue int) (errMsg interface{}) {
 	return nil
 }
 
+// 添加时间条件
 func addTimeCond(db *gorm.DB, timeField string, condMap map[string]interface{}) *gorm.DB {
 	dbEntity := db
 
@@ -143,6 +155,7 @@ func addTimeCond(db *gorm.DB, timeField string, condMap map[string]interface{}) 
 	return dbEntity
 }
 
+// 通用SQL语句格式化
 func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilter func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string)) (errMsg interface{}, respond *RespondListData) {
 	errMsg = nil
 	respond = nil
@@ -195,6 +208,7 @@ func generalSQLFormat(request *RequestListData, listSearch interface{}, condFilt
 	return
 }
 
+// 获取排序条件
 func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	orderCond = ""
 
@@ -212,6 +226,7 @@ func getOrderCond(condMap map[string]interface{}) (orderCond string) {
 	return
 }
 
+// 添加查询条件
 func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm.DB {
 	dbEntity := db
 	switch key {
@@ -268,8 +283,37 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 	return dbEntity
 }
 
-func (request *RequestListData) GetDeviceList(userID uint64) (*RespondListData, interface{}) {
+// 获取全部充电列表
+func (request *RequestListData) GetDeviceCharge(userID uint64) (*RespondListData, interface{}) {
+	var deviceList []DeviceCharge
+	var respond *RespondListData = nil
+	var errMsg interface{} = nil
 
+	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
+		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
+		db = addWhereCond(db, condMap, COM_ID_KEY)
+		db = addWhereCond(db, condMap, MAX_ENERGY_KEY)
+		db = addWhereCond(db, condMap, MAX_TIME_KEY)
+		db = addWhereCond(db, condMap, MAX_ELECTRICITY_KEY)
+		db = addWhereCond(db, condMap, USE_ENERGY_KEY)
+		db = addWhereCond(db, condMap, USE_TIME_KEY)
+		db = addWhereCond(db, condMap, MAX_CHARGE_ELECTRICITY_KEY)
+		db = addWhereCond(db, condMap, AVERAGE_POWER_KEY)
+		db = addWhereCond(db, condMap, MAX_POWER_KEY)
+		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
+		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
+		db = addWhereCond(db, condMap, ENDING_TIME_KEY)
+		return db, getOrderCond(condMap)
+	}); errMsg != nil {
+		return nil, errMsg
+	}
+
+	return respond, nil
+}
+
+// 获取设备列表
+func (request *RequestListData) GetDeviceList(userID uint64) (*RespondListData, interface{}) {
 	var deviceList []DeviceInfo
 	var respond *RespondListData = nil
 	var errMsg interface{} = nil
@@ -291,6 +335,7 @@ func (request *RequestListData) GetDeviceList(userID uint64) (*RespondListData, 
 	return respond, nil
 }
 
+// 获取设备日志上报列表
 func (request *RequestListData) GetDeviceTransferLogList(userID uint64) (interface{}, interface{}) {
 	var transferList []DeviceTransferLog
 	var respond *RespondListData = nil
@@ -313,6 +358,7 @@ func (request *RequestListData) GetDeviceTransferLogList(userID uint64) (interfa
 	return respond, nil
 }
 
+// 获取模组列表
 func (request *RequestListData) GetModuleList(userID uint64) (interface{}, interface{}) {
 	var moduleList []ModuleInfo
 	var respond *RespondListData = nil
@@ -333,6 +379,7 @@ func (request *RequestListData) GetModuleList(userID uint64) (interface{}, inter
 	return respond, nil
 }
 
+// 获取模组连接日志
 func (request *RequestListData) GetModuleConnectLogList(userID uint64) (interface{}, interface{}) {
 	var connectList []ModuleConnectLog
 	var respond *RespondListData = nil
@@ -352,6 +399,7 @@ func (request *RequestListData) GetModuleConnectLogList(userID uint64) (interfac
 	return respond, nil
 }
 
+// 批量更新设备状态
 func batchUpdatesDeviceStatus(entity interface{}, status int8) bool {
 	deviceIDList := make([]uint64, 0)
 	switch status {
@@ -383,6 +431,7 @@ func batchUpdatesDeviceStatus(entity interface{}, status int8) bool {
 	return false
 }
 
+// 设备状态异步处理方法
 func asyncDeviceStatusTaskFunc(task *AsyncTaskEntity) {
 	if task.Entity == nil {
 		task.Lock.Unlock()
@@ -461,6 +510,7 @@ func asyncDeviceStatusTaskFunc(task *AsyncTaskEntity) {
 	}
 }
 
+// 同步设备状态
 func (request *RequestSyncData) SyncDeviceStatus() (interface{}, interface{}) {
 
 	lock, ok, err := TryLock(StringJoin([]interface{}{"USERID_", request.UserID}), "syncDeviceStatus", int(REDIS_LOCK_DEFAULTIMEOUT))

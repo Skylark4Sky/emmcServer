@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	REDIS_LOCK_STATETIMEOUT = 5
+)
+
 //构建缓存数据实体
 func calculateComData(comData *mqtt.ComData) *CacheComData {
 	cacheComData := &CacheComData{
@@ -23,10 +27,10 @@ func calculateComData(comData *mqtt.ComData) *CacheComData {
 	return cacheComData
 }
 
-func deviceComStateDataCHK(newData,redisData *CacheComData, userID, deviceID uint64) bool {
+func deviceComStateDataCHK(newData, redisData *CacheComData, userID, deviceID uint64) bool {
 	//如果token一致需检测数据变更
 	if newData.Token == redisData.Token && (newData.Enable == COM_DISENABLE && redisData.Enable == COM_ENABLE) {
-		comChargeTaskNeedCheck(redisData,userID,deviceID)
+		comChargeTaskNeedCheck(redisData, userID, deviceID)
 		SystemLog("实时: ", newData.Enable, " 缓存: ", redisData.Enable)
 		SystemLog("deviceID", deviceID)
 		SystemLog("实时: ---> ", newData)
@@ -36,7 +40,7 @@ func deviceComStateDataCHK(newData,redisData *CacheComData, userID, deviceID uin
 	return false
 }
 
-func deviceComCharge(newComData,redisCacheData *CacheComData, userID, deviceID uint64) bool {
+func deviceComCharge(newComData, redisCacheData *CacheComData, userID, deviceID uint64) bool {
 	//端口启用状态
 	if newComData.Enable == COM_ENABLE {
 		// 拷贝数据
@@ -64,7 +68,7 @@ func deviceComCharge(newComData,redisCacheData *CacheComData, userID, deviceID u
 	}
 
 	//未开启时，检测值是否有变化 大于50ma保存异常数值
-	if CmpElectricityException(float64(newComData.CurElectricity),float64(redisCacheData.CurElectricity),50) {
+	if CmpElectricityException(float64(newComData.CurElectricity), float64(redisCacheData.CurElectricity), 50) {
 		SystemLog(" Time:", TimeFormat(time.Now()), " ", deviceID, " 端口:", newComData.Id, " 异常---当前值:", newComData.CurElectricity, "上一次值为:", redisCacheData.CurElectricity)
 	}
 
@@ -85,7 +89,7 @@ func deviceStateHandle(comList *mqtt.ComList, deviceSN string, userID, deviceID 
 			}
 			if !deviceComCharge(newComData, &redisCacheData, userID, deviceID) {
 				copyNewData = false
-				delete(redisComList,comData.Id)
+				delete(redisComList, comData.Id)
 			}
 		}
 
@@ -119,7 +123,6 @@ func deviceActBehaviorDataOps(packet *mqtt.Packet, deviceSN string, userID, devi
 		comChargeTaskStop(packet.Data.(*mqtt.ComTaskStopTransfer), deviceSN, userID, deviceID, false)
 	case mqtt.GISUNLINK_STOP_CHARGE:
 		comChargeTaskStop(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID, true)
-		updateComTatol()
 	case mqtt.GISUNLINK_CHARGE_NO_LOAD, mqtt.GISUNLINK_CHARGE_FINISH, mqtt.GISUNLINK_CHARGE_BREAKDOWN:
 		deviceInitiativeExitComChargeTask(packet.Data.(*mqtt.ComList), deviceSN, userID, deviceID, packet.Json.Behavior)
 	}

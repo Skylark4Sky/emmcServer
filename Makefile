@@ -26,6 +26,7 @@ TIME := "log"$(shell date +"%Y%m%d")
 exe:
 	@sh ./utils/shell/exeRun.sh $(BINNAME)
 bg: release
+	@export GIN_MODE=release
 	@sh ./utils/shell/killExe.sh $(BINNAME)
 	@sh ./utils/shell/exeRun.sh $(BINNAME) $(TIME)
 run: debug
@@ -33,7 +34,7 @@ run: debug
 	@sh ./utils/shell/exeRun.sh $(BINNAME)
 release:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
-	#upx -9 ./build/$(BINNAME)
+#	upx -9 ./build/$(BINNAME)
 debug:
 	@$(GO) build -ldflags $(LDFLAGS) -o ./build/$(BINNAME) main.go
 clean:

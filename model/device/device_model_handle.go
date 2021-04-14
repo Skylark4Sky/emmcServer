@@ -94,7 +94,7 @@ func isChargeEnding(state uint32) (ret bool) {
 	}
 	return ret
 }
-func checkChargeIsExit(state, newStateBit uint32)  bool {
+func checkChargeIsExit(state, newStateBit uint32) bool {
 	switch newStateBit {
 	case COM_CHARGE_RUNING_BIT:
 		return false
@@ -115,11 +115,16 @@ func checkChargeIsExit(state, newStateBit uint32)  bool {
 			return true
 		}
 	}
-	if (state&newStateBit) == state {
+	if (state & newStateBit) == state {
 		return true
 	}
 	return false
 }
+
+func deviceComOpsSettingWithTotal(deviceID uint64, state uint32) {
+
+}
+
 func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	taskRecord := &DeviceCharge{
 		DeviceID: entity.DeviceID,
@@ -132,9 +137,11 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 		return err
 	}
 
+	nowTime := GetTimestampMs()
+
 	//存在记录
 	if hasRecord {
-		if checkChargeIsExit(taskRecord.State,state) {
+		if checkChargeIsExit(taskRecord.State, state) {
 			return nil
 		}
 
@@ -143,7 +150,7 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 
 		if state == COM_CHARGE_STOP_BIT {
 			updateParam["state"] = entity.State
-			updateParam["end_time"] = GetTimestampMs()
+			updateParam["end_time"] = nowTime
 		} else {
 			updateParam["max_energy"] = entity.MaxEnergy
 			updateParam["max_time"] = entity.MaxTime
@@ -155,9 +162,9 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 			updateParam["average_power"] = entity.AveragePower
 			updateParam["max_power"] = entity.MaxPower
 			if state == COM_CHARGE_RUNING_BIT {
-				updateParam["update_time"] = GetTimestampMs()
+				updateParam["update_time"] = nowTime
 			} else if isChargeEnding(state) {
-				updateParam["end_time"] = GetTimestampMs()
+				updateParam["end_time"] = nowTime
 			}
 		}
 		if err := ExecSQL().Model(taskRecord).Updates(updateParam).Error; err != nil {
@@ -166,14 +173,17 @@ func DeviceComChargeTaskOps(entity *DeviceCharge, state uint32) error {
 	} else { //不存在记录
 		entity.State = state
 		if state == COM_CHARGE_RUNING_BIT {
-			entity.UpdateTime = GetTimestampMs()
+			entity.UpdateTime = nowTime
 		} else if isChargeEnding(state) {
-			entity.EndTime = GetTimestampMs()
+			entity.EndTime = nowTime
 		}
 		if err := ExecSQL().Create(entity).Error; err != nil {
 			structTpey := reflect.Indirect(reflect.ValueOf(entity)).Type()
 			SystemLog("Create ", structTpey, " Error ", zap.Any("SQL", entity), zap.Error(err))
 		}
 	}
+
+	deviceComOpsSettingWithTotal(entity.DeviceID, state)
+
 	return nil
 }

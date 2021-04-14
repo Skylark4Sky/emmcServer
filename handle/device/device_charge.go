@@ -5,7 +5,8 @@ import (
 	. "GoServer/model/asyncTask"
 	. "GoServer/model/device"
 	mqtt "GoServer/mqttPacket"
-	//	. "GoServer/utils/log"
+	. "GoServer/utils/log"
+	. "GoServer/utils/string"
 )
 
 func asyncDeviceChargeTaskFunc(task *AsyncTaskEntity) {
@@ -73,15 +74,29 @@ func comChargeTaskStart(iface interface{}, deviceSN string, userID, deviceID uin
 		task.Func = asyncDeviceChargeTaskFunc
 		if !ack {
 			entity := iface.(*mqtt.ComTaskStartTransfer)
-			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.ComID)
-			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, entity.MaxElectricity)
-			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
+			_, ok, err := TryLock(StringJoin([]interface{}{deviceSN, "-", deviceID, "-", entity.ComID}), "ComStateLock", int(REDIS_LOCK_STATETIMEOUT))
+			if err != nil {
+				SystemLog("Try Error: ", err)
+				return
+			}
+			if ok {
+				deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.ComID)
+				deviceCom.Init(entity.MaxEnergy, entity.MaxTime, entity.MaxElectricity)
+				task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK, deviceCom)
+			}
 		} else {
 			comList := iface.(*mqtt.ComList)
 			entity := (comList.ComPort[0]).(mqtt.ComData)
-			deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
-			deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
-			task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
+			_, ok, err := TryLock(StringJoin([]interface{}{deviceSN, "-", deviceID, "-", entity.Id, "Ack"}), "ComStateLock", int(REDIS_LOCK_STATETIMEOUT))
+			if err != nil {
+				SystemLog("Try Error: ", err)
+				return
+			}
+			if ok {
+				deviceCom.Create(userID, deviceID, uint64(entity.Token), entity.Id)
+				deviceCom.Init(entity.MaxEnergy, entity.MaxTime, uint32(entity.MaxElectricity))
+				task.RunTaskWithTypeAndEntity(ASYNC_CREATE_COM_CHARGE_TASK_ACK, deviceCom)
+			}
 		}
 	}
 }

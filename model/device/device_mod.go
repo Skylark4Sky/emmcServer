@@ -12,15 +12,15 @@ const (
 )
 
 const (
-	COM_CHARGE_START_BIT     uint32 = 0x01 //下发
-	COM_CHARGE_START_ACK_BIT uint32 = 0x02 //设备已执行
-	COM_CHARGE_STOP_BIT      uint32 = 0x04 //下发
-	COM_CHARGE_STOP_ACK_BIT  uint32 = 0x08 //设备已执行
-	COM_CHARGE_RUNING_BIT    uint32 = 0x10 //运行
-	COM_CHARGE_FINISH_BIT    uint32 = 0x20 //完成
-	COM_CHARGE_NO_LOAD_BIT   uint32 = 0x40 //空载
-	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x80 //异常
-	COM_CHARGE_EXIT_BIT		 uint32 = 0x100 //不一致退出
+	COM_CHARGE_START_BIT     uint32 = 0x01  //下发
+	COM_CHARGE_START_ACK_BIT uint32 = 0x02  //设备已执行
+	COM_CHARGE_STOP_BIT      uint32 = 0x04  //下发
+	COM_CHARGE_STOP_ACK_BIT  uint32 = 0x08  //设备已执行
+	COM_CHARGE_RUNING_BIT    uint32 = 0x10  //运行
+	COM_CHARGE_FINISH_BIT    uint32 = 0x20  //完成
+	COM_CHARGE_NO_LOAD_BIT   uint32 = 0x40  //空载
+	COM_CHARGE_BREAKDOWN_BIT uint32 = 0x80  //异常
+	COM_CHARGE_EXIT_BIT      uint32 = 0x100 //不一致退出
 )
 
 const (
@@ -91,7 +91,7 @@ type DeviceComInfo struct {
 	UID         uint64 `gorm:"column:uid;type:bigint(20) unsigned;not null" json:"uid"`             // 用户ID
 	DeviceID    uint64 `gorm:"column:device_id;type:bigint(20) unsigned;not null" json:"device_id"` // 设备ID
 	ComID       uint8  `gorm:"column:com_id;type:tinyint(2) unsigned;not null" json:"com_id"`       // 端口ID
-	Enable       uint8  `gorm:"column:enable;type:tinyint(2) unsigned;not null" json:"enable"`      // 是否启动 0 空闲 1 启动
+	Enable      uint8  `gorm:"column:enable;type:tinyint(2) unsigned;not null" json:"enable"`       // 是否启动 0 空闲 1 启动
 	TotalEnergy int64  `gorm:"column:total_energy;type:bigint(20) unsigned" json:"total_energy"`    // 总计使用度数
 	TotalTime   int64  `gorm:"column:total_time;type:bigint(20) unsigned" json:"total_time"`        // 总计使用时间
 	BillType    uint32 `gorm:"column:bill_type;type:int(10) unsigned" json:"bill_type"`             // 计费类型-按时间，按功率

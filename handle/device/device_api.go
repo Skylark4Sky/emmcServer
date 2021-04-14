@@ -4,8 +4,8 @@ import (
 	. "GoServer/handle/user"
 	. "GoServer/middleWare/dataBases/mysql"
 	. "GoServer/middleWare/dataBases/redis"
-	. "GoServer/model/device"
 	. "GoServer/model/asyncTask"
+	. "GoServer/model/device"
 	. "GoServer/utils/log"
 	. "GoServer/utils/respond"
 	. "GoServer/utils/string"
@@ -34,7 +34,7 @@ const (
 )
 
 const (
-	DEVICE_UID_KEY	   = "uid"
+	DEVICE_UID_KEY     = "uid"
 	DEVICE_ID_KEY      = "device_id"
 	DEVICE_SN_KEY      = "device_sn"
 	DEVICE_VERSION_KEY = "device_version"

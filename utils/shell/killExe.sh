@@ -16,7 +16,7 @@ exeName=$1
 es_pid=`ps aux | grep .$exeName. | grep -v "grep" | tr -s ' '| cut -d ' ' -f 2`
 
 if [ $es_pid ]; then
-	kill -9 $es_pid
+	kill $es_pid
 	echo -e "\033[31mkill PID "$es_pid"\033[0m"
 fi
 

@@ -9,12 +9,6 @@ import (
 )
 
 func StartCharge(ctx *gin.Context) {
-	//	userID := ctx.MustGet(JwtCtxUidKey)
-
-	//	if userID.(uint64) <= 0 {
-	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
-	//	}
-
 	var postData mqtt.ComTaskStartTransfer
 	postData.ComID = 6
 	postData.Token = 567890
@@ -32,12 +26,6 @@ func StartCharge(ctx *gin.Context) {
 }
 
 func StopCharge(ctx *gin.Context) {
-	//	userID := ctx.MustGet(JwtCtxUidKey)
-	//
-	//	if userID.(uint64) <= 0 {
-	//		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
-	//	}
-
 	var postData mqtt.ComTaskStopTransfer
 	postData.ComID = 6
 	postData.Token = 567890
@@ -48,7 +36,6 @@ func StopCharge(ctx *gin.Context) {
 	mqttMsg := &MqMsg{}
 	mqttMsg.Send("47.106.235.93:1883", "57ff69067878495148300967", payload)
 	RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, payload))
-
 }
 
 func StatusQuery(ctx *gin.Context) {
@@ -57,7 +44,6 @@ func StatusQuery(ctx *gin.Context) {
 	if userID.(uint64) <= 0 {
 		RespondMessage(ctx, CreateErrorMessage(PARAM_ERROR, nil))
 	}
-
 }
 
 func NoLoadSetting(ctx *gin.Context) {

@@ -1,6 +1,0 @@
-package device
-
-
-func updateComTatol() {
-	
-}

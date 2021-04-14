@@ -54,6 +54,7 @@ const (
 	UPDATE_TIME_KEY            = "update_time"
 	ENDING_TIME_KEY            = "end_time"
 	COM_ID_KEY                 = "com_id"
+	STATE_KEY                  = "state"
 	MAX_ENERGY_KEY             = "max_energy"
 	MAX_TIME_KEY               = "max_time"
 	MAX_ELECTRICITY_KEY        = "max_electricity"
@@ -263,6 +264,17 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 				}
 			}
 		}
+	case STATE_KEY:
+		{
+			if keyValue, ok := condMap[DEVICE_STATUS_KEY]; ok {
+				if keyValue == "0" && keyValue != "" {
+					break
+				} else if keyValue != "" {
+					cond := StringJoin([]interface{}{" (", key, " & ?)"})
+					dbEntity = dbEntity.Where(cond, keyValue)
+				}
+			}
+		}
 	default:
 		if keyValue, ok := condMap[key]; ok {
 			switch key {
@@ -301,6 +313,7 @@ func (request *RequestListData) GetDeviceChargeList(userID uint64) (*RespondList
 		db = addWhereCond(db, condMap, MAX_CHARGE_ELECTRICITY_KEY)
 		db = addWhereCond(db, condMap, AVERAGE_POWER_KEY)
 		db = addWhereCond(db, condMap, MAX_POWER_KEY)
+		db = addWhereCond(db, condMap, STATE_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
 		db = addWhereCond(db, condMap, UPDATE_TIME_KEY)
 		db = addWhereCond(db, condMap, ENDING_TIME_KEY)
@@ -349,13 +362,11 @@ func (request *RequestListData) GetDeviceTransferLogList(userID uint64) (interfa
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, BEHAVIOR_KEY)
 		db = addWhereCond(db, condMap, CREATE_TIME_KEY)
-
 		defaultSortMap := map[string]interface{}{SORT_FIELD_KEY: "create_time", SORT_ORDER_KEY: DESCEND_ORDER}
 		return db, getOrderCond(defaultSortMap)
 	}); errMsg != nil {
 		return nil, errMsg
 	}
-
 	return respond, nil
 }
 
@@ -376,7 +387,6 @@ func (request *RequestListData) GetModuleList(userID uint64) (interface{}, inter
 	}); errMsg != nil {
 		return nil, errMsg
 	}
-
 	return respond, nil
 }
 
@@ -396,7 +406,6 @@ func (request *RequestListData) GetModuleConnectLogList(userID uint64) (interfac
 	}); errMsg != nil {
 		return nil, errMsg
 	}
-
 	return respond, nil
 }
 

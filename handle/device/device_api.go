@@ -284,7 +284,7 @@ func addWhereCond(db *gorm.DB, condMap map[string]interface{}, key string) *gorm
 }
 
 // 获取全部充电列表
-func (request *RequestListData) GetDeviceCharge(userID uint64) (*RespondListData, interface{}) {
+func (request *RequestListData) GetDeviceChargeList(userID uint64) (*RespondListData, interface{}) {
 	var deviceList []DeviceCharge
 	var respond *RespondListData = nil
 	var errMsg interface{} = nil

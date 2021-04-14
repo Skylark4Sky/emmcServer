@@ -71,14 +71,14 @@ func GetDeviceCom(ctx *gin.Context) {
 }
 
 // 返回设备充电列表
-func GetDeviceCharge(ctx *gin.Context) {
+func GetDeviceChargeList(ctx *gin.Context) {
 	var getListData RequestListData
 
 	if _, errMsg := generalRequestChk(ctx, &getListData); errMsg != nil {
-		RespondMessage(ctx, errMsg);
+		RespondMessage(ctx, errMsg)
 	}
 
-	data, err := getListData.GetDeviceCharge(getListData.UserID)
+	data, err := getListData.GetDeviceChargeList(getListData.UserID)
 
 	if err != nil {
 		RespondMessage(ctx, err)
@@ -92,7 +92,7 @@ func GetDeviceCharge(ctx *gin.Context) {
 func GetDeviceList(ctx *gin.Context) {
 	var getListData RequestListData
 	if _, errMsg := generalRequestChk(ctx, &getListData); errMsg != nil {
-		RespondMessage(ctx, errMsg);
+		RespondMessage(ctx, errMsg)
 	}
 
 	data, err := getListData.GetDeviceList(getListData.UserID)

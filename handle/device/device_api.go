@@ -63,7 +63,7 @@ const (
 	MAX_CHARGE_ELECTRICITY_KEY = "max_charge_electricity"
 	AVERAGE_POWER_KEY          = "average_power"
 	MAX_POWER_KEY              = "max_power"
-	IS_CHARGE_OVER 			   = "charge_over"
+	IS_CHARGE_OVER             = "charge_over"
 )
 
 type RequestSyncData struct {
@@ -317,7 +317,7 @@ func (request *RequestListData) GetDeviceChargeList(userID uint64) (*RespondList
 	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		//		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
 		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
 		db = addWhereCond(db, condMap, COM_ID_KEY)
 		db = addWhereCond(db, condMap, MAX_ENERGY_KEY)
@@ -349,7 +349,7 @@ func (request *RequestListData) GetDeviceList(userID uint64) (*RespondListData, 
 	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &deviceList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		//		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
 		db = addWhereCond(db, condMap, DEVICE_VERSION_KEY)
 		db = addWhereCond(db, condMap, TYPE_KEY)
@@ -372,7 +372,7 @@ func (request *RequestListData) GetDeviceTransferLogList(userID uint64) (interfa
 	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &transferList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		//		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
 		db = addWhereCond(db, condMap, TRANSFER_ID_KEY)
 		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
 		db = addWhereCond(db, condMap, DEVICE_SN_KEY)
@@ -393,7 +393,7 @@ func (request *RequestListData) GetModuleList(userID uint64) (interface{}, inter
 	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &moduleList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		//		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
 		db = addWhereCond(db, condMap, DEVICE_ID_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
@@ -413,7 +413,7 @@ func (request *RequestListData) GetModuleConnectLogList(userID uint64) (interfac
 	var errMsg interface{} = nil
 
 	if errMsg, respond = generalSQLFormat(request, &connectList, func(db *gorm.DB, condMap map[string]interface{}) (*gorm.DB, string) {
-		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
+		//		db = addWhereCond(db, map[string]interface{}{"uid": userID}, DEVICE_UID_KEY)
 		db = addWhereCond(db, condMap, MODULE_ID_KEY)
 		db = addWhereCond(db, condMap, MODULE_SN_KEY)
 		db = addWhereCond(db, condMap, ACCESS_WAY_KEY)
